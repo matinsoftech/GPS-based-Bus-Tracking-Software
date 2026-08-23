@@ -1,4 +1,4 @@
-name: Deploy to Test Server
+name: Deploy
 
 on:
   workflow_dispatch:
@@ -38,7 +38,7 @@ jobs:
                 npm run build
               fi
 
-              # php artisan migrate --force
+              php artisan migrate --force
 
               php artisan optimize:clear
               php artisan config:cache
