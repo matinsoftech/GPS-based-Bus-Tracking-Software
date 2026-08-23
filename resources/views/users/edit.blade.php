@@ -25,6 +25,7 @@
         <form
             action="{{ route('users.update', $user) }}"
             method="POST"
+            enctype="multipart/form-data"
             class="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
         >
             @csrf
@@ -106,6 +107,37 @@
                         <option value="inactive" @selected(old('status', $user->status) === 'inactive')>Inactive</option>
                     </select>
                     @error('status')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="md:col-span-2">
+                    <label for="profile_photo" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Photo</label>
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                        @if ($user->profile_photo)
+                            <img
+                                src="{{ asset('storage/' . $user->profile_photo) }}"
+                                alt="{{ $user->name }}"
+                                class="h-20 w-20 rounded-full object-cover"
+                            >
+                        @else
+                            <div class="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 text-2xl font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-300">
+                                {{ strtoupper(substr($user->name, 0, 1)) }}
+                            </div>
+                        @endif
+
+                        <div class="flex-1">
+                            <input
+                                type="file"
+                                id="profile_photo"
+                                name="profile_photo"
+                                accept="image/*"
+                                class="block w-full rounded-lg border border-gray-300 bg-white text-sm text-gray-900 file:mr-4 file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:file:bg-gray-700 dark:file:text-gray-200"
+                            >
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty to keep the current photo.</p>
+                        </div>
+                    </div>
+                    @error('profile_photo')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>

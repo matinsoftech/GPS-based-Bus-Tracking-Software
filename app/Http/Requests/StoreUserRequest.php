@@ -31,6 +31,7 @@ class StoreUserRequest extends FormRequest
             'password' => 'required|min:8',
             'role' => 'required|exists:roles,name',
             'status' => 'required|in:active,inactive',
+            'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ];
     }
 }

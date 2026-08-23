@@ -13,7 +13,7 @@
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
+    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6" enctype="multipart/form-data">
         @csrf
         @method('patch')
 
@@ -45,6 +45,37 @@
                     @endif
                 </div>
             @endif
+        </div>
+
+        <div>
+            <x-input-label for="profile_photo" :value="__('Profile Photo')" />
+            <div class="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center">
+                @if ($user->profile_photo)
+                    <img
+                        src="{{ asset('storage/' . $user->profile_photo) }}"
+                        alt="{{ $user->name }}"
+                        class="h-20 w-20 rounded-full object-cover"
+                    >
+                @else
+                    <div class="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 text-2xl font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-300">
+                        {{ strtoupper(substr($user->name, 0, 1)) }}
+                    </div>
+                @endif
+
+                <div class="flex-1">
+                    <input
+                        type="file"
+                        id="profile_photo"
+                        name="profile_photo"
+                        accept="image/*"
+                        class="block w-full rounded-lg border border-gray-300 bg-white text-sm text-gray-900 file:mr-4 file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:file:bg-gray-700 dark:file:text-gray-200"
+                    >
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {{ __('Leave empty to keep the current photo. JPG, PNG or WEBP up to 2MB.') }}
+                    </p>
+                </div>
+            </div>
+            <x-input-error class="mt-2" :messages="$errors->get('profile_photo')" />
         </div>
 
         <div class="flex items-center gap-4">

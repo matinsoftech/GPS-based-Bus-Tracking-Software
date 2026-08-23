@@ -312,7 +312,11 @@
                     @click.prevent="dropdownOpen = ! dropdownOpen"
                 >
                     <span class="mr-3 h-11 w-11 overflow-hidden rounded-full">
-                        <img src="/images/user/owner.jpg" alt="User" />
+                        @if (Auth::user()->profile_photo)
+                            <img src="{{ asset('storage/' . Auth::user()->profile_photo) }}" alt="{{ Auth::user()->name }}" class="h-full w-full object-cover" />
+                        @else
+                            <img src="/images/user/owner.jpg" alt="User" class="h-full w-full object-cover" />
+                        @endif
                     </span>
 
                     <span class="text-theme-sm mr-1 block font-medium">

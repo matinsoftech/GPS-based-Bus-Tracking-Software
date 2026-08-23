@@ -89,7 +89,22 @@
                     @forelse ($users as $user)
                         <tr class="text-gray-700 dark:text-gray-200">
                             <td class="px-5 py-3">{{ $user->id }}</td>
-                            <td class="px-5 py-3 font-medium">{{ $user->name }}</td>
+                            <td class="px-5 py-3 font-medium">
+                                <div class="flex items-center gap-3">
+                                    @if ($user->profile_photo)
+                                        <img
+                                            src="{{ asset('storage/' . $user->profile_photo) }}"
+                                            alt="{{ $user->name }}"
+                                            class="h-8 w-8 rounded-full object-cover"
+                                        >
+                                    @else
+                                        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-300">
+                                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        </span>
+                                    @endif
+                                    {{ $user->name }}
+                                </div>
+                            </td>
                             <td class="px-5 py-3">{{ $user->email }}</td>
                             <td class="px-5 py-3">
                                 @php

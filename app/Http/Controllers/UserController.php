@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Throwable;
 
@@ -66,6 +67,13 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
+        if ($request->hasFile('profile_photo')) {
+
+            $validated['profile_photo'] =
+                $request->file('profile_photo')
+                    ->store('users', 'public');
+        }
+
         try {
             // Create the user and assign the chosen role atomically.
             DB::transaction(function () use ($validated) {
@@ -74,6 +82,7 @@ class UserController extends Controller
                     'email' => $validated['email'],
                     'password' => $validated['password'],
                     'status' => $validated['status'],
+                    'profile_photo' => $validated['profile_photo'] ?? null,
                 ]);
 
                 $user->assignRole($validated['role']);
@@ -111,6 +120,21 @@ class UserController extends Controller
             unset($validated['password']);
         }
 
+        // A newly uploaded photo replaces the old one on disk.
+        if ($request->hasFile('profile_photo')) {
+            if (
+                $user->profile_photo &&
+                Storage::disk('public')->exists($user->profile_photo)
+            ) {
+                Storage::disk('public')
+                    ->delete($user->profile_photo);
+            }
+
+            $validated['profile_photo'] =
+                $request->file('profile_photo')
+                    ->store('users', 'public');
+        }
+
         try {
             // Update the user and synchronise the role atomically.
             DB::transaction(function () use ($validated, $user) {
@@ -136,6 +160,14 @@ class UserController extends Controller
         // Prevent a Super Admin from locking themselves out of the app.
         if ($user->id === auth()->id()) {
             return back()->with('error', 'You cannot delete your own account.');
+        }
+
+        if (
+            $user->profile_photo &&
+            Storage::disk('public')->exists($user->profile_photo)
+        ) {
+            Storage::disk('public')
+                ->delete($user->profile_photo);
         }
 
         try {
