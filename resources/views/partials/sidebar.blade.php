@@ -37,6 +37,7 @@
                 ['key' => 'school-admin-management', 'label' => 'School Admin', 'route' => 'school-admins.index', 'active' => 'school-admin-management', 'icon' => 'heroicon-o-user-group', 'permission' => 'school-admin.view', 'dropdown' => null],
                 ['key' => 'parent-management', 'label' => 'Parent', 'route' => 'parents.index', 'active' => 'parent-management', 'icon' => 'heroicon-o-users', 'permission' => null, 'dropdown' => null],
                 ['key' => 'route-management', 'label' => 'Route', 'route' => 'routes.index', 'active' => 'route-management', 'icon' => 'heroicon-o-map', 'permission' => null, 'dropdown' => null],
+                ['key' => 'buses', 'label' => 'Buses', 'route' => 'buses.index', 'active' => 'buses', 'icon' => 'heroicon-o-truck', 'permission' => 'bus.view', 'dropdown' => null],
                 // ['key' => 'trip-management', 'label' => 'Trip', 'route' => 'dashboard', 'active' => 'trip-management', 'icon' => 'heroicon-o-clipboard-document-list', 'permission' => null, 'dropdown' => null],
             ],
         ],
