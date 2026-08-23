@@ -24,11 +24,11 @@ jobs:
               cd /home/hestiaadmin/web/school.nazartrack.com/public_html
 
               if [ ! -d ".git" ]; then
-                git clone --branch rabin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/matinsoftech/GPS-based-Bus-Tracking-Software.git .
+                git clone --branch main https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/matinsoftech/GPS-based-Bus-Tracking-Software.git .
               else
                 git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/matinsoftech/GPS-based-Bus-Tracking-Software.git
-                git fetch origin rabin
-                git reset --hard origin/rabin
+                git fetch origin main
+                git reset --hard origin/main
               fi
 
               composer install --no-dev --optimize-autoloader
