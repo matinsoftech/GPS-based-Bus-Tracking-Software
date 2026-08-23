@@ -1,0 +1,47 @@
+name: Deploy to Test Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SERVER_HOST_SCHOOL }}
+          username: ${{ secrets.SERVER_USER_SCHOOL }}
+          key: ${{ secrets.SERVER_KEY_SCHOOL }}
+          port: ${{ secrets.SERVER_PORT_SCHOOL }}
+
+          script: |
+            sudo bash -c '
+              set -euo pipefail
+              cd /home/hestiaadmin/web/school.nazartrack.com/public_html
+
+              if [ ! -d ".git" ]; then
+                git clone --branch rabin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/matinsoftech/GPS-based-Bus-Tracking-Software.git .
+              else
+                git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/matinsoftech/GPS-based-Bus-Tracking-Software.git
+                git fetch origin rabin
+                git reset --hard origin/rabin
+              fi
+
+              composer install --no-dev --optimize-autoloader
+
+              if [ -f package.json ]; then
+                npm ci
+                npm run build
+              fi
+
+              # php artisan migrate --force
+
+              php artisan optimize:clear
+              php artisan config:cache
+              php artisan route:cache
+              php artisan view:cache
+            '
