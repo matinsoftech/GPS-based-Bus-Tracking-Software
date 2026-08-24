@@ -52,8 +52,7 @@ class ParentDashboardTest extends TestCase
         $this->parent = ParentProfile::create([
             'user_id' => $this->parentUser->id,
             'school_id' => $this->school->id,
-            'father_name' => 'Hari Bahadur',
-            'mother_name' => 'Gita Bahadur',
+            'name' => 'Hari Bahadur',
             'phone' => '9812345678',
             'alternate_phone' => '9812345679',
             'address' => 'Chabahil, Kathmandu',
@@ -125,7 +124,6 @@ class ParentDashboardTest extends TestCase
             ->assertJsonPath('data.children.0.full_name', 'Sita Bahadur')
             ->assertJsonPath('data.children.0.bus.bus_number', 'PARENT-BUS-1')
             ->assertJsonPath('data.children.0.bus.driver.name', 'Ramesh Sharma')
-            ->assertJsonPath('data.parent.father_name', 'Hari Bahadur')
             ->assertJsonStructure([
                 'message',
                 'data' => [
@@ -134,8 +132,7 @@ class ParentDashboardTest extends TestCase
                         'name',
                         'email',
                         'phone',
-                        'father_name',
-                        'mother_name',
+                        'name',
                         'school' => ['id', 'name', 'address'],
                     ],
                     'children_count',
@@ -273,8 +270,7 @@ class ParentDashboardTest extends TestCase
                     'email',
                     'phone',
                     'alternate_phone',
-                    'father_name',
-                    'mother_name',
+                    'name',
                     'address',
                     'occupation',
                     'role',

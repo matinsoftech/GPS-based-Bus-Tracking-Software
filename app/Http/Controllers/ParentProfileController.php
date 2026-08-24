@@ -44,7 +44,7 @@ class ParentProfileController extends Controller
                     $query->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
                 })
-                    ->orWhere('father_name', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
             })
             ->latest()
@@ -109,8 +109,6 @@ class ParentProfileController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8',
             'school_id' => 'required|exists:schools,id',
-            'father_name' => 'required|max:255',
-            'mother_name' => 'nullable|max:255',
             'phone' => 'required|max:20',
             'alternate_phone' => 'nullable|max:20',
             'address' => 'required',
@@ -148,8 +146,7 @@ class ParentProfileController extends Controller
                 ParentProfile::create([
                     'user_id' => $user->id,
                     'school_id' => $validated['school_id'],
-                    'father_name' => $validated['father_name'],
-                    'mother_name' => $validated['mother_name'] ?? null,
+                    'name' => $validated['name'],
                     'phone' => $validated['phone'],
                     'alternate_phone' => $validated['alternate_phone'] ?? null,
                     'address' => $validated['address'],
@@ -217,8 +214,6 @@ class ParentProfileController extends Controller
             'email' => 'required|email|unique:users,email,'.$parentProfile->user_id,
             'password' => 'nullable|min:8',
             'school_id' => 'required|exists:schools,id',
-            'father_name' => 'required|max:255',
-            'mother_name' => 'nullable|max:255',
             'phone' => 'required|max:20',
             'alternate_phone' => 'nullable|max:20',
             'address' => 'required',
@@ -255,8 +250,7 @@ class ParentProfileController extends Controller
 
                 $parentProfile->update([
                     'school_id' => $validated['school_id'],
-                    'father_name' => $validated['father_name'],
-                    'mother_name' => $validated['mother_name'] ?? null,
+                    'name' => $validated['name'],
                     'phone' => $validated['phone'],
                     'alternate_phone' => $validated['alternate_phone'] ?? null,
                     'address' => $validated['address'],

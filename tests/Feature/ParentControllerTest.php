@@ -60,8 +60,6 @@ class ParentControllerTest extends TestCase
             'email' => 'new@example.com',
             'password' => 'password123',
             'school_id' => $schoolB->id,
-            'father_name' => 'Father Name',
-            'mother_name' => 'Mother Name',
             'phone' => '9800000000',
             'alternate_phone' => null,
             'address' => 'Kathmandu',
@@ -83,7 +81,6 @@ class ParentControllerTest extends TestCase
             'name' => 'New Parent',
             'email' => 'new@example.com',
             'school_id' => $schoolB->id,
-            'father_name' => 'Father Name',
             'phone' => '9800000000',
             'address' => 'Kathmandu',
         ]);
@@ -164,8 +161,7 @@ class ParentControllerTest extends TestCase
         return ParentProfile::create([
             'user_id' => $user->id,
             'school_id' => $school->id,
-            'father_name' => 'Father',
-            'mother_name' => 'Mother',
+            'name' => $name,
             'phone' => '9800000000',
             'address' => 'Kathmandu',
         ]);

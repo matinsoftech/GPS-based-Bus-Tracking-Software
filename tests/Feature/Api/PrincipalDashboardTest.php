@@ -135,7 +135,7 @@ class PrincipalDashboardTest extends TestCase
         return ParentProfile::create([
             'user_id' => $user->id,
             'school_id' => $this->school->id,
-            'father_name' => 'Hari Sharma',
+            'name' => 'Hari Sharma',
             'phone' => '9812345678',
             'address' => 'Chabahil, Kathmandu',
         ]);

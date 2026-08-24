@@ -53,7 +53,7 @@ class ParentChildTest extends TestCase
         $this->parent = ParentProfile::create([
             'user_id' => $this->parentUser->id,
             'school_id' => $this->school->id,
-            'father_name' => 'Hari Bahadur',
+            'name' => 'Hari Bahadur',
             'phone' => '9812345678',
             'address' => 'Chabahil, Kathmandu',
         ]);
@@ -385,7 +385,7 @@ class ParentChildTest extends TestCase
         $otherParent = ParentProfile::create([
             'user_id' => $otherParentUser->id,
             'school_id' => $this->school->id,
-            'father_name' => 'Other Parent',
+            'name' => 'Other Parent',
             'phone' => '9800000302',
             'address' => 'Kathmandu',
         ]);

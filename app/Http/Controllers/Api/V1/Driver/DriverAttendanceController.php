@@ -14,9 +14,9 @@ class DriverAttendanceController extends Controller
     {
         $driver = $request->user()->driver;
 
-        if (!$driver) {
+        if (! $driver) {
             return response()->json([
-                'message' => 'Driver profile not found.'
+                'message' => 'Driver profile not found.',
             ], 404);
         }
 
@@ -28,9 +28,9 @@ class DriverAttendanceController extends Controller
             ->with(['route', 'students.parent.user'])
             ->find($validated['bus_id']);
 
-        if (!$bus) {
+        if (! $bus) {
             return response()->json([
-                'message' => 'Bus not found for this driver.'
+                'message' => 'Bus not found for this driver.',
             ], 404);
         }
 
@@ -43,7 +43,7 @@ class DriverAttendanceController extends Controller
             ->whereIn('student_id', $students->pluck('id'))
             ->whereDate('date', now())
             ->get()
-            ->keyBy(fn($record) => $record->student_id . '-' . $record->trip);
+            ->keyBy(fn ($record) => $record->student_id.'-'.$record->trip);
 
         return response()->json([
             'message' => 'Students for driver bus.',
@@ -59,7 +59,7 @@ class DriverAttendanceController extends Controller
                     ] : null,
                 ],
                 'total_students' => $students->count(),
-                'students' => $students->map(fn($student) => [
+                'students' => $students->map(fn ($student) => [
                     'id' => $student->id,
                     'admission_no' => $student->admission_no,
                     'first_name' => $student->first_name,
@@ -69,17 +69,17 @@ class DriverAttendanceController extends Controller
                     'grade' => $student->grade,
                     'section' => $student->section,
                     'roll_no' => $student->roll_no,
-                    'photo' => $student->photo ? asset('storage/' . $student->photo) : null,
+                    'photo' => $student->photo ? asset('storage/'.$student->photo) : null,
                     'pickup_location' => $student->pickup_location,
                     'drop_location' => $student->drop_location,
                     'parent' => $student->parent ? [
                         'id' => $student->parent->id,
-                        'name' => $student->parent->user->name ?? $student->parent->father_name,
+                        'name' => $student->parent->user->name ?? $student->parent->name,
                         'phone' => $student->parent->phone,
                     ] : null,
                     'today_attendance' => $this->todayAttendanceFor(
-                        $todayRecords->get($student->id . '-' . Attendance::TRIP_HOME_TO_SCHOOL),
-                        $todayRecords->get($student->id . '-' . Attendance::TRIP_SCHOOL_TO_HOME),
+                        $todayRecords->get($student->id.'-'.Attendance::TRIP_HOME_TO_SCHOOL),
+                        $todayRecords->get($student->id.'-'.Attendance::TRIP_SCHOOL_TO_HOME),
                     ),
                 ]),
             ],
@@ -88,19 +88,19 @@ class DriverAttendanceController extends Controller
 
     private function todayAttendanceFor(?Attendance $home, ?Attendance $school): array
     {
-        $tripStatus = fn(?Attendance $record) => $record === null
+        $tripStatus = fn (?Attendance $record) => $record === null
             ? 'not_checked_in'
             : ($record->isCheckedOut() ? 'completed' : 'checked_in');
 
         $nextAction = null;
 
-        if (!$home || !$home->isCheckedIn()) {
+        if (! $home || ! $home->isCheckedIn()) {
             $nextAction = ['key' => 'picked_up_home', 'label' => 'Pick Up'];
-        } elseif (!$home->isCheckedOut()) {
+        } elseif (! $home->isCheckedOut()) {
             $nextAction = ['key' => 'dropped_at_school', 'label' => 'Drop at School'];
-        } elseif (!$school || !$school->isCheckedIn()) {
+        } elseif (! $school || ! $school->isCheckedIn()) {
             $nextAction = ['key' => 'picked_up_school', 'label' => 'Pick Up from School'];
-        } elseif (!$school->isCheckedOut()) {
+        } elseif (! $school->isCheckedOut()) {
             $nextAction = ['key' => 'dropped_at_home', 'label' => 'Drop at Home'];
         }
 
@@ -124,9 +124,9 @@ class DriverAttendanceController extends Controller
     {
         $driver = $request->user()->driver;
 
-        if (!$driver) {
+        if (! $driver) {
             return response()->json([
-                'message' => 'Driver profile not found.'
+                'message' => 'Driver profile not found.',
             ], 404);
         }
 
@@ -140,17 +140,17 @@ class DriverAttendanceController extends Controller
             ->with('route')
             ->find($validated['bus_id']);
 
-        if (!$bus) {
+        if (! $bus) {
             return response()->json([
-                'message' => 'Bus not found for this driver.'
+                'message' => 'Bus not found for this driver.',
             ], 404);
         }
 
-        $from = !empty($validated['from'])
+        $from = ! empty($validated['from'])
             ? Carbon::parse($validated['from'])->startOfDay()
             : now()->subDays(30)->startOfDay();
 
-        $to = !empty($validated['to'])
+        $to = ! empty($validated['to'])
             ? Carbon::parse($validated['to'])->endOfDay()
             : now()->endOfDay();
 
@@ -178,7 +178,7 @@ class DriverAttendanceController extends Controller
                 'from' => $from->toDateString(),
                 'to' => $to->toDateString(),
                 'total_records' => $records->total(),
-                'records' => $records->map(fn(Attendance $record) => [
+                'records' => $records->map(fn (Attendance $record) => [
                     'id' => $record->id,
                     'date' => $record->date?->toDateString(),
                     'trip' => $record->trip,
@@ -194,7 +194,7 @@ class DriverAttendanceController extends Controller
                         'full_name' => $record->student->full_name,
                         'grade' => $record->student->grade,
                         'section' => $record->student->section,
-                        'photo' => $record->student->photo ? asset('storage/' . $record->student->photo) : null,
+                        'photo' => $record->student->photo ? asset('storage/'.$record->student->photo) : null,
                     ] : null,
                     'marked_by' => $record->markedBy ? [
                         'id' => $record->markedBy->id,
@@ -217,9 +217,9 @@ class DriverAttendanceController extends Controller
     {
         $driver = $request->user()->driver;
 
-        if (!$driver) {
+        if (! $driver) {
             return response()->json([
-                'message' => 'Driver profile not found.'
+                'message' => 'Driver profile not found.',
             ], 404);
         }
 
@@ -230,15 +230,15 @@ class DriverAttendanceController extends Controller
 
         $bus = $driver->buses()->find($validated['bus_id']);
 
-        if (!$bus) {
+        if (! $bus) {
             return response()->json([
-                'message' => 'Bus not found for this driver.'
+                'message' => 'Bus not found for this driver.',
             ], 404);
         }
 
         if ($bus->status !== 'Active') {
             return response()->json([
-                'message' => 'Attendance can only be marked on active buses.'
+                'message' => 'Attendance can only be marked on active buses.',
             ], 422);
         }
 
@@ -246,9 +246,9 @@ class DriverAttendanceController extends Controller
             ->where('bus_id', $bus->id)
             ->first();
 
-        if (!$student) {
+        if (! $student) {
             return response()->json([
-                'message' => 'Student not found on this bus.'
+                'message' => 'Student not found on this bus.',
             ], 422);
         }
 
@@ -265,7 +265,7 @@ class DriverAttendanceController extends Controller
 
         $action = null;
 
-        if (!$home || !$home->isCheckedIn()) {
+        if (! $home || ! $home->isCheckedIn()) {
             $attendance = Attendance::updateOrCreate(
                 [
                     'student_id' => $student->id,
@@ -280,7 +280,7 @@ class DriverAttendanceController extends Controller
             );
 
             $action = ['key' => 'picked_up_home', 'message' => "{$student->full_name} picked up from home."];
-        } elseif (!$home->isCheckedOut()) {
+        } elseif (! $home->isCheckedOut()) {
             $home->update([
                 'check_out_at' => $date,
                 'marked_by' => $request->user()->id,
@@ -288,7 +288,7 @@ class DriverAttendanceController extends Controller
 
             $attendance = $home;
             $action = ['key' => 'dropped_at_school', 'message' => "{$student->full_name} dropped at school."];
-        } elseif (!$school || !$school->isCheckedIn()) {
+        } elseif (! $school || ! $school->isCheckedIn()) {
             $attendance = Attendance::updateOrCreate(
                 [
                     'student_id' => $student->id,
@@ -303,7 +303,7 @@ class DriverAttendanceController extends Controller
             );
 
             $action = ['key' => 'picked_up_school', 'message' => "{$student->full_name} picked up from school."];
-        } elseif (!$school->isCheckedOut()) {
+        } elseif (! $school->isCheckedOut()) {
             $school->update([
                 'check_out_at' => $date,
                 'marked_by' => $request->user()->id,

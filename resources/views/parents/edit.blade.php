@@ -119,35 +119,6 @@
                     @endif
 
                     <div>
-                        <label for="father_name" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Father Name</label>
-                        <input
-                            type="text"
-                            id="father_name"
-                            name="father_name"
-                            value="{{ old('father_name', $parentProfile->father_name) }}"
-                            required
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                        >
-                        @error('father_name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="mother_name" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Mother Name</label>
-                        <input
-                            type="text"
-                            id="mother_name"
-                            name="mother_name"
-                            value="{{ old('mother_name', $parentProfile->mother_name) }}"
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                        >
-                        @error('mother_name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
                         <label for="phone" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
                         <input
                             type="text"

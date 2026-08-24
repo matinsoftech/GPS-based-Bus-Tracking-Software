@@ -13,8 +13,7 @@ class ParentProfile extends Model
     protected $fillable = [
         'user_id',
         'school_id',
-        'father_name',
-        'mother_name',
+        'name',
         'phone',
         'alternate_phone',
         'address',

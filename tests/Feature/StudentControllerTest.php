@@ -40,7 +40,7 @@ class StudentControllerTest extends TestCase
         $parent = ParentProfile::create([
             'user_id' => $parentUser->id,
             'school_id' => $school->id,
-            'father_name' => 'Ramesh Shrestha',
+            'name' => 'Ramesh Shrestha',
             'phone' => '9800000001',
             'address' => 'Kathmandu',
         ]);
@@ -117,7 +117,7 @@ class StudentControllerTest extends TestCase
         $parent = ParentProfile::create([
             'user_id' => $parentUser->id,
             'school_id' => $school->id,
-            'father_name' => 'Ramesh Shrestha',
+            'name' => 'Ramesh Shrestha',
             'phone' => '9800000001',
             'address' => 'Kathmandu',
         ]);

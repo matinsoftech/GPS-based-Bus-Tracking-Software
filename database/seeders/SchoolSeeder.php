@@ -52,8 +52,6 @@ class SchoolSeeder extends Seeder
             'parents' => [
                 [
                     'user' => ['name' => 'Michael Johnson', 'email' => 'michael.johnson@example.com'],
-                    'father_name' => 'Michael Johnson',
-                    'mother_name' => 'Sarah Johnson',
                     'phone' => '+1-555-0101',
                     'alternate_phone' => '+1-555-0102',
                     'address' => '10 Oak Street, Springfield',
@@ -87,8 +85,6 @@ class SchoolSeeder extends Seeder
                 ],
                 [
                     'user' => ['name' => 'Robert Smith', 'email' => 'robert.smith@example.com'],
-                    'father_name' => 'Robert Smith',
-                    'mother_name' => 'Linda Smith',
                     'phone' => '+1-555-0103',
                     'alternate_phone' => null,
                     'address' => '5 Pine Road, Springfield',
@@ -122,8 +118,6 @@ class SchoolSeeder extends Seeder
                 ],
                 [
                     'user' => ['name' => 'David Brown', 'email' => 'david.brown@example.com'],
-                    'father_name' => 'David Brown',
-                    'mother_name' => 'Emily Brown',
                     'phone' => '+1-555-0104',
                     'alternate_phone' => '+1-555-0105',
                     'address' => '22 Cedar Street, Springfield',
@@ -188,8 +182,6 @@ class SchoolSeeder extends Seeder
             'parents' => [
                 [
                     'user' => ['name' => 'James Wilson', 'email' => 'james.wilson@example.com'],
-                    'father_name' => 'James Wilson',
-                    'mother_name' => 'Laura Wilson',
                     'phone' => '+1-555-0201',
                     'alternate_phone' => null,
                     'address' => '3 Sunrise Avenue, Riverside',
@@ -223,8 +215,6 @@ class SchoolSeeder extends Seeder
                 ],
                 [
                     'user' => ['name' => 'Maria Garcia', 'email' => 'maria.garcia@example.com'],
-                    'father_name' => 'Carlos Garcia',
-                    'mother_name' => 'Maria Garcia',
                     'phone' => '+1-555-0202',
                     'alternate_phone' => '+1-555-0203',
                     'address' => '18 Moon Crescent, Riverside',
@@ -381,8 +371,7 @@ class SchoolSeeder extends Seeder
             ['user_id' => $user->id],
             [
                 'school_id' => $school->id,
-                'father_name' => $data['father_name'],
-                'mother_name' => $data['mother_name'],
+                'name' => $data['user']['name'],
                 'phone' => $data['phone'],
                 'alternate_phone' => $data['alternate_phone'],
                 'address' => $data['address'],

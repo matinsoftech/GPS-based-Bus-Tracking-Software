@@ -102,7 +102,7 @@ class AttendanceControllerTest extends TestCase
         return ParentProfile::create([
             'user_id' => $user->id,
             'school_id' => $school->id,
-            'father_name' => 'Bishal Shrestha',
+            'name' => 'Bishal Shrestha',
             'phone' => '9800000002',
             'address' => 'Kathmandu',
         ]);

@@ -1,5 +1,4 @@
 <?php
-<?php
 
 namespace Tests\Feature\Api;
 
@@ -13,7 +12,6 @@ use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
-use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class StudentCrudTest extends TestCase
@@ -83,7 +81,7 @@ class StudentCrudTest extends TestCase
         return ParentProfile::create([
             'user_id' => $user->id,
             'school_id' => $school->id,
-            'father_name' => $name,
+            'name' => $name,
             'phone' => $phone,
             'address' => 'Kathmandu',
         ]);
@@ -280,6 +278,4 @@ class StudentCrudTest extends TestCase
             ->assertForbidden()
             ->assertJsonPath('message', 'You are not authorized to access this student.');
     }
-
-
 }

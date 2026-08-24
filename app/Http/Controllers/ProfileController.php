@@ -100,7 +100,7 @@ class ProfileController extends Controller
 
         if ($user->parent) {
             $user->parent()->update([
-                'father_name' => $user->name,
+                'name' => $user->name,
             ]);
         }
     }

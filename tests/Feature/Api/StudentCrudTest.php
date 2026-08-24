@@ -82,7 +82,7 @@ class StudentCrudTest extends TestCase
         return ParentProfile::create([
             'user_id' => $user->id,
             'school_id' => $school->id,
-            'father_name' => $name,
+            'name' => $name,
             'phone' => $phone,
             'address' => 'Kathmandu',
         ]);

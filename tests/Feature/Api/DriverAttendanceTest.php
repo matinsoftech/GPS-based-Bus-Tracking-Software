@@ -73,7 +73,7 @@ class DriverAttendanceTest extends TestCase
         $parent = ParentProfile::create([
             'user_id' => $this->driverUser->id,
             'school_id' => $this->school->id,
-            'father_name' => 'Hari Bahadur',
+            'name' => 'Hari Bahadur',
             'phone' => '9812345678',
             'address' => 'Kathmandu',
         ]);

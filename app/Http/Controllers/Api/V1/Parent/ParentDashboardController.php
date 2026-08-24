@@ -38,8 +38,6 @@ class ParentDashboardController extends Controller
                     'name' => $parent->user->name,
                     'email' => $parent->user->email,
                     'phone' => $parent->phone,
-                    'father_name' => $parent->father_name,
-                    'mother_name' => $parent->mother_name,
                     'school' => $parent->school ? [
                         'id' => $parent->school->id,
                         'name' => $parent->school->name,
@@ -102,8 +100,6 @@ class ParentDashboardController extends Controller
                 'email' => $parent->user->email,
                 'phone' => $parent->phone,
                 'alternate_phone' => $parent->alternate_phone,
-                'father_name' => $parent->father_name,
-                'mother_name' => $parent->mother_name,
                 'address' => $parent->address,
                 'occupation' => $parent->occupation,
                 'role' => $parent->user->getRoleNames()->first(),

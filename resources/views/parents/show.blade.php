@@ -46,13 +46,8 @@
                 </div>
 
                 <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Father Name</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $parentProfile->father_name }}</dd>
-                </div>
-
-                <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Mother Name</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $parentProfile->mother_name ?? '—' }}</dd>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Name</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $parentProfile->name }}</dd>
                 </div>
 
                 <div>
