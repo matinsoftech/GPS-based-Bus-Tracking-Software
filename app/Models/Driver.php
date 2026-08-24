@@ -78,4 +78,15 @@ class Driver extends Model
     {
         return trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
     }
+
+    public static function nameParts(string $name): array
+    {
+        [$firstName, $lastName] = array_pad(
+            preg_split('/\s+/', trim($name), 2),
+            2,
+            ''
+        );
+
+        return ['first_name' => $firstName, 'last_name' => $lastName];
+    }
 }
