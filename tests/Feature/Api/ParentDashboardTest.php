@@ -132,7 +132,6 @@ class ParentDashboardTest extends TestCase
                         'name',
                         'email',
                         'phone',
-                        'name',
                         'school' => ['id', 'name', 'address'],
                     ],
                     'children_count',
@@ -236,6 +235,11 @@ class ParentDashboardTest extends TestCase
 
         $this->getJson('/api/v1/parent/dashboard')->assertNotFound();
         $this->getJson('/api/v1/parent/profile')->assertNotFound();
+        $this->putJson('/api/v1/parent/profile', [
+            'name' => 'X',
+            'phone' => '9800000000',
+            'address' => 'Kathmandu',
+        ])->assertNotFound();
     }
 
     public function test_non_parent_user_is_forbidden(): void
@@ -246,6 +250,11 @@ class ParentDashboardTest extends TestCase
         Sanctum::actingAs($driverUser);
 
         $this->getJson('/api/v1/parent/dashboard')->assertForbidden();
+        $this->putJson('/api/v1/parent/profile', [
+            'name' => 'X',
+            'phone' => '9800000000',
+            'address' => 'Kathmandu',
+        ])->assertForbidden();
     }
 
     public function test_parent_can_view_profile(): void
@@ -270,7 +279,6 @@ class ParentDashboardTest extends TestCase
                     'email',
                     'phone',
                     'alternate_phone',
-                    'name',
                     'address',
                     'occupation',
                     'role',
@@ -279,5 +287,56 @@ class ParentDashboardTest extends TestCase
                     'children_count',
                 ],
             ]);
+    }
+
+    public function test_parent_can_update_their_profile(): void
+    {
+        Sanctum::actingAs($this->parentUser);
+
+        $response = $this->putJson('/api/v1/parent/profile', [
+            'name' => 'Hari Prasad Bahadur',
+            'phone' => '9800000111',
+            'alternate_phone' => null,
+            'address' => 'New Baneshwor, Kathmandu',
+            'occupation' => 'Teacher',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('message', 'Parent profile updated.')
+            ->assertJsonPath('data.name', 'Hari Prasad Bahadur')
+            ->assertJsonPath('data.phone', '9800000111')
+            ->assertJsonPath('data.occupation', 'Teacher');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $this->parentUser->id,
+            'name' => 'Hari Prasad Bahadur',
+        ]);
+
+        $this->assertDatabaseHas('parent_profiles', [
+            'id' => $this->parent->id,
+            'name' => 'Hari Prasad Bahadur',
+            'phone' => '9800000111',
+            'address' => 'New Baneshwor, Kathmandu',
+        ]);
+
+        $this->parent->refresh();
+        $this->assertNull($this->parent->alternate_phone);
+    }
+
+    public function test_parent_profile_update_validates_required_fields(): void
+    {
+        Sanctum::actingAs($this->parentUser);
+
+        $this->putJson('/api/v1/parent/profile', [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['name', 'phone', 'address']);
+
+        $this->putJson('/api/v1/parent/profile', [
+            'name' => str_repeat('a', 256),
+            'phone' => '123456789012345678901',
+            'address' => 'Kathmandu',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['name', 'phone']);
     }
 }

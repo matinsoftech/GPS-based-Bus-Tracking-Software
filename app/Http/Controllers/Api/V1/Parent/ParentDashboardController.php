@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\V1\Parent;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\ParentProfile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ParentDashboardController extends Controller
 {
@@ -94,24 +96,58 @@ class ParentDashboardController extends Controller
 
         return response()->json([
             'message' => 'Parent profile data.',
-            'data' => [
-                'id' => $parent->id,
-                'name' => $parent->user->name,
-                'email' => $parent->user->email,
-                'phone' => $parent->phone,
-                'alternate_phone' => $parent->alternate_phone,
-                'address' => $parent->address,
-                'occupation' => $parent->occupation,
-                'role' => $parent->user->getRoleNames()->first(),
-                'status' => $parent->user->status,
-                'school' => $parent->school ? [
-                    'id' => $parent->school->id,
-                    'name' => $parent->school->name,
-                    'address' => $parent->school->address,
-                ] : null,
-                'children_count' => $parent->children()->count(),
-            ],
+            'data' => $this->profileData($parent),
         ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $parent = $request->user()->parent;
+
+        if (! $parent) {
+            return response()->json([
+                'message' => 'Parent profile not found.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:20'],
+            'alternate_phone' => ['nullable', 'string', 'max:20'],
+            'address' => ['required', 'string'],
+            'occupation' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        DB::transaction(function () use ($validated, $parent) {
+            $parent->user->update(['name' => $validated['name']]);
+            $parent->update($validated);
+        });
+
+        return response()->json([
+            'message' => 'Parent profile updated.',
+            'data' => $this->profileData($parent),
+        ]);
+    }
+
+    private function profileData(ParentProfile $parent): array
+    {
+        return [
+            'id' => $parent->id,
+            'name' => $parent->user->name,
+            'email' => $parent->user->email,
+            'phone' => $parent->phone,
+            'alternate_phone' => $parent->alternate_phone,
+            'address' => $parent->address,
+            'occupation' => $parent->occupation,
+            'role' => $parent->user->getRoleNames()->first(),
+            'status' => $parent->user->status,
+            'school' => $parent->school ? [
+                'id' => $parent->school->id,
+                'name' => $parent->school->name,
+                'address' => $parent->school->address,
+            ] : null,
+            'children_count' => $parent->children()->count(),
+        ];
     }
 
     private function todayAttendanceFor(?Attendance $home, ?Attendance $school): array
