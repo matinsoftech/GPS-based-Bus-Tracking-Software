@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -54,6 +55,10 @@ class ProfileController extends Controller
 
         $user->save();
 
+        if ($user->wasChanged('name')) {
+            $this->syncNameToProfiles($user);
+        }
+
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
@@ -76,5 +81,27 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    private function syncNameToProfiles(User $user): void
+    {
+        if ($user->driver) {
+            [$firstName, $lastName] = array_pad(
+                preg_split('/\s+/', trim($user->name), 2),
+                2,
+                ''
+            );
+
+            $user->driver()->update([
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+            ]);
+        }
+
+        if ($user->parent) {
+            $user->parent()->update([
+                'father_name' => $user->name,
+            ]);
+        }
     }
 }
