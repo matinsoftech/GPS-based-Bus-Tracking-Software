@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api\V1\Parent;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\ParentProfile;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ParentDashboardController extends Controller
 {
@@ -40,6 +43,9 @@ class ParentDashboardController extends Controller
                     'name' => $parent->user->name,
                     'email' => $parent->user->email,
                     'phone' => $parent->phone,
+                    'photo_url' => $parent->user->profile_photo
+                        ? asset('storage/'.$parent->user->profile_photo)
+                        : null,
                     'school' => $parent->school ? [
                         'id' => $parent->school->id,
                         'name' => $parent->school->name,
@@ -112,6 +118,14 @@ class ParentDashboardController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                Rule::unique(User::class)->ignore($parent->user_id),
+            ],
             'phone' => ['required', 'string', 'max:20'],
             'alternate_phone' => ['nullable', 'string', 'max:20'],
             'address' => ['required', 'string'],
@@ -119,13 +133,61 @@ class ParentDashboardController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $parent) {
-            $parent->user->update(['name' => $validated['name']]);
-            $parent->update($validated);
+            $user = $parent->user;
+
+            $user->fill([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+            ]);
+
+            if ($user->isDirty('email')) {
+                $user->email_verified_at = null;
+            }
+
+            $user->save();
+
+            $parent->update(collect($validated)->except('email')->all());
         });
 
         return response()->json([
             'message' => 'Parent profile updated.',
             'data' => $this->profileData($parent),
+        ]);
+    }
+
+    public function uploadPhoto(Request $request)
+    {
+        $parent = $request->user()->parent;
+
+        if (! $parent) {
+            return response()->json([
+                'message' => 'Parent profile not found.',
+            ], 404);
+        }
+
+        $request->validate([
+            'profile_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        $user = $parent->user;
+
+        if (
+            $user->profile_photo &&
+            Storage::disk('public')->exists($user->profile_photo)
+        ) {
+            Storage::disk('public')->delete($user->profile_photo);
+        }
+
+        $user->profile_photo = $request
+            ->file('profile_photo')
+            ->store('users', 'public');
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile photo updated.',
+            'data' => [
+                'photo_url' => asset('storage/'.$user->profile_photo),
+            ],
         ]);
     }
 
@@ -139,6 +201,9 @@ class ParentDashboardController extends Controller
             'alternate_phone' => $parent->alternate_phone,
             'address' => $parent->address,
             'occupation' => $parent->occupation,
+            'photo_url' => $parent->user->profile_photo
+                ? asset('storage/'.$parent->user->profile_photo)
+                : null,
             'role' => $parent->user->getRoleNames()->first(),
             'status' => $parent->user->status,
             'school' => $parent->school ? [

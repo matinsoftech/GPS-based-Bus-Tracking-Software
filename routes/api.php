@@ -27,6 +27,8 @@ Route::prefix('v1')->group(function () {
         Route::prefix('driver')->group(function () {
             Route::get('/dashboard', [DriverDashboardController::class, 'index']);
             Route::get('/profile', [DriverProfileController::class, 'show']);
+            Route::put('/profile', [DriverProfileController::class, 'update']);
+            Route::post('/profile/photo', [DriverProfileController::class, 'uploadPhoto']);
             Route::get('/buses', [DriverBusController::class, 'index']);
             Route::get('/buses/{bus}', [DriverBusController::class, 'show']);
             Route::get('/buses/{bus}/students', [DriverBusController::class, 'students']);
@@ -44,6 +46,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/dashboard', [ParentDashboardController::class, 'index']);
             Route::get('/profile', [ParentDashboardController::class, 'profile']);
             Route::put('/profile', [ParentDashboardController::class, 'updateProfile']);
+            Route::post('/profile/photo', [ParentDashboardController::class, 'uploadPhoto']);
             Route::get('/children', [ParentChildController::class, 'index']);
             Route::get('/children/{student}', [ParentChildController::class, 'show']);
             Route::get('/children/{student}/history', [ParentChildController::class, 'history']);

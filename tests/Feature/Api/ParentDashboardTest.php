@@ -12,6 +12,8 @@ use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -289,12 +291,123 @@ class ParentDashboardTest extends TestCase
             ]);
     }
 
+    public function test_parent_can_update_their_profile_with_new_email(): void
+    {
+        Sanctum::actingAs($this->parentUser);
+
+        $this->parentUser->forceFill(['email_verified_at' => now()])->save();
+
+        $response = $this->putJson('/api/v1/parent/profile', [
+            'name' => 'Hari Bahadur',
+            'email' => 'hari.new@example.com',
+            'phone' => '9812345678',
+            'address' => 'Chabahil, Kathmandu',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.email', 'hari.new@example.com');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $this->parentUser->id,
+            'email' => 'hari.new@example.com',
+        ]);
+
+        $this->assertNull($this->parentUser->refresh()->email_verified_at);
+    }
+
+    public function test_parent_profile_update_rejects_duplicate_email(): void
+    {
+        User::factory()->create(['email' => 'taken@example.com']);
+
+        Sanctum::actingAs($this->parentUser);
+
+        $this->putJson('/api/v1/parent/profile', [
+            'name' => 'Hari Bahadur',
+            'email' => 'taken@example.com',
+            'phone' => '9812345678',
+            'address' => 'Chabahil, Kathmandu',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_parent_profile_update_rejects_invalid_email(): void
+    {
+        Sanctum::actingAs($this->parentUser);
+
+        $this->putJson('/api/v1/parent/profile', [
+            'name' => 'Hari Bahadur',
+            'email' => 'not-an-email',
+            'phone' => '9812345678',
+            'address' => 'Chabahil, Kathmandu',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_parent_can_upload_profile_photo(): void
+    {
+        Storage::fake('public');
+
+        Sanctum::actingAs($this->parentUser);
+
+        $response = $this->postJson('/api/v1/parent/profile/photo', [
+            'profile_photo' => UploadedFile::fake()->image('me.jpg'),
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('message', 'Profile photo updated.');
+
+        $path = $this->parentUser->refresh()->profile_photo;
+
+        $this->assertNotNull($path);
+        $this->assertStringStartsWith('users/', $path);
+        Storage::disk('public')->assertExists($path);
+    }
+
+    public function test_replacing_parent_photo_deletes_old_file(): void
+    {
+        Storage::fake('public');
+
+        Sanctum::actingAs($this->parentUser);
+
+        $this->postJson('/api/v1/parent/profile/photo', [
+            'profile_photo' => UploadedFile::fake()->image('first.jpg'),
+        ]);
+
+        $oldPath = $this->parentUser->refresh()->profile_photo;
+
+        $this->postJson('/api/v1/parent/profile/photo', [
+            'profile_photo' => UploadedFile::fake()->image('second.jpg'),
+        ]);
+
+        $newPath = $this->parentUser->refresh()->profile_photo;
+
+        $this->assertNotSame($oldPath, $newPath);
+        Storage::disk('public')->assertMissing($oldPath);
+        Storage::disk('public')->assertExists($newPath);
+    }
+
+    public function test_parent_photo_upload_rejects_invalid_file(): void
+    {
+        Storage::fake('public');
+
+        Sanctum::actingAs($this->parentUser);
+
+        $this->postJson('/api/v1/parent/profile/photo', [
+            'profile_photo' => UploadedFile::fake()->create('notes.txt', 100),
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['profile_photo']);
+    }
+
     public function test_parent_can_update_their_profile(): void
     {
         Sanctum::actingAs($this->parentUser);
 
         $response = $this->putJson('/api/v1/parent/profile', [
             'name' => 'Hari Prasad Bahadur',
+            'email' => 'hari@example.com',
             'phone' => '9800000111',
             'alternate_phone' => null,
             'address' => 'New Baneshwor, Kathmandu',
@@ -329,14 +442,15 @@ class ParentDashboardTest extends TestCase
 
         $this->putJson('/api/v1/parent/profile', [])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['name', 'phone', 'address']);
+            ->assertJsonValidationErrors(['name', 'email', 'phone', 'address']);
 
         $this->putJson('/api/v1/parent/profile', [
             'name' => str_repeat('a', 256),
+            'email' => 'invalid',
             'phone' => '123456789012345678901',
             'address' => 'Kathmandu',
         ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['name', 'phone']);
+            ->assertJsonValidationErrors(['name', 'email', 'phone']);
     }
 }
