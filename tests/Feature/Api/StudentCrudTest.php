@@ -11,6 +11,8 @@ use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -416,5 +418,90 @@ class StudentCrudTest extends TestCase
         $this->getJson('/api/v1/students')
             ->assertNotFound()
             ->assertJsonPath('message', 'Principal profile not found.');
+    }
+
+    public function test_principal_can_upload_student_photo(): void
+    {
+        Storage::fake('public');
+
+        $student = $this->makeStudent($this->school, $this->parent, $this->bus);
+
+        Sanctum::actingAs($this->principal);
+
+        $response = $this->postJson("/api/v1/students/{$student->id}/photo", [
+            'profile_photo' => UploadedFile::fake()->image('student.jpg'),
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('message', 'Student photo updated.')
+            ->assertJsonPath('data.student.id', $student->id);
+
+        $path = $student->refresh()->photo;
+
+        $this->assertNotNull($path);
+        $this->assertStringStartsWith('students/', $path);
+        Storage::disk('public')->assertExists($path);
+
+        $response->assertJsonPath('data.student.photo', asset('storage/'.$path));
+    }
+
+    public function test_replacing_student_photo_deletes_old_file(): void
+    {
+        Storage::fake('public');
+
+        $student = $this->makeStudent($this->school, $this->parent, $this->bus);
+
+        Sanctum::actingAs($this->principal);
+
+        $this->postJson("/api/v1/students/{$student->id}/photo", [
+            'profile_photo' => UploadedFile::fake()->image('first.jpg'),
+        ]);
+
+        $oldPath = $student->refresh()->photo;
+
+        $this->postJson("/api/v1/students/{$student->id}/photo", [
+            'profile_photo' => UploadedFile::fake()->image('second.jpg'),
+        ]);
+
+        $newPath = $student->refresh()->photo;
+
+        $this->assertNotSame($oldPath, $newPath);
+        Storage::disk('public')->assertMissing($oldPath);
+        Storage::disk('public')->assertExists($newPath);
+    }
+
+    public function test_student_photo_upload_validates_file(): void
+    {
+        Storage::fake('public');
+
+        $student = $this->makeStudent($this->school, $this->parent, $this->bus);
+
+        Sanctum::actingAs($this->principal);
+
+        $this->postJson("/api/v1/students/{$student->id}/photo", [
+            'profile_photo' => UploadedFile::fake()->create('notes.txt', 100),
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['profile_photo']);
+
+        $this->postJson("/api/v1/students/{$student->id}/photo", [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['profile_photo']);
+    }
+
+    public function test_other_school_admin_cannot_upload_student_photo(): void
+    {
+        Storage::fake('public');
+
+        $otherParent = $this->makeParent($this->otherSchool, 'Other Parent', '9800000602');
+        $student = $this->makeStudent($this->otherSchool, $otherParent);
+
+        Sanctum::actingAs($this->principal);
+
+        $this->postJson("/api/v1/students/{$student->id}/photo", [
+            'profile_photo' => UploadedFile::fake()->image('hijack.jpg'),
+        ])
+            ->assertForbidden()
+            ->assertJsonMissingPath('exception');
     }
 }

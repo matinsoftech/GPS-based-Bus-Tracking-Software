@@ -9,6 +9,7 @@ use App\Models\SchoolAdmin;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -110,7 +111,7 @@ class StudentController extends Controller
             'drop_latitude' => 'nullable|numeric|between:-90,90',
             'drop_longitude' => 'nullable|numeric|between:-180,180',
             'bus_id' => 'nullable|exists:buses,id',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active' => 'nullable|boolean',
         ];
 
@@ -244,7 +245,7 @@ class StudentController extends Controller
             'drop_latitude' => 'nullable|numeric|between:-90,90',
             'drop_longitude' => 'nullable|numeric|between:-180,180',
             'bus_id' => 'nullable|exists:buses,id',
-            'photo' => 'nullable|image|max:2048',
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active' => 'nullable|boolean',
         ];
 
@@ -351,7 +352,7 @@ class StudentController extends Controller
      * Parents for the student form dropdown.
      * School-level admins only see their own school's parents; the filtering happens in the query.
      */
-    private function availableParents(?int $schoolId): \Illuminate\Support\Collection
+    private function availableParents(?int $schoolId): Collection
     {
         return ParentProfile::with(['user', 'school'])
             ->when($schoolId, fn ($query) => $query->where('school_id', $schoolId))
