@@ -43,6 +43,7 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/dashboard', [ParentDashboardController::class, 'index']);
             Route::get('/profile', [ParentDashboardController::class, 'profile']);
+            Route::put('/profile', [ParentDashboardController::class, 'updateProfile']);
             Route::get('/children', [ParentChildController::class, 'index']);
             Route::get('/children/{student}', [ParentChildController::class, 'show']);
             Route::get('/children/{student}/history', [ParentChildController::class, 'history']);
