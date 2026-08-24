@@ -66,6 +66,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/{student}', [StudentController::class, 'show'])->middleware('permission:student.view');
             Route::put('/{student}', [StudentController::class, 'update'])->middleware('permission:student.update');
             Route::delete('/{student}', [StudentController::class, 'destroy'])->middleware('permission:student.delete');
+            Route::post('/{student}/photo', [StudentController::class, 'updatePhoto'])->middleware('permission:student.update');
         });
     });
 });

@@ -25,23 +25,23 @@ class StudentController extends Controller
         $students = Student::query()
             ->with(['school', 'parent.user', 'bus'])
             ->where('school_id', $schoolId)
-            ->when($request->filled('q'), fn($q) => $q
-                ->where(fn($query) => $query
-                    ->where('admission_no', 'like', '%' . $request->string('q') . '%')
-                    ->orWhere('first_name', 'like', '%' . $request->string('q') . '%')
-                    ->orWhere('last_name', 'like', '%' . $request->string('q') . '%')
-                    ->orWhere('grade', 'like', '%' . $request->string('q') . '%')
-                    ->orWhereHas('parent.user', fn($query) => $query
-                        ->where('name', 'like', '%' . $request->string('q') . '%'))))
-            ->when($request->filled('grade'), fn($q) => $q->where('grade', $request->string('grade')))
-            ->when($request->filled('is_active'), fn($q) => $q->where('is_active', $request->boolean('is_active')))
+            ->when($request->filled('q'), fn ($q) => $q
+                ->where(fn ($query) => $query
+                    ->where('admission_no', 'like', '%'.$request->string('q').'%')
+                    ->orWhere('first_name', 'like', '%'.$request->string('q').'%')
+                    ->orWhere('last_name', 'like', '%'.$request->string('q').'%')
+                    ->orWhere('grade', 'like', '%'.$request->string('q').'%')
+                    ->orWhereHas('parent.user', fn ($query) => $query
+                        ->where('name', 'like', '%'.$request->string('q').'%'))))
+            ->when($request->filled('grade'), fn ($q) => $q->where('grade', $request->string('grade')))
+            ->when($request->filled('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
             ->latest()
             ->paginate($this->perPage($request));
 
         return response()->json([
             'message' => 'Students list.',
             'data' => [
-                'students' => $students->map(fn(Student $student) => $this->studentPayload($student)),
+                'students' => $students->map(fn (Student $student) => $this->studentPayload($student)),
                 'pagination' => [
                     'current_page' => $students->currentPage(),
                     'per_page' => $students->perPage(),
@@ -155,6 +155,37 @@ class StudentController extends Controller
         ]);
     }
 
+    public function updatePhoto(Request $request, Student $student)
+    {
+        if (! $this->authorizeStudent($request->user(), $student)) {
+            return response()->json([
+                'message' => 'You are not authorized to access this student.',
+            ], 403);
+        }
+
+        $request->validate([
+            'profile_photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        if ($student->photo && Storage::disk('public')->exists($student->photo)) {
+            Storage::disk('public')->delete($student->photo);
+        }
+
+        $student->photo = $request
+            ->file('profile_photo')
+            ->store('students', 'public');
+        $student->save();
+
+        $student->load(['school', 'parent.user', 'bus']);
+
+        return response()->json([
+            'message' => 'Student photo updated.',
+            'data' => [
+                'student' => $this->studentPayload($student),
+            ],
+        ]);
+    }
+
     private function validateStudent(Request $request, int $schoolId, ?Student $student): array
     {
         $uniqueAdmissionNo = Rule::unique('students', 'admission_no');
@@ -180,7 +211,7 @@ class StudentController extends Controller
             'drop_longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'parent_id' => ['required', Rule::exists('parent_profiles', 'id')->where('school_id', $schoolId)],
             'bus_id' => ['nullable', Rule::exists('buses', 'id')->where('school_id', $schoolId)],
-            'photo' => ['nullable', 'image', 'max:2048'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ], [
             'parent_id.exists' => 'The selected parent does not belong to your school.',
             'bus_id.exists' => 'The selected bus does not belong to your school.',
@@ -211,7 +242,7 @@ class StudentController extends Controller
             'pickup_longitude' => $student->pickup_longitude,
             'drop_latitude' => $student->drop_latitude,
             'drop_longitude' => $student->drop_longitude,
-            'photo' => $student->photo ? asset('storage/' . $student->photo) : null,
+            'photo' => $student->photo ? asset('storage/'.$student->photo) : null,
             'is_active' => $student->is_active,
             'parent' => $student->parent ? [
                 'id' => $student->parent->id,
