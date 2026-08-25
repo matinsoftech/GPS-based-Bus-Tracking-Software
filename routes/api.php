@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Driver\DriverDashboardController;
 use App\Http\Controllers\Api\V1\Driver\DriverLiveTrackingController;
 use App\Http\Controllers\Api\V1\Driver\DriverProfileController;
 use App\Http\Controllers\Api\V1\Driver\DriverTripController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Parent\ParentBusController;
 use App\Http\Controllers\Api\V1\Parent\ParentChildController;
 use App\Http\Controllers\Api\V1\Parent\ParentDashboardController;
@@ -24,6 +25,11 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/auth/me', [ApiAuthController::class, 'me']);
         Route::post('/auth/logout', [ApiAuthController::class, 'logout']);
+
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
         Route::prefix('driver')->group(function () {
             Route::get('/dashboard', [DriverDashboardController::class, 'index']);
