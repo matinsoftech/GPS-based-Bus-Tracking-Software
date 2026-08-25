@@ -156,7 +156,7 @@ class ParentDashboardTest extends TestCase
                                 'bus_number',
                                 'registration_number',
                                 'status',
-                                'route',
+                                'routes',
                                 'driver' => ['id', 'name', 'phone'],
                             ],
                             'today_attendance' => [

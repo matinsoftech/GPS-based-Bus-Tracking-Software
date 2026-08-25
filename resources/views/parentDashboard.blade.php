@@ -137,7 +137,7 @@
                                         <div class="rounded-lg bg-gray-50 p-3 dark:bg-white/[0.03]">
                                             <p class="text-theme-xs text-gray-500 dark:text-gray-400">Assigned Bus</p>
                                             <p class="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{{ $bus?->bus_number ?? 'Not assigned' }}</p>
-                                            <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ $bus?->route?->name ?? 'No route' }}</p>
+                                            <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ $bus?->routes->pluck('name')->join(', ') ?: 'No route' }}</p>
                                         </div>
                                         <div class="rounded-lg bg-gray-50 p-3 dark:bg-white/[0.03]">
                                             <p class="text-theme-xs text-gray-500 dark:text-gray-400">Driver</p>

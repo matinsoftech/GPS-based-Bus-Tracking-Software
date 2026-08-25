@@ -111,15 +111,19 @@
 
                     <dl class="space-y-4 text-sm">
                         <div class="flex justify-between items-center gap-4">
-                            <dt class="text-gray-500 dark:text-gray-400">Assigned Route</dt>
+                            <dt class="text-gray-500 dark:text-gray-400">Assigned Routes</dt>
                             <dd class="font-semibold text-gray-900 dark:text-white">
-                                @if ($bus->route)
-                                    <a href="{{ route('routes.show', $bus->route) }}" class="inline-flex items-center gap-1.5 text-brand-600 hover:text-brand-700 dark:text-brand-400">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-                                        </svg>
-                                        {{ $bus->route->name }} ({{ $bus->route->route_code }})
-                                    </a>
+                                @if ($bus->routes->isNotEmpty())
+                                    <div class="flex flex-wrap gap-1.5">
+                                        @foreach ($bus->routes as $route)
+                                            <a href="{{ route('routes.show', $route) }}" class="inline-flex items-center gap-1.5 text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                                                </svg>
+                                                {{ $route->name }} ({{ $route->route_code }})
+                                            </a>
+                                        @endforeach
+                                    </div>
                                 @else
                                     <span class="text-gray-400">— No route assigned —</span>
                                 @endif
@@ -257,7 +261,7 @@
 
     const busNumber = @json($bus->bus_number);
     const driverName = @json($bus->driver?->full_name ?? '—');
-    const routeName = @json($bus->route?->name ?? '—');
+    const routeName = @json($bus->routes->pluck('name')->join(', ') ?: '—');
     const gpsEndpoint = @json(route('bus_location.latest', ['bus_id' => $bus->id]));
 
     function busMarkerHtml() {

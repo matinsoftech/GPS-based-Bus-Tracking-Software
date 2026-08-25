@@ -89,13 +89,13 @@ class ParentChildTest extends TestCase
 
         $this->bus = Bus::create([
             'school_id' => $this->school->id,
-            'route_id' => $route->id,
             'driver_id' => $driver->id,
             'bus_number' => 'CHILD-BUS-1',
             'registration_number' => 'BA CHILD-BUS-1',
             'capacity' => 40,
             'status' => 'Active',
         ]);
+        $this->bus->routes()->attach($route->id);
     }
 
     private function makeStudent(array $overrides = []): Student
@@ -159,7 +159,7 @@ class ParentChildTest extends TestCase
                                 'bus_number',
                                 'registration_number',
                                 'status',
-                                'route',
+                                'routes',
                                 'driver' => ['id', 'name', 'phone'],
                             ],
                             'today_attendance' => [
@@ -206,7 +206,7 @@ class ParentChildTest extends TestCase
             ->assertJsonPath('data.student.full_name', 'Sita Bahadur')
             ->assertJsonPath('data.student.school.name', 'Bright Future School')
             ->assertJsonPath('data.bus.bus_number', 'CHILD-BUS-1')
-            ->assertJsonPath('data.bus.route.name', 'Route 1')
+            ->assertJsonPath('data.bus.routes.0.name', 'Route 1')
             ->assertJsonPath('data.today_attendance.home_to_school.status', 'completed')
             ->assertJsonPath('data.today_attendance.next_action.key', 'picked_up_school')
             ->assertJsonStructure([
@@ -243,7 +243,7 @@ class ParentChildTest extends TestCase
                         'capacity',
                         'fuel_type',
                         'status',
-                        'route' => ['id', 'name', 'route_code', 'start_location', 'end_location'],
+                        'routes' => [['id', 'name', 'route_code', 'start_location', 'end_location']],
                         'driver' => ['id', 'name', 'phone'],
                     ],
                     'today_attendance' => [

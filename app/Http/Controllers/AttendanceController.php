@@ -23,7 +23,7 @@ class AttendanceController extends Controller
         $user = Auth::user();
 
         $query = Bus::query()
-            ->with(['school', 'driver', 'route'])
+            ->with(['school', 'driver', 'routes'])
             ->withCount('students');
 
         if ($user->hasRole('Super Admin')) {
@@ -84,7 +84,7 @@ class AttendanceController extends Controller
 
         $isToday = Carbon::parse($date)->isSameDay(now());
 
-        $bus->load(['school', 'driver', 'route']);
+        $bus->load(['school', 'driver', 'routes']);
 
         $students = $bus->students()
             ->with('parent.user')
@@ -209,7 +209,7 @@ class AttendanceController extends Controller
     {
         $this->authorizeBus($bus);
 
-        $bus->load(['school', 'route', 'driver']);
+        $bus->load(['school', 'routes', 'driver']);
 
         $validated = $request->validate([
             'from' => ['nullable', 'date'],

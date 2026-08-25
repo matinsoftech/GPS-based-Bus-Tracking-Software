@@ -49,7 +49,7 @@ class SuperAdminDashboardController extends Controller
             ->whereNotNull('check_in_at')
             ->count();
 
-        $fleet = Bus::with(['driver', 'school', 'route'])->latest()->limit(5)->get();
+        $fleet = Bus::with(['driver', 'school', 'routes'])->latest()->limit(5)->get();
 
         $latestRoutes = Route::with(['buses.driver', 'stops'])->latest()->limit(5)->get();
 

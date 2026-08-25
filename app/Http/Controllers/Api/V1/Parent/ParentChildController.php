@@ -21,7 +21,7 @@ class ParentChildController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['bus.route', 'bus.driver'])
+            ->with(['bus.routes', 'bus.driver'])
             ->orderBy('grade')
             ->orderBy('roll_no')
             ->get();
@@ -55,10 +55,10 @@ class ParentChildController extends Controller
                         'bus_number' => $student->bus->bus_number,
                         'registration_number' => $student->bus->registration_number,
                         'status' => $student->bus->status,
-                        'route' => $student->bus->route ? [
-                            'id' => $student->bus->route->id,
-                            'name' => $student->bus->route->name,
-                        ] : null,
+                        'routes' => $student->bus->routes->map(fn ($route) => [
+                            'id' => $route->id,
+                            'name' => $route->name,
+                        ]),
                         'driver' => $student->bus->driver ? [
                             'id' => $student->bus->driver->id,
                             'name' => $student->bus->driver->full_name,
@@ -90,7 +90,7 @@ class ParentChildController extends Controller
             ], 403);
         }
 
-        $student->load(['school', 'bus.route', 'bus.driver']);
+        $student->load(['school', 'bus.routes', 'bus.driver']);
 
         $todayRecords = Attendance::query()
             ->where('student_id', $student->id)
@@ -136,13 +136,13 @@ class ParentChildController extends Controller
                     'capacity' => $student->bus->capacity,
                     'fuel_type' => $student->bus->fuel_type,
                     'status' => $student->bus->status,
-                    'route' => $student->bus->route ? [
-                        'id' => $student->bus->route->id,
-                        'name' => $student->bus->route->name,
-                        'route_code' => $student->bus->route->route_code,
-                        'start_location' => $student->bus->route->start_location,
-                        'end_location' => $student->bus->route->end_location,
-                    ] : null,
+                    'routes' => $student->bus->routes->map(fn ($route) => [
+                        'id' => $route->id,
+                        'name' => $route->name,
+                        'route_code' => $route->route_code,
+                        'start_location' => $route->start_location,
+                        'end_location' => $route->end_location,
+                    ]),
                     'driver' => $student->bus->driver ? [
                         'id' => $student->bus->driver->id,
                         'name' => $student->bus->driver->full_name,

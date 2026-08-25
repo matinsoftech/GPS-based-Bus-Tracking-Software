@@ -5,7 +5,7 @@
                 <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $bus->bus_number }}</h1>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     {{ $bus->school->name ?? '—' }} ·
-                    Route: {{ $bus->route?->name ?? '—' }} ·
+                    Route: {{ $bus->routes->pluck('name')->join(', ') ?: '—' }} ·
                     Driver: {{ $bus->driver?->full_name ?? '—' }}
                 </p>
             </div>
