@@ -73,7 +73,7 @@ class FleetMapService
      */
     public function forSchool(?int $schoolId, ?Collection $busIds = null): array
     {
-        $busQuery = Bus::query()->with(['driver', 'routes.stops', 'gpsDevice', 'school']);
+        $busQuery = Bus::query()->with(['drivers', 'routes.stops', 'gpsDevice', 'school']);
 
         if ($schoolId) {
             $busQuery->where('school_id', $schoolId);
@@ -151,7 +151,7 @@ class FleetMapService
             'bus_number' => $bus->bus_number,
             'registration_number' => $bus->registration_number,
             'status' => $bus->status,
-            'driver_name' => $bus->driver?->full_name,
+            'driver_name' => $bus->drivers->first()?->full_name,
             'route_id' => $bus->routes->first()?->id,
             'route_name' => $bus->routes->pluck('name')->join(', '),
             'school_name' => $bus->school?->name,

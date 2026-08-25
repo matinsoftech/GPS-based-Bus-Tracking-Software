@@ -26,7 +26,7 @@ class BusController extends Controller
     {
         $user = Auth::user();
 
-        $query = Bus::with(['school', 'routes', 'driver']);
+        $query = Bus::with(['school', 'routes', 'drivers']);
 
         if ($this->isSchoolLevelAdmin($user)) {
             $schoolId = $this->getUserSchoolId($user);
@@ -124,11 +124,14 @@ class BusController extends Controller
         $validated['created_by'] = $user->id;
         $routeIds = $validated['route_ids'] ?? [];
         unset($validated['route_ids']);
+        $driverIds = $validated['driver_ids'] ?? [];
+        unset($validated['driver_ids']);
 
         try {
-            DB::transaction(function () use ($validated, $routeIds) {
+            DB::transaction(function () use ($validated, $routeIds, $driverIds) {
                 $bus = Bus::create($validated);
                 $bus->routes()->sync($routeIds);
+                $bus->drivers()->sync($driverIds);
             });
         } catch (Throwable $e) {
             return back()
@@ -148,7 +151,7 @@ class BusController extends Controller
     {
         $this->authorizeBus($bus);
 
-        $bus->load(['school', 'creator', 'routes', 'driver', 'gpsDevice']);
+        $bus->load(['school', 'creator', 'routes', 'drivers', 'gpsDevice']);
 
         $latestLocation = $this->gpsService->locationPayload($bus);
 
@@ -177,7 +180,7 @@ class BusController extends Controller
         $drivers = $this->availableDrivers($school, $bus);
         $routes = $this->availableRoutes($school, $bus);
 
-        $bus->load(['routes', 'driver']);
+        $bus->load(['routes', 'drivers']);
 
         return view('buses.edit', compact('bus', 'school', 'schools', 'drivers', 'routes'));
     }
@@ -214,11 +217,14 @@ class BusController extends Controller
 
         $routeIds = $validated['route_ids'] ?? [];
         unset($validated['route_ids']);
+        $driverIds = $validated['driver_ids'] ?? [];
+        unset($validated['driver_ids']);
 
         try {
-            DB::transaction(function () use ($bus, $validated, $routeIds) {
+            DB::transaction(function () use ($bus, $validated, $routeIds, $driverIds) {
                 $bus->update($validated);
                 $bus->routes()->sync($routeIds);
+                $bus->drivers()->sync($driverIds);
             });
         } catch (Throwable $e) {
             return back()
@@ -303,7 +309,8 @@ class BusController extends Controller
             'route_ids' => 'nullable|array',
             'route_ids.*' => 'exists:routes,id',
 
-            'driver_id' => 'nullable|exists:drivers,id',
+            'driver_ids' => 'nullable|array',
+            'driver_ids.*' => 'exists:drivers,id',
         ];
     }
 

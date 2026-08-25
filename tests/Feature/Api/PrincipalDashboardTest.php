@@ -117,14 +117,19 @@ class PrincipalDashboardTest extends TestCase
 
     private function makeBus(string $busNumber, ?int $driverId = null, string $status = 'Active'): Bus
     {
-        return Bus::create([
+        $bus = Bus::create([
             'school_id' => $this->school->id,
-            'driver_id' => $driverId,
             'bus_number' => $busNumber,
             'registration_number' => 'BA '.$busNumber,
             'capacity' => 40,
             'status' => $status,
         ]);
+
+        if ($driverId) {
+            $bus->drivers()->attach($driverId);
+        }
+
+        return $bus;
     }
 
     private function makeParent(): ParentProfile

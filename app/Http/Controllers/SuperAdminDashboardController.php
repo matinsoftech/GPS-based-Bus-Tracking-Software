@@ -49,9 +49,9 @@ class SuperAdminDashboardController extends Controller
             ->whereNotNull('check_in_at')
             ->count();
 
-        $fleet = Bus::with(['driver', 'school', 'routes'])->latest()->limit(5)->get();
+        $fleet = Bus::with(['drivers', 'school', 'routes'])->latest()->limit(5)->get();
 
-        $latestRoutes = Route::with(['buses.driver', 'stops'])->latest()->limit(5)->get();
+        $latestRoutes = Route::with(['buses.drivers', 'stops'])->latest()->limit(5)->get();
 
         $expiringBuses = Bus::whereNotNull('insurance_expiry_date')
             ->get()
@@ -63,7 +63,7 @@ class SuperAdminDashboardController extends Controller
 
         $suspendedDrivers = Driver::where('status', 'Suspended')->limit(4)->get();
 
-        $unassignedBuses = Bus::whereNull('driver_id')->latest()->limit(4)->get();
+        $unassignedBuses = Bus::whereDoesntHave('drivers')->latest()->limit(4)->get();
 
         $busCountsBySchool = Bus::selectRaw('school_id, count(*) as total')
             ->groupBy('school_id')

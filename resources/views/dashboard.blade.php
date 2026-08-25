@@ -159,9 +159,9 @@
                                                 @endif
                                             </td>
                                             <td class="py-3.5">
-                                                @if ($bus->driver)
+                                                @if ($bus->drivers->isNotEmpty())
                                                     <span class="text-theme-xs inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                                                        {{ $bus->driver->full_name }}
+                                                        {{ $bus->drivers->first()?->full_name }}
                                                     </span>
                                                 @else
                                                     <span class="text-theme-xs text-gray-400 dark:text-gray-500">No driver</span>

@@ -133,12 +133,12 @@
                         <div class="flex justify-between items-center gap-4">
                             <dt class="text-gray-500 dark:text-gray-400">Assigned Driver</dt>
                             <dd class="font-semibold text-gray-900 dark:text-white">
-                                @if ($bus->driver)
-                                    <a href="{{ route('drivers.show', $bus->driver) }}" class="inline-flex items-center gap-1.5 text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                                @if ($bus->drivers->isNotEmpty())
+                                    <a href="{{ route('drivers.show', $bus->drivers->first()) }}" class="inline-flex items-center gap-1.5 text-brand-600 hover:text-brand-700 dark:text-brand-400">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                         </svg>
-                                        {{ $bus->driver->full_name }}
+                                        {{ $bus->drivers->first()?->full_name }}
                                     </a>
                                 @else
                                     <span class="text-gray-400">— No driver assigned —</span>
@@ -260,7 +260,7 @@
     let lastSignalText = @json($lastSignalText);
 
     const busNumber = @json($bus->bus_number);
-    const driverName = @json($bus->driver?->full_name ?? '—');
+    const driverName = @json($bus->drivers->first()?->full_name ?? '—');
     const routeName = @json($bus->routes->pluck('name')->join(', ') ?: '—');
     const gpsEndpoint = @json(route('bus_location.latest', ['bus_id' => $bus->id]));
 

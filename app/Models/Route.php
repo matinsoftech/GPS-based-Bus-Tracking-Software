@@ -27,6 +27,11 @@ class Route extends Model
         return $this->belongsToMany(Bus::class, 'bus_route', 'route_id', 'bus_id');
     }
 
+    public function drivers()
+    {
+        return $this->belongsToMany(Driver::class, 'driver_route', 'route_id', 'driver_id');
+    }
+
     public function stops()
     {
         return $this->hasMany(RouteStop::class)

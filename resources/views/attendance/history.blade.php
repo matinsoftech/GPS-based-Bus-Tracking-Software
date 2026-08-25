@@ -7,7 +7,7 @@
                     {{ $bus->bus_number }} ·
                     {{ $bus->school->name ?? '—' }} ·
                     Route: {{ $bus->routes->pluck('name')->join(', ') ?: '—' }} ·
-                    Driver: {{ $bus->driver?->full_name ?? '—' }}
+                    Driver: {{ $bus->drivers->first()?->full_name ?? '—' }}
                 </p>
             </div>
             <a

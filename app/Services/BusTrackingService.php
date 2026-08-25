@@ -132,7 +132,7 @@ class BusTrackingService
         }
 
         // Notify the driver assigned to this bus
-        $driverUser = $bus->driver?->user;
+        $driverUser = $bus->drivers->first()?->user;
 
         if ($driverUser) {
             $driverUser->notify($notification);

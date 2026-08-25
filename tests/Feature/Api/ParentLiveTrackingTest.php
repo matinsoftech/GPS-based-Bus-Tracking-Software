@@ -85,13 +85,13 @@ class ParentLiveTrackingTest extends TestCase
 
         $this->bus = Bus::create([
             'school_id' => $this->school->id,
-            'driver_id' => $driver->id,
             'bus_number' => 'LIVE-BUS-1',
             'registration_number' => 'BA LIVE-BUS-1',
             'capacity' => 40,
             'gps_device_id' => '123456789012345',
             'status' => 'Active',
         ]);
+        $this->bus->drivers()->attach($driver->id);
     }
 
     private function makeBus(string $busNumber, ?string $imei = null): Bus
