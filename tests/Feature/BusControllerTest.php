@@ -77,7 +77,7 @@ class BusControllerTest extends TestCase
             'last_service_date' => '2026-01-01',
             'status' => 'Active',
             'notes' => 'Brand new bus',
-            'route_id' => $route->id,
+            'route_ids' => [$route->id],
             'driver_id' => $driver->id,
         ]);
 
@@ -86,14 +86,18 @@ class BusControllerTest extends TestCase
         $this->assertDatabaseHas('buses', [
             'bus_number' => 'BUS-001',
             'school_id' => $school->id,
-            'route_id' => $route->id,
             'driver_id' => $driver->id,
             'created_by' => $user->id,
         ]);
 
+        $this->assertDatabaseHas('bus_route', [
+            'bus_id' => Bus::where('bus_number', 'BUS-001')->first()->id,
+            'route_id' => $route->id,
+        ]);
+
         $bus = Bus::where('bus_number', 'BUS-001')->first();
         $this->assertNotNull($bus);
-        $this->assertTrue($bus->route->is($route));
+        $this->assertTrue($bus->routes->contains($route));
         $this->assertTrue($bus->driver->is($driver));
     }
 
@@ -197,7 +201,7 @@ class BusControllerTest extends TestCase
             'registration_number' => 'BA 1 KHA 1111',
             'capacity' => 50,
             'status' => 'Maintenance',
-            'route_id' => $route->id,
+            'route_ids' => [$route->id],
             'driver_id' => $driver->id,
         ]);
 
@@ -207,7 +211,7 @@ class BusControllerTest extends TestCase
 
         $this->assertSame(50, $bus->capacity);
         $this->assertSame('Maintenance', $bus->status);
-        $this->assertSame($route->id, $bus->route_id);
+        $this->assertTrue($bus->routes->contains($route));
         $this->assertSame($driver->id, $bus->driver_id);
     }
 }

@@ -118,7 +118,6 @@ class ParentBusTest extends TestCase
 
         $this->bus = Bus::create([
             'school_id' => $this->school->id,
-            'route_id' => $this->route->id,
             'driver_id' => $this->driver->id,
             'bus_number' => 'PARENT-BUS-1',
             'registration_number' => 'BA PARENT-BUS-1',
@@ -126,6 +125,7 @@ class ParentBusTest extends TestCase
             'gps_device_id' => '123456789012345',
             'status' => 'Active',
         ]);
+        $this->bus->routes()->attach($this->route->id);
     }
 
     private function makeStudent(array $overrides = []): Student
@@ -189,9 +189,9 @@ class ParentBusTest extends TestCase
             ->assertJsonPath('data.student.full_name', 'Sita Bahadur')
             ->assertJsonPath('data.bus.bus_number', 'PARENT-BUS-1')
             ->assertJsonPath('data.bus.driver.name', 'Ramesh Sharma')
-            ->assertJsonPath('data.bus.route.name', 'Route 1')
-            ->assertJsonCount(2, 'data.bus.route.stops')
-            ->assertJsonPath('data.bus.route.stops.0.name', 'Chabahil')
+            ->assertJsonPath('data.bus.routes.0.name', 'Route 1')
+            ->assertJsonCount(2, 'data.bus.routes.0.stops')
+            ->assertJsonPath('data.bus.routes.0.stops.0.name', 'Chabahil')
             ->assertJsonPath('data.live_location.imei', '123456789012345')
             ->assertJsonPath('data.live_location.latitude', 27.7172)
             ->assertJsonPath('data.live_location.longitude', 85.324)
@@ -212,14 +212,16 @@ class ParentBusTest extends TestCase
                         'fuel_type',
                         'status',
                         'driver' => ['id', 'name', 'phone'],
-                        'route' => [
-                            'id',
-                            'name',
-                            'route_code',
-                            'start_location',
-                            'end_location',
-                            'stops' => [
-                                '*' => ['id', 'name', 'latitude', 'longitude', 'stop_order', 'pickup_time', 'drop_time'],
+                        'routes' => [
+                            [
+                                'id',
+                                'name',
+                                'route_code',
+                                'start_location',
+                                'end_location',
+                                'stops' => [
+                                    '*' => ['id', 'name', 'latitude', 'longitude', 'stop_order', 'pickup_time', 'drop_time'],
+                                ],
                             ],
                         ],
                         'school' => ['id', 'name', 'address'],

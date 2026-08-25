@@ -44,7 +44,7 @@
             @endif
         </div>
 
-        @if (!$selectedChild || !$bus || !$route)
+        @if (!$selectedChild || !$bus || $routes->isEmpty())
         <!-- Empty / Unassigned State Card -->
         <div class="rounded-2xl border border-gray-200 bg-white p-8 md:p-12 text-center shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 mb-4">
@@ -68,6 +68,8 @@
             </div>
         </div>
         @else
+
+        @php $route = $routes->first(); @endphp
 
         <!-- "Where is My Bus?" Telemetry & Information Cards Grid -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -332,7 +334,7 @@
 </x-app-layout>
 
 <!-- Leaflet CSS & JS -->
-@if ($route)
+@if ($routes->isNotEmpty())
 <script>
     let gpsPollTimer = null;
 

@@ -32,7 +32,7 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['bus.route', 'bus.driver', 'bus.school'])
+            ->with(['bus.routes', 'bus.driver', 'bus.school'])
             ->get();
 
         $busIds = $children->pluck('bus_id')->filter()->unique();
@@ -77,7 +77,7 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['bus.route', 'bus.driver', 'bus.school'])
+            ->with(['bus.routes', 'bus.driver', 'bus.school'])
             ->get();
 
         return view('parents.children', compact('user', 'children'));
@@ -98,7 +98,7 @@ class ParentDashboardController extends Controller
             abort(403, 'You are not authorized to view this student\'s attendance.');
         }
 
-        $student->load(['school', 'bus.route']);
+        $student->load(['school', 'bus.routes']);
 
         $records = Attendance::query()
             ->with(['bus', 'markedBy'])

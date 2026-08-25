@@ -29,7 +29,7 @@
         </div>
         <div class="flex justify-between gap-3">
             <dt class="text-gray-500 dark:text-gray-400">Route</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->route?->name ?? '—' }}</dd>
+            <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->routes->pluck('name')->join(', ') ?: '—' }}</dd>
         </div>
         <div class="flex justify-between gap-3">
             <dt class="text-gray-500 dark:text-gray-400">Capacity</dt>

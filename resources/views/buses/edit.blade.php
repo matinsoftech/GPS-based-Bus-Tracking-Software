@@ -272,18 +272,25 @@
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                        <label for="route_id" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route</label>
-                        <select
-                            id="route_id"
-                            name="route_id"
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                        >
-                            <option value="">No route</option>
-                            @foreach ($routes as $route)
-                                <option value="{{ $route->id }}" @selected(old('route_id', $bus->route_id) == $route->id)>{{ $route->name }} ({{ $route->route_code }})</option>
-                            @endforeach
-                        </select>
-                        @error('route_id')
+                        <label for="route_ids" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Routes</label>
+                        @php $selectedRouteIds = old('route_ids', $bus->routes->pluck('id')->toArray()); @endphp
+                        <div class="max-h-48 overflow-y-auto rounded-lg border border-gray-300 p-3 dark:border-gray-600 dark:bg-gray-800">
+                            @forelse ($routes as $route)
+                                <label class="flex items-center gap-2 py-1">
+                                    <input
+                                        type="checkbox"
+                                        name="route_ids[]"
+                                        value="{{ $route->id }}"
+                                        @checked(in_array($route->id, $selectedRouteIds))
+                                        class="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                                    >
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ $route->name }} ({{ $route->route_code }})</span>
+                                </label>
+                            @empty
+                                <p class="text-sm text-gray-500 dark:text-gray-400">No routes available.</p>
+                            @endforelse
+                        </div>
+                        @error('route_ids')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>

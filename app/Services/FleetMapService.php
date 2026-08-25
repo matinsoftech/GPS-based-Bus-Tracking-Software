@@ -73,7 +73,7 @@ class FleetMapService
      */
     public function forSchool(?int $schoolId, ?Collection $busIds = null): array
     {
-        $busQuery = Bus::query()->with(['driver', 'route.stops', 'gpsDevice', 'school']);
+        $busQuery = Bus::query()->with(['driver', 'routes.stops', 'gpsDevice', 'school']);
 
         if ($schoolId) {
             $busQuery->where('school_id', $schoolId);
@@ -98,7 +98,7 @@ class FleetMapService
         }
 
         if ($busIds !== null) {
-            $routeIds = $buses->pluck('route_id')->filter()->values();
+            $routeIds = $buses->flatMap(fn ($bus) => $bus->routes->pluck('id'))->unique()->values();
             $routeQuery->whereIn('id', $routeIds);
         }
 
@@ -152,8 +152,8 @@ class FleetMapService
             'registration_number' => $bus->registration_number,
             'status' => $bus->status,
             'driver_name' => $bus->driver?->full_name,
-            'route_id' => $bus->route_id,
-            'route_name' => $bus->route?->name,
+            'route_id' => $bus->routes->first()?->id,
+            'route_name' => $bus->routes->pluck('name')->join(', '),
             'school_name' => $bus->school?->name,
             'latitude' => $location['latitude'] ?? null,
             'longitude' => $location['longitude'] ?? null,
@@ -211,14 +211,16 @@ class FleetMapService
             return null;
         }
 
-        if (! $bus->route?->stops || $bus->route->stops->isEmpty()) {
+        $allStops = $bus->routes->flatMap(fn ($route) => $route->stops ?? collect());
+
+        if ($allStops->isEmpty()) {
             return null;
         }
 
         $nearest = null;
         $nearestDistance = PHP_FLOAT_MAX;
 
-        foreach ($bus->route->stops as $stop) {
+        foreach ($allStops as $stop) {
             $distance = $this->haversineKm(
                 (float) $lat,
                 (float) $lng,

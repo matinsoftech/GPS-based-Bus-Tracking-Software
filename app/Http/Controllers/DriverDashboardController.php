@@ -32,7 +32,7 @@ class DriverDashboardController extends Controller
         }
 
         $buses = $driver->buses()
-            ->with(['route', 'school', 'students'])
+            ->with(['routes', 'school', 'students'])
             ->withCount('students')
             ->orderBy('bus_number')
             ->get();
@@ -83,7 +83,7 @@ class DriverDashboardController extends Controller
         }
 
         $buses = $driver->buses()
-            ->with(['route', 'school'])
+            ->with(['routes', 'school'])
             ->orderBy('bus_number')
             ->get();
 

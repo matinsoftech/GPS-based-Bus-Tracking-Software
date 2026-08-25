@@ -24,7 +24,7 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['bus.route', 'bus.driver'])
+            ->with(['bus.routes', 'bus.driver'])
             ->orderBy('grade')
             ->orderBy('roll_no')
             ->get();
@@ -71,10 +71,10 @@ class ParentDashboardController extends Controller
                         'bus_number' => $student->bus->bus_number,
                         'registration_number' => $student->bus->registration_number,
                         'status' => $student->bus->status,
-                        'route' => $student->bus->route ? [
-                            'id' => $student->bus->route->id,
-                            'name' => $student->bus->route->name,
-                        ] : null,
+                        'routes' => $student->bus->routes->map(fn ($route) => [
+                            'id' => $route->id,
+                            'name' => $route->name,
+                        ]),
                         'driver' => $student->bus->driver ? [
                             'id' => $student->bus->driver->id,
                             'name' => $student->bus->driver->full_name,

@@ -26,7 +26,7 @@ class BusController extends Controller
     {
         $user = Auth::user();
 
-        $query = Bus::with(['school', 'route', 'driver']);
+        $query = Bus::with(['school', 'routes', 'driver']);
 
         if ($this->isSchoolLevelAdmin($user)) {
             $schoolId = $this->getUserSchoolId($user);
@@ -122,10 +122,13 @@ class BusController extends Controller
         }
 
         $validated['created_by'] = $user->id;
+        $routeIds = $validated['route_ids'] ?? [];
+        unset($validated['route_ids']);
 
         try {
-            DB::transaction(function () use ($validated) {
-                Bus::create($validated);
+            DB::transaction(function () use ($validated, $routeIds) {
+                $bus = Bus::create($validated);
+                $bus->routes()->sync($routeIds);
             });
         } catch (Throwable $e) {
             return back()
@@ -145,7 +148,7 @@ class BusController extends Controller
     {
         $this->authorizeBus($bus);
 
-        $bus->load(['school', 'creator', 'route', 'driver', 'gpsDevice']);
+        $bus->load(['school', 'creator', 'routes', 'driver', 'gpsDevice']);
 
         $latestLocation = $this->gpsService->locationPayload($bus);
 
@@ -174,7 +177,7 @@ class BusController extends Controller
         $drivers = $this->availableDrivers($school, $bus);
         $routes = $this->availableRoutes($school, $bus);
 
-        $bus->load(['route', 'driver']);
+        $bus->load(['routes', 'driver']);
 
         return view('buses.edit', compact('bus', 'school', 'schools', 'drivers', 'routes'));
     }
@@ -209,9 +212,13 @@ class BusController extends Controller
             }
         }
 
+        $routeIds = $validated['route_ids'] ?? [];
+        unset($validated['route_ids']);
+
         try {
-            DB::transaction(function () use ($bus, $validated) {
+            DB::transaction(function () use ($bus, $validated, $routeIds) {
                 $bus->update($validated);
+                $bus->routes()->sync($routeIds);
             });
         } catch (Throwable $e) {
             return back()
@@ -293,7 +300,8 @@ class BusController extends Controller
 
             'notes' => 'nullable|string',
 
-            'route_id' => 'nullable|exists:routes,id',
+            'route_ids' => 'nullable|array',
+            'route_ids.*' => 'exists:routes,id',
 
             'driver_id' => 'nullable|exists:drivers,id',
         ];

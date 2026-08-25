@@ -25,7 +25,7 @@ class DriverAttendanceController extends Controller
         ]);
 
         $bus = $driver->buses()
-            ->with(['route', 'students.parent.user'])
+            ->with(['routes', 'students.parent.user'])
             ->find($validated['bus_id']);
 
         if (! $bus) {
@@ -53,10 +53,10 @@ class DriverAttendanceController extends Controller
                     'bus_number' => $bus->bus_number,
                     'registration_number' => $bus->registration_number,
                     'status' => $bus->status,
-                    'route' => $bus->route ? [
-                        'id' => $bus->route->id,
-                        'name' => $bus->route->name,
-                    ] : null,
+                    'routes' => $bus->routes->map(fn ($route) => [
+                        'id' => $route->id,
+                        'name' => $route->name,
+                    ]),
                 ],
                 'total_students' => $students->count(),
                 'students' => $students->map(fn ($student) => [
@@ -137,7 +137,7 @@ class DriverAttendanceController extends Controller
         ]);
 
         $bus = $driver->buses()
-            ->with('route')
+            ->with('routes')
             ->find($validated['bus_id']);
 
         if (! $bus) {
@@ -170,10 +170,10 @@ class DriverAttendanceController extends Controller
                     'bus_number' => $bus->bus_number,
                     'registration_number' => $bus->registration_number,
                     'status' => $bus->status,
-                    'route' => $bus->route ? [
-                        'id' => $bus->route->id,
-                        'name' => $bus->route->name,
-                    ] : null,
+                    'routes' => $bus->routes->map(fn ($route) => [
+                        'id' => $route->id,
+                        'name' => $route->name,
+                    ]),
                 ],
                 'from' => $from->toDateString(),
                 'to' => $to->toDateString(),

@@ -32,7 +32,7 @@ class BusLocationController extends Controller
             $parent = ParentProfile::where('user_id', $user->id)->first();
 
             $children = $parent
-                ? $parent->children()->with(['bus.route.stops', 'bus.driver', 'bus.school'])->get()
+                ? $parent->children()->with(['bus.routes.stops', 'bus.driver', 'bus.school'])->get()
                 : collect();
 
             $selectedChildId = $request->query('child_id');
@@ -41,10 +41,12 @@ class BusLocationController extends Controller
                 ?? $children->first();
 
             $bus = $selectedChild?->bus;
-            $route = $bus?->route;
+            $routes = $bus?->routes;
 
-            if ($route) {
-                $route->load(['stops', 'school', 'buses.driver']);
+            if ($routes) {
+                foreach ($routes as $route) {
+                    $route->load(['stops', 'school', 'buses.driver']);
+                }
             }
 
             $latestLocation = $this->latestLocationForBus($bus);
@@ -57,7 +59,7 @@ class BusLocationController extends Controller
                 'children',
                 'selectedChild',
                 'bus',
-                'route',
+                'routes',
                 'latestLocation',
                 'fleetMap'
             ));
@@ -124,7 +126,7 @@ class BusLocationController extends Controller
             $schoolId = $user->school_id
                 ?? SchoolAdmin::where('user_id', $user->id)->value('school_id');
 
-            $bus = Bus::with(['route.stops', 'driver', 'school'])->find($busId);
+            $bus = Bus::with(['routes.stops', 'driver', 'school'])->find($busId);
 
             if (! $bus || ($schoolId && $bus->school_id != $schoolId)) {
                 abort(403, 'You are not authorized to view this bus.');
