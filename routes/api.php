@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Driver\DriverBusController;
 use App\Http\Controllers\Api\V1\Driver\DriverDashboardController;
 use App\Http\Controllers\Api\V1\Driver\DriverLiveTrackingController;
 use App\Http\Controllers\Api\V1\Driver\DriverProfileController;
+use App\Http\Controllers\Api\V1\Driver\DriverTripController;
 use App\Http\Controllers\Api\V1\Parent\ParentBusController;
 use App\Http\Controllers\Api\V1\Parent\ParentChildController;
 use App\Http\Controllers\Api\V1\Parent\ParentDashboardController;
@@ -33,6 +34,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/buses/{bus}', [DriverBusController::class, 'show']);
             Route::get('/buses/{bus}/students', [DriverBusController::class, 'students']);
             Route::get('/live-tracking', [DriverLiveTrackingController::class, 'index']);
+
+            Route::get('/trips', [DriverTripController::class, 'index'])->middleware('permission:trip.view');
+            Route::post('/trips/toggle', [DriverTripController::class, 'toggle'])->middleware('permission:trip.start');
 
             Route::prefix('attendances')->group(function () {
                 Route::get('/', [DriverAttendanceController::class, 'index']);

@@ -64,4 +64,14 @@ class Bus extends Model
     {
         return $this->hasMany(Student::class);
     }
+
+    public function trips()
+    {
+        return $this->hasMany(Trip::class);
+    }
+
+    public function activeTrip()
+    {
+        return $this->hasOne(Trip::class)->where('status', Trip::STATUS_IN_PROGRESS);
+    }
 }
