@@ -62,6 +62,16 @@ class Driver extends Model
         return $this->hasMany(Bus::class);
     }
 
+    public function trips()
+    {
+        return $this->hasMany(Trip::class);
+    }
+
+    public function activeTrips()
+    {
+        return $this->trips()->where('status', Trip::STATUS_IN_PROGRESS);
+    }
+
     public function attendances()
     {
         return $this->hasManyThrough(
