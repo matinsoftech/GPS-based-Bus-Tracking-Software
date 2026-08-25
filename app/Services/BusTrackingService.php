@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Bus;
 use App\Models\GpsDevice;
+use App\Models\SchoolAdmin;
+use App\Models\User;
 use App\Notifications\BusStartedNotification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -112,6 +114,9 @@ class BusTrackingService
 
     private function notifyBusStarted(Bus $bus): void
     {
+        $notification = new BusStartedNotification($bus);
+
+        // Notify parents of students on this bus
         $students = $bus->students()
             ->with('parent.user')
             ->get();
@@ -123,9 +128,34 @@ class BusTrackingService
                 continue;
             }
 
-            $parent->notify(
-                new BusStartedNotification($bus)
-            );
+            $parent->notify($notification);
+        }
+
+        // Notify the driver assigned to this bus
+        $driverUser = $bus->driver?->user;
+
+        if ($driverUser) {
+            $driverUser->notify($notification);
+        }
+
+        // Notify all school admins for this bus's school
+        $schoolAdmins = SchoolAdmin::where('school_id', $bus->school_id)
+            ->with('user')
+            ->get();
+
+        foreach ($schoolAdmins as $admin) {
+            if (! $admin->user) {
+                continue;
+            }
+
+            $admin->user->notify($notification);
+        }
+
+        // Notify all super admins
+        $superAdmins = User::role('Super Admin')->get();
+
+        foreach ($superAdmins as $superAdmin) {
+            $superAdmin->notify($notification);
         }
     }
 }
