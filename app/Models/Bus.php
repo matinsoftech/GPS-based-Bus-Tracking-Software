@@ -58,11 +58,6 @@ class Bus extends Model
         return $this->hasOne(GpsDevice::class, 'bus_id');
     }
 
-    public function students()
-    {
-        return $this->hasMany(Student::class);
-    }
-
     public function trips()
     {
         return $this->hasMany(Trip::class);

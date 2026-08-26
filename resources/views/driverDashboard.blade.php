@@ -153,7 +153,7 @@
 
                         <div class="grid grid-cols-2 gap-2">
                             <a
-                                href="{{ route('attendance.buses.show', ['bus' => $bus]) }}"
+                                href="{{ route('attendance.index') }}"
                                 class="rounded-lg bg-brand-500 px-4 py-2 text-center text-sm font-medium text-white hover:bg-brand-600"
                             >
                                 Mark Attendance

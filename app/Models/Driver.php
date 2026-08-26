@@ -79,7 +79,7 @@ class Driver extends Model
 
     public function attendances()
     {
-        return Attendance::whereIn('bus_id', $this->buses()->pluck('buses.id'));
+        return Attendance::whereIn('route_id', $this->routes()->pluck('driver_route.route_id'));
     }
 
     public function getFullNameAttribute(): string

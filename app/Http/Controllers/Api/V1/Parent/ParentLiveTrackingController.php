@@ -22,7 +22,7 @@ class ParentLiveTrackingController extends Controller
         }
 
         $children = $parent->children()
-            ->with('bus')
+            ->with(['route.buses.gpsDevice'])
             ->orderBy('grade')
             ->orderBy('roll_no')
             ->get();
@@ -37,13 +37,14 @@ class ParentLiveTrackingController extends Controller
                     'grade' => $student->grade,
                     'section' => $student->section,
                     'photo' => $student->photo ? asset('storage/'.$student->photo) : null,
-                    'bus' => $student->bus ? [
-                        'id' => $student->bus->id,
-                        'bus_number' => $student->bus->bus_number,
-                        'registration_number' => $student->bus->registration_number,
-                        'status' => $student->bus->status,
+                    'route' => $student->route ? [
+                        'id' => $student->route->id,
+                        'name' => $student->route->name,
+                        'route_code' => $student->route->route_code,
                     ] : null,
-                    'live_location' => $student->bus ? $this->gps->locationPayload($student->bus) : null,
+                    'live_location' => $student->route?->buses->first()
+                        ? $this->gps->locationPayload($student->route->buses->first())
+                        : null,
                 ]),
             ],
         ]);
@@ -65,7 +66,7 @@ class ParentLiveTrackingController extends Controller
             ], 403);
         }
 
-        $student->load('bus');
+        $student->load('route.buses.gpsDevice');
 
         return response()->json([
             'message' => 'Parent child live tracking data.',
@@ -77,13 +78,14 @@ class ParentLiveTrackingController extends Controller
                     'section' => $student->section,
                     'photo' => $student->photo ? asset('storage/'.$student->photo) : null,
                 ],
-                'bus' => $student->bus ? [
-                    'id' => $student->bus->id,
-                    'bus_number' => $student->bus->bus_number,
-                    'registration_number' => $student->bus->registration_number,
-                    'status' => $student->bus->status,
+                'route' => $student->route ? [
+                    'id' => $student->route->id,
+                    'name' => $student->route->name,
+                    'route_code' => $student->route->route_code,
                 ] : null,
-                'live_location' => $student->bus ? $this->gps->locationPayload($student->bus) : null,
+                'live_location' => $student->route?->buses->first()
+                    ? $this->gps->locationPayload($student->route->buses->first())
+                    : null,
             ],
         ]);
     }

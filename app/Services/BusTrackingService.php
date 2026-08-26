@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Bus;
 use App\Models\GpsDevice;
 use App\Models\SchoolAdmin;
+use App\Models\Student;
 use App\Models\User;
 use App\Notifications\BusStartedNotification;
 use Illuminate\Support\Facades\Cache;
@@ -117,7 +118,9 @@ class BusTrackingService
         $notification = new BusStartedNotification($bus);
 
         // Notify parents of students on this bus
-        $students = $bus->students()
+        $routeIds = $bus->routes()->pluck('routes.id');
+
+        $students = Student::whereIn('route_id', $routeIds)
             ->with('parent.user')
             ->get();
 

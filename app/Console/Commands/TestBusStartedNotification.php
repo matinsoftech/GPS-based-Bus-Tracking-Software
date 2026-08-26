@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Bus;
+use App\Models\Student;
 use App\Notifications\BusStartedNotification;
 use Illuminate\Console\Command;
 
@@ -24,7 +25,9 @@ class TestBusStartedNotification extends Command
             return self::FAILURE;
         }
 
-        $students = $bus->students()
+        $routeIds = $bus->routes()->pluck('routes.id');
+
+        $students = Student::whereIn('route_id', $routeIds)
             ->with('parent.user')
             ->get();
 

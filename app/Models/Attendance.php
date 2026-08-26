@@ -12,7 +12,7 @@ class Attendance extends Model
 
     protected $fillable = [
         'student_id',
-        'bus_id',
+        'route_id',
         'trip',
         'date',
         'check_in_at',
@@ -47,9 +47,9 @@ class Attendance extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function bus()
+    public function route()
     {
-        return $this->belongsTo(Bus::class);
+        return $this->belongsTo(Route::class);
     }
 
     public function markedBy()

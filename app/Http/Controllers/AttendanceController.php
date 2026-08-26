@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
-use App\Models\Bus;
 use App\Models\Driver;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
@@ -16,18 +16,18 @@ use Illuminate\Support\Facades\Auth;
 class AttendanceController extends Controller
 {
     /**
-     * Display buses available for attendance.
+     * Display routes available for attendance.
      */
     public function index(Request $request)
     {
         $user = Auth::user();
 
-        $query = Bus::query()
-            ->with(['school', 'drivers', 'routes'])
+        $query = Route::query()
+            ->with('school')
             ->withCount('students');
 
         if ($user->hasRole('Super Admin')) {
-            // All buses.
+            // All routes.
         } elseif ($user->hasAnyRole(['School Admin', 'Principal'])) {
             $schoolId = $this->getUserSchoolId($user);
 
@@ -41,7 +41,7 @@ class AttendanceController extends Controller
                 $today = $request->query('date') ?: now()->toDateString();
 
                 return view('attendance.index', [
-                    'buses' => collect(),
+                    'routes' => collect(),
                     'checkedIn' => collect(),
                     'today' => $today,
                     'groupedBySchool' => false,
@@ -51,15 +51,15 @@ class AttendanceController extends Controller
             $query->whereHas('drivers', fn($q) => $q->where('drivers.id', $driverId));
         }
 
-        $buses = $query->orderBy('bus_number')->get();
+        $routes = $query->orderBy('name')->get();
 
         $today = $request->query('date') ?: now()->toDateString();
 
         $checkedIn = Attendance::query()
             ->whereDate('date', $today)
-            ->whereIn('bus_id', $buses->pluck('id'))
+            ->whereIn('route_id', $routes->pluck('id'))
             ->get()
-            ->groupBy('bus_id')
+            ->groupBy('route_id')
             ->map(fn ($group) => [
                 'picked_up_home' => $group->where('trip', Attendance::TRIP_HOME_TO_SCHOOL)->whereNotNull('check_in_at')->pluck('student_id')->unique()->count(),
                 'dropped_school' => $group->where('trip', Attendance::TRIP_HOME_TO_SCHOOL)->whereNotNull('check_out_at')->pluck('student_id')->unique()->count(),
@@ -69,24 +69,23 @@ class AttendanceController extends Controller
 
         $groupedBySchool = $user->hasRole('Super Admin');
 
-        return view('attendance.index', compact('buses', 'checkedIn', 'today', 'groupedBySchool'));
+        return view('attendance.index', compact('routes', 'checkedIn', 'today', 'groupedBySchool'));
     }
 
     /**
-     * Display a bus and its assigned students with the next valid attendance action.
+     * Display a route and its assigned students with the next valid attendance action.
      */
-    public function show(Request $request, Bus $bus)
+    public function show(Request $request, Route $route)
     {
-        $this->authorizeBus($bus);
-        $this->ensureBusActive($bus);
+        $this->authorizeRoute($route);
 
         $date = $request->query('date') ?: now()->toDateString();
 
         $isToday = Carbon::parse($date)->isSameDay(now());
 
-        $bus->load(['school', 'drivers', 'routes']);
+        $route->load('school');
 
-        $students = $bus->students()
+        $students = $route->students()
             ->with('parent.user')
             ->orderBy('grade')
             ->orderBy('roll_no')
@@ -120,16 +119,15 @@ class AttendanceController extends Controller
         $allCompleted = $students->isNotEmpty()
             && $studentStages->every(fn ($entry) => $entry['completed']);
 
-        return view('attendance.show', compact('bus', 'studentStages', 'date', 'isToday', 'allCompleted'));
+        return view('attendance.show', compact('route', 'studentStages', 'date', 'isToday', 'allCompleted'));
     }
 
     /**
      * Check a student's next valid attendance action and store it.
      */
-    public function mark(Request $request, Bus $bus, Student $student)
+    public function mark(Request $request, Route $route, Student $student)
     {
-        $this->authorizeBus($bus);
-        $this->ensureBusActive($bus);
+        $this->authorizeRoute($route);
 
         $validated = $request->validate([
             'action' => ['required', 'in:check_in,check_out'],
@@ -137,8 +135,8 @@ class AttendanceController extends Controller
             'date' => ['nullable', 'date'],
         ]);
 
-        if ((int) $student->bus_id !== (int) $bus->id) {
-            abort(403, 'This student is not assigned to this bus.');
+        if ((int) $student->route_id !== (int) $route->id) {
+            abort(403, 'This student is not assigned to this route.');
         }
 
         $date = ! empty($validated['date']) ? Carbon::parse($validated['date']) : now();
@@ -175,7 +173,7 @@ class AttendanceController extends Controller
             Attendance::updateOrCreate(
                 ['student_id' => $student->id, 'date' => $date, 'trip' => $validated['trip']],
                 [
-                    'bus_id' => $bus->id,
+                    'route_id' => $route->id,
                     'check_in_at' => now(),
                     'marked_by' => Auth::id(),
                 ]
@@ -198,18 +196,18 @@ class AttendanceController extends Controller
         }
 
         return redirect()
-            ->route('attendance.buses.show', ['bus' => $bus, 'date' => $date->toDateString()])
+            ->route('attendance.routes.show', ['route' => $route, 'date' => $date->toDateString()])
             ->with('success', $message);
     }
 
     /**
-     * Display the attendance history for a bus across dates.
+     * Display the attendance history for a route across dates.
      */
-    public function history(Request $request, Bus $bus)
+    public function history(Request $request, Route $route)
     {
-        $this->authorizeBus($bus);
+        $this->authorizeRoute($route);
 
-        $bus->load(['school', 'routes', 'drivers']);
+        $route->load('school');
 
         $validated = $request->validate([
             'from' => ['nullable', 'date'],
@@ -226,7 +224,7 @@ class AttendanceController extends Controller
 
         $records = Attendance::query()
             ->with(['student', 'markedBy'])
-            ->where('bus_id', $bus->id)
+            ->where('route_id', $route->id)
             ->whereBetween('date', [$from, $to])
             ->orderByDesc('date')
             ->orderByDesc('id')
@@ -235,17 +233,7 @@ class AttendanceController extends Controller
 
         $totalRecords = $records->total();
 
-        return view('attendance.history', compact('bus', 'records', 'from', 'to', 'totalRecords'));
-    }
-
-    /**
-     * Make sure attendance can only be marked on an active bus.
-     */
-    private function ensureBusActive(Bus $bus): void
-    {
-        if ($bus->status !== 'Active') {
-            abort(403, 'Attendance is only available for active buses.');
-        }
+        return view('attendance.history', compact('route', 'records', 'from', 'to', 'totalRecords'));
     }
 
     /**
@@ -349,10 +337,14 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Make sure the current user is allowed to access this bus.
+     * Make sure the current user is allowed to access this route.
      */
-    private function authorizeBus(Bus $bus): void
+    private function authorizeRoute(Route $route): void
     {
+        if (! $route->is_active) {
+            abort(403, 'This route is currently inactive.');
+        }
+
         $user = Auth::user();
 
         if ($user->hasRole('Super Admin')) {
@@ -362,8 +354,8 @@ class AttendanceController extends Controller
         if ($user->hasAnyRole(['School Admin', 'Principal'])) {
             $schoolId = $this->getUserSchoolId($user);
 
-            if ($schoolId && (int) $bus->school_id !== (int) $schoolId) {
-                abort(403, 'You are not authorized to access this bus.');
+            if ($schoolId && (int) $route->school_id !== (int) $schoolId) {
+                abort(403, 'You are not authorized to access this route.');
             }
 
             return;
@@ -372,11 +364,11 @@ class AttendanceController extends Controller
         if ($user->hasRole('Driver')) {
             $driverId = Driver::where('user_id', $user->id)->value('id');
 
-            if ($driverId && $bus->drivers->contains('id', $driverId)) {
+            if ($driverId && $route->drivers->contains('id', $driverId)) {
                 return;
             }
 
-            abort(403, 'You are not authorized to access this bus.');
+            abort(403, 'You are not authorized to access this route.');
         }
 
         abort(403);

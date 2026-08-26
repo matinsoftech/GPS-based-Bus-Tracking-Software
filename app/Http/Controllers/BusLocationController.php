@@ -32,26 +32,25 @@ class BusLocationController extends Controller
             $parent = ParentProfile::where('user_id', $user->id)->first();
 
             $children = $parent
-                ? $parent->children()->with(['bus.routes.stops', 'bus.drivers', 'bus.school'])->get()
+                ? $parent->children()->with(['route.buses.gpsDevice', 'route.stops', 'route.school'])->get()
                 : collect();
 
             $selectedChildId = $request->query('child_id');
             $selectedChild = $children->firstWhere('id', $selectedChildId)
-                ?? $children->firstWhere('bus_id', '!=', null)
+                ?? $children->firstWhere('route_id', '!=', null)
                 ?? $children->first();
 
-            $bus = $selectedChild?->bus;
-            $routes = $bus?->routes;
+            $route = $selectedChild?->route;
+            $bus = $route?->buses->first();
+            $routes = $route ? collect([$route]) : collect();
 
-            if ($routes) {
-                foreach ($routes as $route) {
-                    $route->load(['stops', 'school', 'buses.drivers']);
-                }
+            if ($route) {
+                $route->load(['stops', 'school', 'buses.drivers']);
             }
 
-            $latestLocation = $this->latestLocationForBus($bus);
+            $latestLocation = $bus ? $this->latestLocationForBus($bus) : null;
 
-            $fleetBusIds = $children->pluck('bus_id')->filter()->unique();
+            $fleetBusIds = $children->pluck('route.buses')->flatten()->pluck('id')->filter()->unique();
             $fleetMap = $this->fleetMap->forSchool(null, $fleetBusIds);
 
             return view('bus_location.parent_bus_location', compact(

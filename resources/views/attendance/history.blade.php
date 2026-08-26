@@ -4,21 +4,19 @@
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Attendance History</h1>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {{ $bus->bus_number }} ·
-                    {{ $bus->school->name ?? '—' }} ·
-                    Route: {{ $bus->routes->pluck('name')->join(', ') ?: '—' }} ·
-                    Driver: {{ $bus->drivers->first()?->full_name ?? '—' }}
+                    {{ $route->name }}@if ($route->route_code) ({{ $route->route_code }})@endif ·
+                    {{ $route->school->name ?? '—' }}
                 </p>
             </div>
             <a
-                href="{{ route('attendance.buses.show', $bus) }}"
+                href="{{ route('attendance.routes.show', $route) }}"
                 class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             >
                 Back to Attendance
             </a>
         </div>
 
-        <form action="{{ route('attendance.buses.history', $bus) }}" method="GET" class="mb-6">
+        <form action="{{ route('attendance.routes.history', $route) }}" method="GET" class="mb-6">
             <div class="flex flex-wrap items-end gap-3">
                 <div>
                     <label for="from" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">From</label>
@@ -47,7 +45,7 @@
                     Apply
                 </button>
                 <a
-                    href="{{ route('attendance.buses.history', $bus) }}"
+                    href="{{ route('attendance.routes.history', $route) }}"
                     class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
                     Clear

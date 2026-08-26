@@ -65,7 +65,7 @@
                                         <span class="text-xs text-gray-400 dark:text-gray-500">—</span>
                                     @endif
                                 </td>
-                                <td class="px-5 py-3 whitespace-nowrap">{{ $record->bus?->bus_number ?? '—' }}</td>
+                                <td class="px-5 py-3 whitespace-nowrap">{{ $record->route?->name ?? '—' }}</td>
                                 <td class="px-5 py-3">
                                     @if ($record->isCheckedOut())
                                         <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">Completed</span>

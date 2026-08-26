@@ -32,12 +32,17 @@ class DriverDashboardController extends Controller
         }
 
         $buses = $driver->buses()
-            ->with(['routes', 'school', 'students'])
-            ->withCount('students')
+            ->with(['routes.students', 'school'])
             ->orderBy('bus_number')
             ->get();
 
+        $buses->each(fn ($bus) => $bus->setAttribute(
+            'students_count',
+            $bus->routes->sum(fn ($route) => $route->students->count()),
+        ));
+
         $busIds = $buses->pluck('id');
+        $routeIds = $buses->flatMap(fn ($bus) => $bus->routes->pluck('id'));
 
         // Live positions come straight from the GPS provider, matched to each
         // bus by its IMEI (gps_device_id).
@@ -45,12 +50,20 @@ class DriverDashboardController extends Controller
 
         $fleetMapRefreshUrl = route('bus_location.latest');
 
+        // Build a map of route_id -> bus_id so we can group attendance back to buses
+        $routeIdToBusId = [];
+        foreach ($buses as $bus) {
+            foreach ($bus->routes as $route) {
+                $routeIdToBusId[$route->id] = $bus->id;
+            }
+        }
+
         $checkedInByBus = Attendance::query()
             ->whereDate('date', now()->toDateString())
-            ->whereIn('bus_id', $busIds)
+            ->whereIn('route_id', $routeIds)
             ->whereNotNull('check_in_at')
             ->get()
-            ->groupBy('bus_id')
+            ->groupBy(fn ($record) => $routeIdToBusId[$record->route_id] ?? null)
             ->map(fn ($group) => $group->pluck('student_id')->unique()->count());
 
         return view('driverDashboard', compact(

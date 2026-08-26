@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Bus;
 use App\Models\ParentProfile;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
@@ -45,12 +45,13 @@ class StudentControllerTest extends TestCase
             'address' => 'Kathmandu',
         ]);
 
-        $bus = Bus::create([
+        $route = Route::create([
+            'name' => 'Route 1',
+            'route_code' => 'RT-S1-001',
             'school_id' => $school->id,
-            'bus_number' => 'BUS-001',
-            'registration_number' => 'BA 1 KHA 1234',
-            'capacity' => 40,
-            'status' => 'Active',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
         ]);
 
         $response = $this->actingAs($admin)->get(route('students.create'));
@@ -68,7 +69,7 @@ class StudentControllerTest extends TestCase
             'roll_no' => '01',
             'pickup_location' => 'Gaushala',
             'drop_location' => 'Bright Future School',
-            'bus_id' => $bus->id,
+            'route_id' => $route->id,
             'is_active' => 1,
         ]);
 
@@ -77,7 +78,7 @@ class StudentControllerTest extends TestCase
             'admission_no' => 'STD001',
             'school_id' => $school->id,
             'parent_id' => $parent->id,
-            'bus_id' => $bus->id,
+            'route_id' => $route->id,
             'first_name' => 'Anita',
         ]);
     }
@@ -122,12 +123,13 @@ class StudentControllerTest extends TestCase
             'address' => 'Kathmandu',
         ]);
 
-        $otherBus = Bus::create([
+        $otherRoute = Route::create([
+            'name' => 'Route 2',
+            'route_code' => 'RT-S2-001',
             'school_id' => $otherSchool->id,
-            'bus_number' => 'BUS-002',
-            'registration_number' => 'BA 1 YA 5678',
-            'capacity' => 45,
-            'status' => 'Active',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
         ]);
 
         $response = $this->actingAs($admin)->post(route('students.store'), [
@@ -141,10 +143,10 @@ class StudentControllerTest extends TestCase
             'section' => 'B',
             'pickup_location' => 'Koteshwor',
             'drop_location' => 'Bright Future School',
-            'bus_id' => $otherBus->id,
+            'route_id' => $otherRoute->id,
         ]);
 
-        $response->assertSessionHasErrors('bus_id');
+        $response->assertSessionHasErrors('route_id');
 
         $this->assertDatabaseMissing('students', [
             'admission_no' => 'STD002',

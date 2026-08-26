@@ -27,22 +27,22 @@ class ParentBusController extends Controller
 
         if (! $hasAccess) {
             return response()->json([
-                'message' => "You are not authorized to view this student's bus.",
+                'message' => "You are not authorized to view this student's route.",
             ], 403);
         }
 
-        $bus = $student->bus()
-            ->with(['routes.stops', 'drivers', 'school'])
+        $route = $student->route()
+            ->with(['stops', 'buses.gpsDevice', 'drivers', 'school'])
             ->first();
 
-        if (! $bus) {
+        if (! $route) {
             return response()->json([
-                'message' => 'Bus not found for this child.',
+                'message' => 'Route not found for this child.',
             ], 404);
         }
 
         return response()->json([
-            'message' => 'Parent child bus data.',
+            'message' => 'Parent child route data.',
             'data' => [
                 'student' => [
                     'id' => $student->id,
@@ -53,44 +53,42 @@ class ParentBusController extends Controller
                     'pickup_location' => $student->pickup_location,
                     'drop_location' => $student->drop_location,
                 ],
-                'bus' => [
-                    'id' => $bus->id,
-                    'bus_number' => $bus->bus_number,
-                    'registration_number' => $bus->registration_number,
-                    'make' => $bus->make,
-                    'model' => $bus->model,
-                    'year' => $bus->year,
-                    'capacity' => $bus->capacity,
-                    'fuel_type' => $bus->fuel_type,
-                    'status' => $bus->status,
-                    'drivers' => $bus->drivers->map(fn ($d) => [
+                'route' => [
+                    'id' => $route->id,
+                    'name' => $route->name,
+                    'route_code' => $route->route_code,
+                    'start_location' => $route->start_location,
+                    'end_location' => $route->end_location,
+                    'is_active' => $route->is_active,
+                    'stops' => $route->stops->map(fn ($stop) => [
+                        'id' => $stop->id,
+                        'name' => $stop->name,
+                        'latitude' => $stop->latitude,
+                        'longitude' => $stop->longitude,
+                        'stop_order' => $stop->stop_order,
+                        'pickup_time' => $stop->pickup_time,
+                        'drop_time' => $stop->drop_time,
+                    ])->values(),
+                    'drivers' => $route->drivers->map(fn ($d) => [
                         'id' => $d->id,
                         'name' => $d->full_name,
                         'phone' => $d->phone,
                     ]),
-                    'routes' => $bus->routes->map(fn ($route) => [
-                        'id' => $route->id,
-                        'name' => $route->name,
-                        'route_code' => $route->route_code,
-                        'start_location' => $route->start_location,
-                        'end_location' => $route->end_location,
-                        'stops' => $route->stops->map(fn ($stop) => [
-                            'id' => $stop->id,
-                            'name' => $stop->name,
-                            'latitude' => $stop->latitude,
-                            'longitude' => $stop->longitude,
-                            'stop_order' => $stop->stop_order,
-                            'pickup_time' => $stop->pickup_time,
-                            'drop_time' => $stop->drop_time,
-                        ])->values(),
+                    'buses' => $route->buses->map(fn ($bus) => [
+                        'id' => $bus->id,
+                        'bus_number' => $bus->bus_number,
+                        'registration_number' => $bus->registration_number,
+                        'capacity' => $bus->capacity,
+                        'status' => $bus->status,
+                        'gps_device_id' => $bus->gps_device_id,
                     ]),
-                    'school' => $bus->school ? [
-                        'id' => $bus->school->id,
-                        'name' => $bus->school->name,
-                        'address' => $bus->school->address,
+                    'school' => $route->school ? [
+                        'id' => $route->school->id,
+                        'name' => $route->school->name,
+                        'address' => $route->school->address,
                     ] : null,
                 ],
-                'live_location' => $this->gps->locationPayload($bus),
+                'live_location' => $this->gps->locationPayload($route->buses->first()),
             ],
         ]);
     }

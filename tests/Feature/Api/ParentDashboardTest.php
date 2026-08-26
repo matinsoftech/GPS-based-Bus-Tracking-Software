@@ -3,9 +3,9 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Attendance;
-use App\Models\Bus;
 use App\Models\Driver;
 use App\Models\ParentProfile;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\Student;
 use App\Models\User;
@@ -27,7 +27,7 @@ class ParentDashboardTest extends TestCase
 
     private ParentProfile $parent;
 
-    private Bus $bus;
+    private Route $route;
 
     protected function setUp(): void
     {
@@ -81,14 +81,15 @@ class ParentDashboardTest extends TestCase
             'created_by' => $driverUser->id,
         ]);
 
-        $this->bus = Bus::create([
+        $this->route = Route::create([
+            'name' => 'Route A',
+            'route_code' => 'RT-PARENT-1',
             'school_id' => $this->school->id,
-            'bus_number' => 'PARENT-BUS-1',
-            'registration_number' => 'BA PARENT-BUS-1',
-            'capacity' => 40,
-            'status' => 'Active',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
         ]);
-        $this->bus->drivers()->attach($driver->id);
+        $this->route->drivers()->attach($driver->id);
     }
 
     private function makeStudent(array $overrides = []): Student
@@ -96,7 +97,7 @@ class ParentDashboardTest extends TestCase
         return Student::create(array_merge([
             'school_id' => $this->school->id,
             'parent_id' => $this->parent->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'admission_no' => 'ADM-PARENT-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Bahadur',
@@ -124,8 +125,8 @@ class ParentDashboardTest extends TestCase
             ->assertJsonPath('data.children_count', 2)
             ->assertJsonCount(2, 'data.children')
             ->assertJsonPath('data.children.0.full_name', 'Sita Bahadur')
-            ->assertJsonPath('data.children.0.bus.bus_number', 'PARENT-BUS-1')
-            ->assertJsonPath('data.children.0.bus.drivers.0.name', 'Ramesh Sharma')
+            ->assertJsonPath('data.children.0.route.name', 'Route A')
+            ->assertJsonPath('data.children.0.route.route_code', 'RT-PARENT-1')
             ->assertJsonStructure([
                 'message',
                 'data' => [
@@ -151,13 +152,11 @@ class ParentDashboardTest extends TestCase
                             'photo',
                             'pickup_location',
                             'drop_location',
-                            'bus' => [
+                            'route' => [
                                 'id',
-                                'bus_number',
-                                'registration_number',
-                                'status',
-                                'routes',
-                                'drivers' => [['id', 'name', 'phone']],
+                                'name',
+                                'route_code',
+                                'is_active',
                             ],
                             'today_attendance' => [
                                 'home_to_school' => ['check_in_at', 'check_out_at', 'status'],
@@ -177,7 +176,7 @@ class ParentDashboardTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'home_to_school',
             'date' => now(),
             'check_in_at' => now()->setTime(7, 15, 0),
@@ -187,7 +186,7 @@ class ParentDashboardTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'school_to_home',
             'date' => now(),
             'check_in_at' => now()->setTime(15, 30, 0),

@@ -32,14 +32,17 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['bus.routes', 'bus.drivers', 'bus.school'])
+            ->with(['route.buses.gpsDevice', 'route.school'])
             ->get();
 
-        $busIds = $children->pluck('bus_id')->filter()->unique();
+        $routeIds = $children->pluck('route_id')->filter()->unique();
 
         $locationsByBus = collect();
-        if ($busIds->isNotEmpty()) {
-            $locations = $this->fleetMap->latestLocationsByDevice($busIds, ['gpsDevice']);
+        if ($routeIds->isNotEmpty()) {
+            $locations = $this->fleetMap->latestLocationsByDevice(
+                $children->pluck('route.buses')->flatten()->pluck('gps_device_id')->filter()->values(),
+                ['gpsDevice']
+            );
 
             $locationsByBus = $locations
                 ->filter(fn ($location) => $location->gpsDevice?->bus_id)
@@ -77,7 +80,7 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['bus.routes', 'bus.drivers', 'bus.school'])
+            ->with(['route'])
             ->get();
 
         return view('parents.children', compact('user', 'children'));
@@ -98,10 +101,10 @@ class ParentDashboardController extends Controller
             abort(403, 'You are not authorized to view this student\'s attendance.');
         }
 
-        $student->load(['school', 'bus.routes']);
+        $student->load(['school', 'route']);
 
         $records = Attendance::query()
-            ->with(['bus', 'markedBy'])
+            ->with(['route', 'markedBy'])
             ->where('student_id', $student->id)
             ->orderByDesc('date')
             ->orderByDesc('created_at')

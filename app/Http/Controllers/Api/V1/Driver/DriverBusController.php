@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Driver;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bus;
+use App\Models\Student;
 use Illuminate\Http\Request;
 
 class DriverBusController extends Controller
@@ -87,7 +88,9 @@ class DriverBusController extends Controller
             ], 403);
         }
 
-        $students = $bus->students()
+        $routeIds = $bus->routes()->pluck('routes.id');
+
+        $students = Student::whereIn('route_id', $routeIds)
             ->with('parent.user')
             ->orderBy('first_name')
             ->get();

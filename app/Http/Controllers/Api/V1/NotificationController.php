@@ -128,15 +128,15 @@ class NotificationController extends Controller
         }
 
         if ($user->hasRole('Driver')) {
-            $busIds = $user->driver?->buses()->pluck('id') ?? collect();
+            $routeIds = $user->driver?->routes()->pluck('driver_route.route_id') ?? collect();
 
-            if ($busIds->isEmpty()) {
+            if ($routeIds->isEmpty()) {
                 return $query->whereRaw('0 = 1');
             }
 
-            return $query->where(function (Builder $q) use ($busIds) {
-                foreach ($busIds as $busId) {
-                    $q->orWhereRaw("json_extract(data, '$.bus_id') = ?", [$busId]);
+            return $query->where(function (Builder $q) use ($routeIds) {
+                foreach ($routeIds as $routeId) {
+                    $q->orWhereRaw("json_extract(data, '$.route_id') = ?", [$routeId]);
                 }
             });
         }
@@ -148,31 +148,31 @@ class NotificationController extends Controller
                 return $query->whereRaw('0 = 1');
             }
 
-            $busIds = \App\Models\Bus::where('school_id', $schoolId)->pluck('id');
+            $routeIds = \App\Models\Route::where('school_id', $schoolId)->pluck('id');
 
-            if ($busIds->isEmpty()) {
+            if ($routeIds->isEmpty()) {
                 return $query->whereRaw('0 = 1');
             }
 
-            return $query->where(function (Builder $q) use ($busIds) {
-                foreach ($busIds as $busId) {
-                    $q->orWhereRaw("json_extract(data, '$.bus_id') = ?", [$busId]);
+            return $query->where(function (Builder $q) use ($routeIds) {
+                foreach ($routeIds as $routeId) {
+                    $q->orWhereRaw("json_extract(data, '$.route_id') = ?", [$routeId]);
                 }
             });
         }
 
         if ($user->hasRole('Parent')) {
-            $studentBusIds = \App\Models\Student::whereHas('parent', function ($q) use ($user) {
+            $studentRouteIds = \App\Models\Student::whereHas('parent', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
-            })->pluck('bus_id')->filter();
+            })->pluck('route_id')->filter();
 
-            if ($studentBusIds->isEmpty()) {
+            if ($studentRouteIds->isEmpty()) {
                 return $query->whereRaw('0 = 1');
             }
 
-            return $query->where(function (Builder $q) use ($studentBusIds) {
-                foreach ($studentBusIds as $busId) {
-                    $q->orWhereRaw("json_extract(data, '$.bus_id') = ?", [$busId]);
+            return $query->where(function (Builder $q) use ($studentRouteIds) {
+                foreach ($studentRouteIds as $routeId) {
+                    $q->orWhereRaw("json_extract(data, '$.route_id') = ?", [$routeId]);
                 }
             });
         }

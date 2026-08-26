@@ -467,21 +467,21 @@ Route::middleware('auth')->group(function () {
         ])
         ->name('attendance.index');
 
-    Route::get('/attendance/buses/{bus}', [AttendanceController::class, 'show'])
+    Route::get('/attendance/routes/{route}', [AttendanceController::class, 'show'])
         ->middleware([
             'permission:attendance.view',
             'role:Super Admin|School Admin|Driver',
         ])
-        ->name('attendance.buses.show');
+        ->name('attendance.routes.show');
 
-    Route::get('/attendance/buses/{bus}/history', [AttendanceController::class, 'history'])
+    Route::get('/attendance/routes/{route}/history', [AttendanceController::class, 'history'])
         ->middleware([
             'permission:attendance.view',
             'role:Super Admin|School Admin|Driver',
         ])
-        ->name('attendance.buses.history');
+        ->name('attendance.routes.history');
 
-    Route::post('/attendance/buses/{bus}/students/{student}', [AttendanceController::class, 'mark'])
+    Route::post('/attendance/routes/{route}/students/{student}', [AttendanceController::class, 'mark'])
         ->middleware([
             'permission:attendance.mark',
             'role:Super Admin|School Admin|Driver',

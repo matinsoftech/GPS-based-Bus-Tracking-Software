@@ -23,7 +23,7 @@
             </div>
         @else
             @php
-                $usedBusIds = $children->pluck('bus_id')->filter()->unique();
+                $usedRouteIds = $children->pluck('route_id')->filter()->unique();
                 $onlineCount = $locationsByBus->filter(fn ($l) => $l->recorded_at?->gt(now()->subMinutes(10)))->count();
                 $pickedUp = $attendanceByStudent->filter(fn ($records) => $records->contains(
                     fn ($a) => $a->trip === \App\Models\Attendance::TRIP_HOME_TO_SCHOOL && $a->check_in_at
@@ -54,8 +54,8 @@
                     </div>
                     <div class="mt-5 flex items-end justify-between">
                         <div>
-                            <span class="text-sm text-gray-500 dark:text-gray-400">Buses In Use</span>
-                            <h4 class="mt-2 text-3xl font-bold text-gray-800 dark:text-white/90">{{ $usedBusIds->count() }}</h4>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Routes In Use</span>
+                            <h4 class="mt-2 text-3xl font-bold text-gray-800 dark:text-white/90">{{ $usedRouteIds->count() }}</h4>
                         </div>
                     </div>
                 </div>
@@ -107,8 +107,8 @@
                         <div class="mt-5 min-h-0 flex-1 space-y-4 overflow-y-auto custom-scrollbar pr-1">
                             @forelse ($children as $child)
                                 @php
-                                    $bus = $child->bus;
-                                    $location = $bus ? $locationsByBus->get($bus->id) : null;
+                                    $route = $child->route;
+                                    $location = $route?->buses->first() ? $locationsByBus->get($route->buses->first()->id) : null;
                                     $online = $location && $location->recorded_at?->gt(now()->subMinutes(10));
                                     $records = $attendanceByStudent->get($child->id, collect());
                                     $pickup = $records->firstWhere('trip', \App\Models\Attendance::TRIP_HOME_TO_SCHOOL);
@@ -135,13 +135,13 @@
 
                                     <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                                         <div class="rounded-lg bg-gray-50 p-3 dark:bg-white/[0.03]">
-                                            <p class="text-theme-xs text-gray-500 dark:text-gray-400">Assigned Bus</p>
-                                            <p class="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{{ $bus?->bus_number ?? 'Not assigned' }}</p>
-                                            <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ $bus?->routes->pluck('name')->join(', ') ?: 'No route' }}</p>
+                                            <p class="text-theme-xs text-gray-500 dark:text-gray-400">Assigned Route</p>
+                                            <p class="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{{ $route?->name ?? 'Not assigned' }}@if ($route?->route_code) ({{ $route->route_code }})@endif</p>
+                                            <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ $route?->school->name ?? '—' }}</p>
                                         </div>
                                         <div class="rounded-lg bg-gray-50 p-3 dark:bg-white/[0.03]">
                                             <p class="text-theme-xs text-gray-500 dark:text-gray-400">Driver</p>
-                                            <p class="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{{ $bus?->drivers->first()?->full_name ?? '—' }}</p>
+                                            <p class="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{{ $route?->buses->first()?->drivers->first()?->full_name ?? '—' }}</p>
                                             <p class="text-theme-xs text-gray-500 dark:text-gray-400">Speed: {{ $location?->speed ?? '—' }} km/h</p>
                                         </div>
                                         <div class="rounded-lg bg-gray-50 p-3 dark:bg-white/[0.03]">
@@ -174,7 +174,7 @@
                                         </div>
                                     </div>
 
-                                    @if ($bus)
+                                    @if ($route)
                                         <div class="mt-3 flex flex-wrap items-center gap-2">
                                             <a href="{{ route('bus_location') }}" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-theme-xs font-medium text-white hover:bg-brand-600">
                                                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,7 +229,7 @@
                                     <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 p-3 dark:border-gray-800">
                                         <div>
                                             <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $child->full_name }}</p>
-                                            <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ $child->bus?->bus_number ?? 'No bus' }}</p>
+                                            <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ $child->route?->name ?? 'No route' }}</p>
                                         </div>
                                         <div class="text-right">
                                             @if ($pickup?->check_in_at && $drop?->check_out_at)
