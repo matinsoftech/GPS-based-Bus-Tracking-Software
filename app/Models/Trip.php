@@ -106,6 +106,16 @@ class Trip extends Model
         ];
     }
 
+    public function getTripTypeLabelAttribute(): string
+    {
+        return self::types()[$this->trip_type] ?? $this->trip_type;
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return self::statuses()[$this->status] ?? $this->status;
+    }
+
     public static function tripTypeByTime(?string $time = null): string
     {
         $hour = ($time ? \Carbon\Carbon::parse($time) : now())->hour;

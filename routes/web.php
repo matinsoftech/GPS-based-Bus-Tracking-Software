@@ -5,6 +5,7 @@ use App\Http\Controllers\BusController;
 use App\Http\Controllers\BusLocationController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\DriverDashboardController;
+use App\Http\Controllers\DriverTripWebController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\ParentProfileController;
@@ -123,6 +124,26 @@ Route::middleware('auth')->group(function () {
             'role:Driver',
         ])
         ->name('driver.live-tracking');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Driver Trips (Web)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('driver')->name('driver.')->middleware(['auth', 'role:Driver'])->group(function () {
+        Route::get('/trips', [DriverTripWebController::class, 'index'])
+            ->middleware('permission:trip.view')
+            ->name('trips.index');
+
+        Route::get('/trips/start', [DriverTripWebController::class, 'create'])
+            ->middleware('permission:trip.start')
+            ->name('trips.create');
+
+        Route::post('/trips/toggle', [DriverTripWebController::class, 'toggle'])
+            ->middleware('permission:trip.start')
+            ->name('trips.toggle');
+    });
 
     /*
     |--------------------------------------------------------------------------

@@ -72,4 +72,24 @@ class BusTrackingService
             'status' => 'active',
         ]);
     }
+
+    public function getLastKnownLocation(int $busId): ?array
+    {
+        $bus = Bus::with('gpsDevice')->find($busId);
+
+        if (! $bus || ! $bus->gpsDevice) {
+            return null;
+        }
+
+        $lastLocation = $bus->gpsDevice->locations()->latest('recorded_at')->first();
+
+        if (! $lastLocation) {
+            return null;
+        }
+
+        return [
+            'latitude' => $lastLocation->latitude,
+            'longitude' => $lastLocation->longitude,
+        ];
+    }
 }

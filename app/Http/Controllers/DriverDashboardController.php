@@ -33,9 +33,11 @@ class DriverDashboardController extends Controller
         }
 
         $buses = $driver->buses()
-            ->with(['school'])
+            ->with(['school', 'activeTrip.route'])
             ->orderBy('bus_number')
             ->get();
+
+        $routes = $driver->routes()->orderBy('name')->get();
 
         $routeIds = $driver->routes()->pluck('driver_route.route_id');
         $studentsCount = \App\Models\Student::whereIn('route_id', $routeIds)->count();
@@ -61,10 +63,17 @@ class DriverDashboardController extends Controller
             ->groupBy(fn ($record) => $routeIdToBusId[$record->route_id] ?? null)
             ->map(fn ($group) => $group->pluck('student_id')->unique()->count());
 
+        $activeTrip = $driver->trips()
+            ->where('status', Trip::STATUS_IN_PROGRESS)
+            ->with(['bus', 'route'])
+            ->first();
+
         return view('driverDashboard', compact(
             'user',
             'driver',
             'buses',
+            'routes',
+            'activeTrip',
             'fleetMap',
             'fleetMapRefreshUrl',
             'checkedInByBus',

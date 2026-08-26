@@ -7,6 +7,7 @@ use App\Models\SchoolAdmin;
 use App\Models\Student;
 use App\Models\Trip;
 use App\Models\User;
+use App\Notifications\TripEndedNotification;
 use App\Notifications\TripStartedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -137,7 +138,7 @@ class DriverTripController extends Controller
         $message = null;
         $nextAction = null;
         $trip = null;
-        $shouldNotify = false;
+        $isStarting = false;
 
         if (! $lastTrip) {
             $trip = DB::transaction(function () use ($bus, $driver, $validated) {
@@ -158,7 +159,7 @@ class DriverTripController extends Controller
             $action = 'started';
             $message = 'Trip started (Home to School).';
             $nextAction = 'end_trip';
-            $shouldNotify = true;
+            $isStarting = true;
 
         } elseif ($lastTrip->trip_type === Trip::TYPE_HOME_TO_SCHOOL && $lastTrip->isCompleted()) {
             $trip = DB::transaction(function () use ($bus, $driver, $validated) {
