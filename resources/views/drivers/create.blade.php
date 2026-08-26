@@ -398,6 +398,76 @@
                 </div>
             </div>
 
+            <div>
+                <h2 class="mb-4 border-b border-gray-200 pb-3 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
+                    Assigned Buses
+                </h2>
+
+                @if ($buses->isNotEmpty())
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                        @foreach ($buses as $bus)
+                            <label class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/[0.03] cursor-pointer transition">
+                                <input
+                                    type="checkbox"
+                                    name="bus_ids[]"
+                                    value="{{ $bus->id }}"
+                                    @checked(in_array($bus->id, old('bus_ids', [])))
+                                    class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                                >
+                                <div class="min-w-0 flex-1">
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $bus->bus_number }}</span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $bus->registration_number }}</span>
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-sm text-gray-500 dark:text-gray-400">No buses available. Create buses first.</p>
+                @endif
+                @error('bus_ids')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                @error('bus_ids.*')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <h2 class="mb-4 border-b border-gray-200 pb-3 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
+                    Assigned Routes
+                </h2>
+
+                @if ($routes->isNotEmpty())
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                        @foreach ($routes as $route)
+                            <label class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/[0.03] cursor-pointer transition">
+                                <input
+                                    type="checkbox"
+                                    name="route_ids[]"
+                                    value="{{ $route->id }}"
+                                    @checked(in_array($route->id, old('route_ids', [])))
+                                    class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                                >
+                                <div class="min-w-0 flex-1">
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $route->name }}</span>
+                                    @if ($route->route_code)
+                                        <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $route->route_code }}</span>
+                                    @endif
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-sm text-gray-500 dark:text-gray-400">No routes available. Create routes first.</p>
+                @endif
+                @error('route_ids')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                @error('route_ids.*')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
             <div class="flex items-center justify-end gap-3 border-t border-gray-200 pt-6 dark:border-gray-800">
                 <a
                     href="{{ route('drivers.index') }}"

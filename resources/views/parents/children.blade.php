@@ -47,7 +47,7 @@
                             </div>
                             <div class="flex justify-between gap-3">
                                 <dt class="text-gray-500 dark:text-gray-400">Driver</dt>
-                                <dd class="font-medium text-gray-900 dark:text-white">{{ $bus?->driver?->full_name ?? '—' }}</dd>
+                                <dd class="font-medium text-gray-900 dark:text-white">{{ $bus?->drivers->first()?->full_name ?? '—' }}</dd>
                             </div>
                             <div class="flex justify-between gap-3">
                                 <dt class="text-gray-500 dark:text-gray-400">Pickup</dt>

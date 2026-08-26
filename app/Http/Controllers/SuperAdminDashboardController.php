@@ -12,6 +12,7 @@ use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
 use App\Services\FleetMapService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SuperAdminDashboardController extends Controller
@@ -21,7 +22,7 @@ class SuperAdminDashboardController extends Controller
     /**
      * Show the super admin dashboard.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -84,6 +85,26 @@ class SuperAdminDashboardController extends Controller
             'routes' => $routeCountsBySchool[$school->id] ?? 0,
         ]);
 
+        $driverQuery = Driver::with(['school', 'buses', 'routes']);
+
+        $search = $request->query('search');
+        if ($search) {
+            $driverQuery->where(function ($q) use ($search) {
+                $q->where('employee_id', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('license_number', 'like', "%{$search}%");
+            });
+        }
+
+        $statusFilter = $request->query('status');
+        if ($statusFilter) {
+            $driverQuery->where('status', $statusFilter);
+        }
+
+        $drivers = $driverQuery->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+
         return view('dashboard', compact(
             'user',
             'totalSchools',
@@ -110,6 +131,7 @@ class SuperAdminDashboardController extends Controller
             'unassignedBuses',
             'schools',
             'fleetMap',
+            'drivers',
         ));
     }
 

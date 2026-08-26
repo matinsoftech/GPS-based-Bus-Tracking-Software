@@ -141,7 +141,7 @@
                                         </div>
                                         <div class="rounded-lg bg-gray-50 p-3 dark:bg-white/[0.03]">
                                             <p class="text-theme-xs text-gray-500 dark:text-gray-400">Driver</p>
-                                            <p class="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{{ $bus?->driver?->full_name ?? '—' }}</p>
+                                            <p class="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{{ $bus?->drivers->first()?->full_name ?? '—' }}</p>
                                             <p class="text-theme-xs text-gray-500 dark:text-gray-400">Speed: {{ $location?->speed ?? '—' }} km/h</p>
                                         </div>
                                         <div class="rounded-lg bg-gray-50 p-3 dark:bg-white/[0.03]">

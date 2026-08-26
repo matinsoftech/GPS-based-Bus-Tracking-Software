@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bus;
 use App\Models\Driver;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\User;
@@ -99,7 +101,17 @@ class DriverController extends Controller
             }
         }
 
-        return view('drivers.create', compact('school', 'schools'));
+        $schoolIdForAssets = $school?->id ?? $user->school_id ?? null;
+
+        $buses = $schoolIdForAssets
+            ? Bus::where('school_id', $schoolIdForAssets)->orderBy('bus_number')->get()
+            : Bus::orderBy('bus_number')->get();
+
+        $routes = $schoolIdForAssets
+            ? Route::where('school_id', $schoolIdForAssets)->orderBy('name')->get()
+            : Route::orderBy('name')->get();
+
+        return view('drivers.create', compact('school', 'schools', 'buses', 'routes'));
     }
 
     /**
@@ -171,6 +183,12 @@ class DriverController extends Controller
             'emergency_contact_phone' => 'nullable|digits_between:10,15',
 
             'remarks' => 'nullable|string',
+
+            'bus_ids' => 'nullable|array',
+            'bus_ids.*' => 'exists:buses,id',
+
+            'route_ids' => 'nullable|array',
+            'route_ids.*' => 'exists:routes,id',
         ];
 
         /*
@@ -250,7 +268,7 @@ class DriverController extends Controller
         */
 
         try {
-            DB::transaction(function () use ($validated) {
+            DB::transaction(function () use ($validated, $request) {
                 $user = User::create([
                     'name' => trim($validated['first_name'].' '.$validated['last_name']),
                     'email' => $validated['email'],
@@ -260,10 +278,18 @@ class DriverController extends Controller
 
                 $user->assignRole('Driver');
 
-                Driver::create([
+                $driver = Driver::create([
                     ...$validated,
                     'user_id' => $user->id,
                 ]);
+
+                if ($request->filled('bus_ids')) {
+                    $driver->buses()->sync($request->input('bus_ids'));
+                }
+
+                if ($request->filled('route_ids')) {
+                    $driver->routes()->sync($request->input('route_ids'));
+                }
             });
         } catch (Throwable $e) {
             return back()
@@ -298,7 +324,14 @@ class DriverController extends Controller
     {
         $this->authorizeDriver($driver);
 
+        $driver->load(['buses', 'routes']);
+
         $user = Auth::user();
+
+        $schoolIdForAssets = $driver->school_id;
+
+        $buses = Bus::where('school_id', $schoolIdForAssets)->orderBy('bus_number')->get();
+        $routes = Route::where('school_id', $schoolIdForAssets)->orderBy('name')->get();
 
         if ($this->isSchoolLevelAdmin($user)) {
             $schoolId = $this->getUserSchoolId($user);
@@ -308,7 +341,9 @@ class DriverController extends Controller
 
                 return view('drivers.edit', compact(
                     'driver',
-                    'school'
+                    'school',
+                    'buses',
+                    'routes',
                 ));
             }
         }
@@ -317,7 +352,9 @@ class DriverController extends Controller
 
         return view('drivers.edit', compact(
             'driver',
-            'schools'
+            'schools',
+            'buses',
+            'routes',
         ));
     }
 
@@ -403,6 +440,12 @@ class DriverController extends Controller
             'emergency_contact_phone' => 'nullable|digits_between:10,15',
 
             'remarks' => 'nullable|string',
+
+            'bus_ids' => 'nullable|array',
+            'bus_ids.*' => 'exists:buses,id',
+
+            'route_ids' => 'nullable|array',
+            'route_ids.*' => 'exists:routes,id',
         ];
 
         if (! $this->isSchoolLevelAdmin($user)) {
@@ -465,7 +508,7 @@ class DriverController extends Controller
         */
 
         try {
-            DB::transaction(function () use ($driver, $validated) {
+            DB::transaction(function () use ($driver, $validated, $request) {
                 $name = trim($validated['first_name'].' '.$validated['last_name']);
 
                 if (! $driver->user) {
@@ -489,6 +532,9 @@ class DriverController extends Controller
                 }
 
                 $driver->update($validated);
+
+                $driver->buses()->sync($request->input('bus_ids', []));
+                $driver->routes()->sync($request->input('route_ids', []));
             });
         } catch (Throwable $e) {
             return back()
