@@ -99,6 +99,12 @@ Route::middleware('auth')->group(function () {
         ])
         ->name('principal.dashboard.fleet-data');
 
+    Route::prefix('principal')->name('principal.')->middleware(['auth', 'role:School Admin'])->group(function () {
+        Route::get('/trips', [PrincipalDashboardController::class, 'tripsIndex'])
+            ->middleware('permission:trip.view')
+            ->name('trips.index');
+    });
+
     /*
     |--------------------------------------------------------------------------
     | Driver Dashboard

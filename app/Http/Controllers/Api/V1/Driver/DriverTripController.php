@@ -180,7 +180,7 @@ class DriverTripController extends Controller
             $action = 'started';
             $message = 'Trip started (School to Home).';
             $nextAction = 'end_trip';
-            $shouldNotify = true;
+            $isStarting = true;
 
         } elseif ($lastTrip->trip_type === Trip::TYPE_HOME_TO_SCHOOL && $lastTrip->isInProgress()) {
             $trip = DB::transaction(function () use ($lastTrip, $validated) {
@@ -197,6 +197,7 @@ class DriverTripController extends Controller
             $action = 'ended';
             $message = 'Trip ended (Home to School).';
             $nextAction = 'start_next_trip';
+            $isStarting = false;
 
         } elseif ($lastTrip->trip_type === Trip::TYPE_SCHOOL_TO_HOME && $lastTrip->isInProgress()) {
             $trip = DB::transaction(function () use ($lastTrip, $validated) {
@@ -213,14 +214,17 @@ class DriverTripController extends Controller
             $action = 'ended';
             $message = 'Trip ended (School to Home). All trips completed for today.';
             $nextAction = 'day_complete';
+            $isStarting = false;
         }
 
         if (is_null($trip->relationLoaded('bus'))) {
             $trip->load(['bus', 'route', 'school']);
         }
 
-        if ($shouldNotify) {
+        if ($isStarting) {
             $this->notifyTripStarted($trip);
+        } else {
+            $this->notifyTripEnded($trip);
         }
 
         return response()->json([

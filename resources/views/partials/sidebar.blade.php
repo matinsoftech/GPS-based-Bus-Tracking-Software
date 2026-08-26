@@ -94,8 +94,7 @@
         [
             'title' => 'Trip Management',
             'items' => [
-                // ['key' => 'active-trips', 'label' => 'Active Trips', 'route' => 'dashboard', 'active' => 'active-trips', 'icon' => 'heroicon-o-play', 'permission' => null, 'dropdown' => null],
-                // ['key' => 'trip-history', 'label' => 'Trip History', 'route' => 'dashboard', 'active' => 'trip-history', 'icon' => 'heroicon-o-clock', 'permission' => null, 'dropdown' => null],
+                ['key' => 'trips', 'label' => 'Trips', 'route' => 'principal.trips.index', 'active' => 'trips', 'icon' => 'heroicon-o-clipboard-document-list', 'permission' => 'trip.view', 'dropdown' => null],
                 ['key' => 'attendance', 'label' => 'Attendance', 'route' => 'attendance.index', 'active' => 'attendance', 'icon' => 'heroicon-o-document-check', 'permission' => 'attendance.view', 'dropdown' => null],
             ],
         ],
