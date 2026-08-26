@@ -18,7 +18,7 @@ class RouteController extends Controller
     {
         $user = Auth::user();
 
-        $query = Route::with('school', 'buses.driver');
+        $query = Route::with('school', 'buses.drivers');
 
         if ($this->isSchoolLevelAdmin($user)) {
             $schoolId = $this->getUserSchoolId($user);
@@ -110,7 +110,7 @@ class RouteController extends Controller
     {
         $this->authorizeRoute($route);
 
-        $route->load(['school', 'buses.driver']);
+        $route->load(['school', 'buses.drivers']);
 
         return view('routes.show', compact('route'));
     }

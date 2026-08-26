@@ -46,9 +46,9 @@ class PrincipalDashboardController extends Controller
         $activeRoutes = (clone $routeQuery)->where('is_active', true)->count();
         $totalRoutes = (clone $routeQuery)->count();
 
-        $fleet = (clone $busQuery)->with('driver')->latest()->limit(5)->get();
+        $fleet = (clone $busQuery)->with('drivers')->latest()->limit(5)->get();
 
-        $upcomingRoutes = (clone $routeQuery)->with('buses.driver', 'stops')->latest()->limit(5)->get();
+        $upcomingRoutes = (clone $routeQuery)->with('buses.drivers', 'stops')->latest()->limit(5)->get();
 
         $expiringBuses = (clone $busQuery)
             ->whereNotNull('insurance_expiry_date')

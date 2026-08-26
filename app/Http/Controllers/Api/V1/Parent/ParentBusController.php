@@ -32,7 +32,7 @@ class ParentBusController extends Controller
         }
 
         $bus = $student->bus()
-            ->with(['routes.stops', 'driver', 'school'])
+            ->with(['routes.stops', 'drivers', 'school'])
             ->first();
 
         if (! $bus) {
@@ -63,11 +63,11 @@ class ParentBusController extends Controller
                     'capacity' => $bus->capacity,
                     'fuel_type' => $bus->fuel_type,
                     'status' => $bus->status,
-                    'driver' => $bus->driver ? [
-                        'id' => $bus->driver->id,
-                        'name' => $bus->driver->full_name,
-                        'phone' => $bus->driver->phone,
-                    ] : null,
+                    'drivers' => $bus->drivers->map(fn ($d) => [
+                        'id' => $d->id,
+                        'name' => $d->full_name,
+                        'phone' => $d->phone,
+                    ]),
                     'routes' => $bus->routes->map(fn ($route) => [
                         'id' => $route->id,
                         'name' => $route->name,

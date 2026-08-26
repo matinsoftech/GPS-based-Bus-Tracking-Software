@@ -75,15 +75,17 @@ class DriverLiveTrackingTest extends TestCase
 
     private function makeBus(string $busNumber, ?string $imei = null): Bus
     {
-        return Bus::create([
+        $bus = Bus::create([
             'school_id' => $this->school->id,
-            'driver_id' => $this->driver->id,
             'bus_number' => $busNumber,
             'registration_number' => 'BA '.$busNumber,
             'capacity' => 40,
             'gps_device_id' => $imei,
             'status' => 'Active',
         ]);
+        $bus->drivers()->attach($this->driver->id);
+
+        return $bus;
     }
 
     public function test_driver_gets_live_tracking_matched_by_imei(): void
@@ -269,13 +271,13 @@ class DriverLiveTrackingTest extends TestCase
 
         $otherBus = Bus::create([
             'school_id' => $this->school->id,
-            'driver_id' => $otherDriver->id,
             'bus_number' => 'LT-API-BUS-9',
             'registration_number' => 'BA LT-API-BUS-9',
             'capacity' => 40,
             'gps_device_id' => '888888888888888',
             'status' => 'Active',
         ]);
+        $otherBus->drivers()->attach($otherDriver->id);
 
         $this->fakeLiveTracking([
             [

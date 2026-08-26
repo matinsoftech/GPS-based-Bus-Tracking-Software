@@ -72,7 +72,7 @@
         <!-- Driver -->
         <div class="rounded-xl bg-gray-50/60 p-4 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/60 flex flex-col justify-between">
             <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Driver</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $route->buses->first()?->driver?->full_name ?? '—' }}</dd>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $route->buses->first()?->drivers->first()?->full_name ?? '—' }}</dd>
         </div>
 
         <!-- Buses -->

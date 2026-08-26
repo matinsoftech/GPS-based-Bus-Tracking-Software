@@ -12,6 +12,7 @@ use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
 use App\Services\FleetMapService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SuperAdminDashboardController extends Controller
@@ -21,7 +22,7 @@ class SuperAdminDashboardController extends Controller
     /**
      * Show the super admin dashboard.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -49,9 +50,9 @@ class SuperAdminDashboardController extends Controller
             ->whereNotNull('check_in_at')
             ->count();
 
-        $fleet = Bus::with(['driver', 'school', 'routes'])->latest()->limit(5)->get();
+        $fleet = Bus::with(['drivers', 'school', 'routes'])->latest()->limit(5)->get();
 
-        $latestRoutes = Route::with(['buses.driver', 'stops'])->latest()->limit(5)->get();
+        $latestRoutes = Route::with(['buses.drivers', 'stops'])->latest()->limit(5)->get();
 
         $expiringBuses = Bus::whereNotNull('insurance_expiry_date')
             ->get()
@@ -63,7 +64,7 @@ class SuperAdminDashboardController extends Controller
 
         $suspendedDrivers = Driver::where('status', 'Suspended')->limit(4)->get();
 
-        $unassignedBuses = Bus::whereNull('driver_id')->latest()->limit(4)->get();
+        $unassignedBuses = Bus::whereDoesntHave('drivers')->latest()->limit(4)->get();
 
         $busCountsBySchool = Bus::selectRaw('school_id, count(*) as total')
             ->groupBy('school_id')
@@ -83,6 +84,26 @@ class SuperAdminDashboardController extends Controller
             'students' => $studentCountsBySchool[$school->id] ?? 0,
             'routes' => $routeCountsBySchool[$school->id] ?? 0,
         ]);
+
+        $driverQuery = Driver::with(['school', 'buses', 'routes']);
+
+        $search = $request->query('search');
+        if ($search) {
+            $driverQuery->where(function ($q) use ($search) {
+                $q->where('employee_id', 'like', "%{$search}%")
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('license_number', 'like', "%{$search}%");
+            });
+        }
+
+        $statusFilter = $request->query('status');
+        if ($statusFilter) {
+            $driverQuery->where('status', $statusFilter);
+        }
+
+        $drivers = $driverQuery->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
         return view('dashboard', compact(
             'user',
@@ -110,6 +131,7 @@ class SuperAdminDashboardController extends Controller
             'unassignedBuses',
             'schools',
             'fleetMap',
+            'drivers',
         ));
     }
 

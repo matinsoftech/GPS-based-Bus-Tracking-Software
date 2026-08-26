@@ -83,12 +83,12 @@ class ParentDashboardTest extends TestCase
 
         $this->bus = Bus::create([
             'school_id' => $this->school->id,
-            'driver_id' => $driver->id,
             'bus_number' => 'PARENT-BUS-1',
             'registration_number' => 'BA PARENT-BUS-1',
             'capacity' => 40,
             'status' => 'Active',
         ]);
+        $this->bus->drivers()->attach($driver->id);
     }
 
     private function makeStudent(array $overrides = []): Student
@@ -125,7 +125,7 @@ class ParentDashboardTest extends TestCase
             ->assertJsonCount(2, 'data.children')
             ->assertJsonPath('data.children.0.full_name', 'Sita Bahadur')
             ->assertJsonPath('data.children.0.bus.bus_number', 'PARENT-BUS-1')
-            ->assertJsonPath('data.children.0.bus.driver.name', 'Ramesh Sharma')
+            ->assertJsonPath('data.children.0.bus.drivers.0.name', 'Ramesh Sharma')
             ->assertJsonStructure([
                 'message',
                 'data' => [
@@ -157,7 +157,7 @@ class ParentDashboardTest extends TestCase
                                 'registration_number',
                                 'status',
                                 'routes',
-                                'driver' => ['id', 'name', 'phone'],
+                                'drivers' => [['id', 'name', 'phone']],
                             ],
                             'today_attendance' => [
                                 'home_to_school' => ['check_in_at', 'check_out_at', 'status'],

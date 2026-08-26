@@ -32,7 +32,7 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['bus.routes', 'bus.driver', 'bus.school'])
+            ->with(['bus.routes', 'bus.drivers', 'bus.school'])
             ->get();
 
         $busIds = $children->pluck('bus_id')->filter()->unique();
@@ -77,7 +77,7 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['bus.routes', 'bus.driver', 'bus.school'])
+            ->with(['bus.routes', 'bus.drivers', 'bus.school'])
             ->get();
 
         return view('parents.children', compact('user', 'children'));

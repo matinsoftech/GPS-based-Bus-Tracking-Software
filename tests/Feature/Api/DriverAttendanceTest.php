@@ -60,12 +60,12 @@ class DriverAttendanceTest extends TestCase
 
         $this->bus = Bus::create([
             'school_id' => $this->school->id,
-            'driver_id' => $this->driver->id,
             'bus_number' => 'API-BUS-1',
             'registration_number' => 'BA API-BUS-1',
             'capacity' => 40,
             'status' => 'Active',
         ]);
+        $this->bus->drivers()->attach($this->driver->id);
     }
 
     private function makeStudent(array $overrides = []): Student
@@ -168,12 +168,12 @@ class DriverAttendanceTest extends TestCase
 
         $otherBus = Bus::create([
             'school_id' => $this->school->id,
-            'driver_id' => $otherDriver->id,
             'bus_number' => 'API-BUS-2',
             'registration_number' => 'BA API-BUS-2',
             'capacity' => 40,
             'status' => 'Active',
         ]);
+        $otherBus->drivers()->attach($otherDriver->id);
 
         Sanctum::actingAs($this->driverUser);
 
@@ -316,12 +316,12 @@ class DriverAttendanceTest extends TestCase
 
         $otherBus = Bus::create([
             'school_id' => $this->school->id,
-            'driver_id' => $otherDriver->id,
             'bus_number' => 'API-BUS-3',
             'registration_number' => 'BA API-BUS-3',
             'capacity' => 40,
             'status' => 'Active',
         ]);
+        $otherBus->drivers()->attach($otherDriver->id);
 
         $student = $this->makeStudent(['bus_id' => $otherBus->id]);
 
@@ -384,12 +384,12 @@ class DriverAttendanceTest extends TestCase
 
         $otherBus = Bus::create([
             'school_id' => $this->school->id,
-            'driver_id' => $otherDriver->id,
             'bus_number' => 'API-BUS-4',
             'registration_number' => 'BA API-BUS-4',
             'capacity' => 40,
             'status' => 'Active',
         ]);
+        $otherBus->drivers()->attach($otherDriver->id);
 
         $student = $this->makeStudent();
 
@@ -494,12 +494,12 @@ class DriverAttendanceTest extends TestCase
 
         $otherBus = Bus::create([
             'school_id' => $this->school->id,
-            'driver_id' => $otherDriver->id,
             'bus_number' => 'API-BUS-5',
             'registration_number' => 'BA API-BUS-5',
             'capacity' => 40,
             'status' => 'Active',
         ]);
+        $otherBus->drivers()->attach($otherDriver->id);
 
         Sanctum::actingAs($this->driverUser);
 

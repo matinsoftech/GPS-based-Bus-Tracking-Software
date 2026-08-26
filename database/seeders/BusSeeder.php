@@ -153,10 +153,13 @@ class BusSeeder extends Seeder
                     ['bus_number' => $data['bus_number']],
                     array_merge($data, [
                         'school_id' => $school->id,
-                        'driver_id' => $driverId,
                         'created_by' => $creator->id,
                     ])
                 );
+
+                if ($driverId) {
+                    $bus->drivers()->syncWithoutDetaching([$driverId]);
+                }
             }
         });
 

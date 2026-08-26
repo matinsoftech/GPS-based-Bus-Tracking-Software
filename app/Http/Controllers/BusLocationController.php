@@ -32,7 +32,7 @@ class BusLocationController extends Controller
             $parent = ParentProfile::where('user_id', $user->id)->first();
 
             $children = $parent
-                ? $parent->children()->with(['bus.routes.stops', 'bus.driver', 'bus.school'])->get()
+                ? $parent->children()->with(['bus.routes.stops', 'bus.drivers', 'bus.school'])->get()
                 : collect();
 
             $selectedChildId = $request->query('child_id');
@@ -45,7 +45,7 @@ class BusLocationController extends Controller
 
             if ($routes) {
                 foreach ($routes as $route) {
-                    $route->load(['stops', 'school', 'buses.driver']);
+                    $route->load(['stops', 'school', 'buses.drivers']);
                 }
             }
 
@@ -70,7 +70,7 @@ class BusLocationController extends Controller
 
         if ($user->hasRole('Driver')) {
             $driver = Driver::where('user_id', $user->id)->first();
-            $allowedBusIds = $driver ? $driver->buses()->pluck('buses.id') : collect();
+            $allowedBusIds = $driver ? $driver->buses()->pluck('id') : collect();
         } elseif ($user->hasRole('School Admin')) {
             $schoolId = $user->school_id
                 ?? SchoolAdmin::where('user_id', $user->id)->value('school_id');
@@ -126,7 +126,7 @@ class BusLocationController extends Controller
             $schoolId = $user->school_id
                 ?? SchoolAdmin::where('user_id', $user->id)->value('school_id');
 
-            $bus = Bus::with(['routes.stops', 'driver', 'school'])->find($busId);
+            $bus = Bus::with(['routes.stops', 'drivers', 'school'])->find($busId);
 
             if (! $bus || ($schoolId && $bus->school_id != $schoolId)) {
                 abort(403, 'You are not authorized to view this bus.');
@@ -140,7 +140,7 @@ class BusLocationController extends Controller
 
         if ($user->hasRole('Driver')) {
             $driver = Driver::where('user_id', $user->id)->first();
-            $allowedBusIds = $driver ? $driver->buses()->pluck('buses.id') : collect();
+            $allowedBusIds = $driver ? $driver->buses()->pluck('id') : collect();
         } elseif ($user->hasRole('School Admin')) {
             $schoolId = $user->school_id
                 ?? SchoolAdmin::where('user_id', $user->id)->value('school_id');

@@ -6,7 +6,7 @@
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     {{ $bus->school->name ?? '—' }} ·
                     Route: {{ $bus->routes->pluck('name')->join(', ') ?: '—' }} ·
-                    Driver: {{ $bus->driver?->full_name ?? '—' }}
+                    Driver: {{ $bus->drivers->first()?->full_name ?? '—' }}
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">

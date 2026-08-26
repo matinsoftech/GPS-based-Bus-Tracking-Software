@@ -51,14 +51,14 @@ class DriverControllerTest extends TestCase
             'created_by' => $driverUser->id,
         ]);
 
-        Bus::create([
+        $bus = Bus::create([
             'school_id' => $school->id,
-            'driver_id' => $driver->id,
             'bus_number' => 'LT-BUS-1',
             'registration_number' => 'BA LT-BUS-1',
             'capacity' => 40,
             'status' => 'Active',
         ]);
+        $bus->drivers()->attach($driver->id);
 
         $response = $this->actingAs($driverUser)->get(route('driver.live-tracking'));
         $response->assertOk();

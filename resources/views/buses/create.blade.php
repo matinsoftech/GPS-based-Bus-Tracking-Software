@@ -299,26 +299,26 @@
                     </div>
 
                     <div>
-                        <label for="driver_id" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Driver</label>
-                        @if ($drivers->isEmpty())
-                            <p class="text-sm text-gray-500 dark:text-gray-400">
-                                No drivers available. <a href="{{ route('drivers.create') }}" class="text-brand-500 hover:text-brand-600">Create a driver</a> first to assign them to this bus.
-                            </p>
-                        @else
-                            <select
-                                id="driver_id"
-                                name="driver_id"
-                                class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                            >
-                                <option value="">No driver</option>
-                                @foreach ($drivers as $driver)
-                                    <option value="{{ $driver->id }}" @selected(old('driver_id') == $driver->id)>{{ $driver->full_name }} ({{ $driver->employee_id }})</option>
-                                @endforeach
-                            </select>
-                            @error('driver_id')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        @endif
+                        <label for="driver_ids" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Drivers</label>
+                        <div class="max-h-48 overflow-y-auto rounded-lg border border-gray-300 p-3 dark:border-gray-600 dark:bg-gray-800">
+                            @forelse ($drivers as $driver)
+                                <label class="flex items-center gap-2 py-1">
+                                    <input
+                                        type="checkbox"
+                                        name="driver_ids[]"
+                                        value="{{ $driver->id }}"
+                                        @checked(in_array($driver->id, old('driver_ids', [])))
+                                        class="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                                    >
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ $driver->full_name }} ({{ $driver->employee_id }})</span>
+                                </label>
+                            @empty
+                                <p class="text-sm text-gray-500 dark:text-gray-400">No drivers available.</p>
+                            @endforelse
+                        </div>
+                        @error('driver_ids')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
             </div>

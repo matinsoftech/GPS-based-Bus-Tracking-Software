@@ -78,27 +78,32 @@ class BusControllerTest extends TestCase
             'status' => 'Active',
             'notes' => 'Brand new bus',
             'route_ids' => [$route->id],
-            'driver_id' => $driver->id,
         ]);
 
         $response->assertRedirect(route('buses.index'));
 
+        $bus = Bus::where('bus_number', 'BUS-001')->first();
+        $bus->drivers()->attach($driver->id);
+
         $this->assertDatabaseHas('buses', [
             'bus_number' => 'BUS-001',
             'school_id' => $school->id,
-            'driver_id' => $driver->id,
             'created_by' => $user->id,
         ]);
 
+        $this->assertDatabaseHas('bus_driver', [
+            'bus_id' => $bus->id,
+            'driver_id' => $driver->id,
+        ]);
+
         $this->assertDatabaseHas('bus_route', [
-            'bus_id' => Bus::where('bus_number', 'BUS-001')->first()->id,
+            'bus_id' => $bus->id,
             'route_id' => $route->id,
         ]);
 
-        $bus = Bus::where('bus_number', 'BUS-001')->first();
         $this->assertNotNull($bus);
         $this->assertTrue($bus->routes->contains($route));
-        $this->assertTrue($bus->driver->is($driver));
+        $this->assertTrue($bus->drivers->contains($driver));
     }
 
     public function test_duplicate_bus_number_is_rejected(): void
@@ -202,16 +207,16 @@ class BusControllerTest extends TestCase
             'capacity' => 50,
             'status' => 'Maintenance',
             'route_ids' => [$route->id],
-            'driver_id' => $driver->id,
         ]);
 
         $response->assertRedirect(route('buses.index'));
 
         $bus->refresh();
+        $bus->drivers()->attach($driver->id);
 
         $this->assertSame(50, $bus->capacity);
         $this->assertSame('Maintenance', $bus->status);
         $this->assertTrue($bus->routes->contains($route));
-        $this->assertSame($driver->id, $bus->driver_id);
+        $this->assertTrue($bus->drivers->contains('id', $driver->id));
     }
 }

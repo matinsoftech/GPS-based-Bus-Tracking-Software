@@ -118,13 +118,13 @@ class ParentBusTest extends TestCase
 
         $this->bus = Bus::create([
             'school_id' => $this->school->id,
-            'driver_id' => $this->driver->id,
             'bus_number' => 'PARENT-BUS-1',
             'registration_number' => 'BA PARENT-BUS-1',
             'capacity' => 40,
             'gps_device_id' => '123456789012345',
             'status' => 'Active',
         ]);
+        $this->bus->drivers()->attach($this->driver->id);
         $this->bus->routes()->attach($this->route->id);
     }
 
@@ -188,7 +188,7 @@ class ParentBusTest extends TestCase
             ->assertJsonPath('message', 'Parent child bus data.')
             ->assertJsonPath('data.student.full_name', 'Sita Bahadur')
             ->assertJsonPath('data.bus.bus_number', 'PARENT-BUS-1')
-            ->assertJsonPath('data.bus.driver.name', 'Ramesh Sharma')
+            ->assertJsonPath('data.bus.drivers.0.name', 'Ramesh Sharma')
             ->assertJsonPath('data.bus.routes.0.name', 'Route 1')
             ->assertJsonCount(2, 'data.bus.routes.0.stops')
             ->assertJsonPath('data.bus.routes.0.stops.0.name', 'Chabahil')
@@ -211,7 +211,7 @@ class ParentBusTest extends TestCase
                         'capacity',
                         'fuel_type',
                         'status',
-                        'driver' => ['id', 'name', 'phone'],
+                        'drivers' => [['id', 'name', 'phone']],
                         'routes' => [
                             [
                                 'id',

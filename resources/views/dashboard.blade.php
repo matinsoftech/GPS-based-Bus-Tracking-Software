@@ -82,6 +82,28 @@
             </div>
         </div>
 
+        {{-- Tab Navigation --}}
+        <div x-data="{ activeTab: 'overview' }" class="mt-6">
+            <div class="mb-6 flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-1 dark:border-gray-800 dark:bg-white/[0.03] w-fit">
+                <button
+                    @click="activeTab = 'overview'"
+                    :class="activeTab === 'overview' ? 'bg-brand-500 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                >
+                    Overview
+                </button>
+                <button
+                    @click="activeTab = 'drivers'"
+                    :class="activeTab === 'drivers' ? 'bg-brand-500 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'"
+                    class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                >
+                    Drivers <span class="ml-1 rounded-full bg-white/20 px-1.5 py-0.5 text-xs">{{ $totalDrivers }}</span>
+                </button>
+            </div>
+
+            {{-- Overview Tab --}}
+            <div x-show="activeTab === 'overview'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+
         @include('partials.fleet-map', [
             'fleetMap' => $fleetMap,
             'fleetMapRefreshUrl' => route('dashboard.fleet-data'),
@@ -159,9 +181,9 @@
                                                 @endif
                                             </td>
                                             <td class="py-3.5">
-                                                @if ($bus->driver)
+                                                @if ($bus->drivers->isNotEmpty())
                                                     <span class="text-theme-xs inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                                                        {{ $bus->driver->full_name }}
+                                                        {{ $bus->drivers->first()?->full_name }}
                                                     </span>
                                                 @else
                                                     <span class="text-theme-xs text-gray-400 dark:text-gray-500">No driver</span>
@@ -395,6 +417,154 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        {{-- Drivers Tab --}}
+        <div x-show="activeTab === 'drivers'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+            <div class="flex flex-col rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="flex flex-col gap-4 border-b border-gray-200 p-5 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">All Drivers</h3>
+                    <div class="flex items-center gap-3">
+                        <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-2">
+                            <div class="relative">
+                                <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search drivers..." class="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:w-64">
+                            </div>
+                            <select name="status" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                                <option value="">All Status</option>
+                                <option value="Active" {{ request('status') === 'Active' ? 'selected' : '' }}>Active</option>
+                                <option value="On Leave" {{ request('status') === 'On Leave' ? 'selected' : '' }}>On Leave</option>
+                                <option value="Suspended" {{ request('status') === 'Suspended' ? 'selected' : '' }}>Suspended</option>
+                                <option value="Inactive" {{ request('status') === 'Inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                            <button type="submit" class="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">Filter</button>
+                            @if (request('search') || request('status'))
+                                <a href="{{ route('dashboard') }}" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">Clear</a>
+                            @endif
+                        </form>
+                        <a href="{{ route('drivers.create') }}" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Add Driver
+                        </a>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="border-b border-gray-200 text-theme-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                            <tr>
+                                <th class="px-6 py-4 font-medium">Driver</th>
+                                <th class="px-6 py-4 font-medium">Employee ID</th>
+                                <th class="px-6 py-4 font-medium">School</th>
+                                <th class="px-6 py-4 font-medium">Phone</th>
+                                <th class="px-6 py-4 font-medium">Assigned Buses</th>
+                                <th class="px-6 py-4 font-medium">Assigned Routes</th>
+                                <th class="px-6 py-4 font-medium">Status</th>
+                                <th class="px-6 py-4 text-right font-medium">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                            @forelse ($drivers as $driver)
+                                <tr class="text-gray-700 dark:text-gray-200">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            @if ($driver->photo)
+                                                <img src="{{ Storage::url($driver->photo) }}" alt="{{ $driver->full_name }}" class="h-9 w-9 rounded-full object-cover">
+                                            @else
+                                                <div class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+                                                    <span class="text-sm font-semibold">{{ strtoupper(substr($driver->first_name, 0, 1) . substr($driver->last_name, 0, 1)) }}</span>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <a href="{{ route('drivers.show', $driver) }}" class="font-medium text-gray-800 hover:text-brand-500 dark:text-white/90">{{ $driver->full_name }}</a>
+                                                <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ $driver->user?->email }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-theme-xs">{{ $driver->employee_id }}</td>
+                                    <td class="px-6 py-4 text-theme-xs">{{ $driver->school?->name ?? '—' }}</td>
+                                    <td class="px-6 py-4 text-theme-xs">{{ $driver->phone }}</td>
+                                    <td class="px-6 py-4">
+                                        @if ($driver->buses->isNotEmpty())
+                                            @foreach ($driver->buses->take(2) as $bus)
+                                                <span class="mr-1 inline-flex items-center rounded-full bg-success-50 px-2 py-0.5 text-theme-xs font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500">{{ $bus->bus_number }}</span>
+                                            @endforeach
+                                            @if ($driver->buses->count() > 2)
+                                                <span class="text-theme-xs text-gray-400">+{{ $driver->buses->count() - 2 }}</span>
+                                            @endif
+                                        @else
+                                            <span class="text-theme-xs text-gray-400 dark:text-gray-500">None</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @if ($driver->routes->isNotEmpty())
+                                            @foreach ($driver->routes->take(2) as $route)
+                                                <span class="mr-1 inline-flex items-center rounded-full bg-warning-50 px-2 py-0.5 text-theme-xs font-medium text-warning-600 dark:bg-warning-500/15 dark:text-warning-500">{{ $route->name }}</span>
+                                            @endforeach
+                                            @if ($driver->routes->count() > 2)
+                                                <span class="text-theme-xs text-gray-400">+{{ $driver->routes->count() - 2 }}</span>
+                                            @endif
+                                        @else
+                                            <span class="text-theme-xs text-gray-400 dark:text-gray-500">None</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @if ($driver->status === 'Active')
+                                            <span class="rounded-full bg-success-50 px-2 py-0.5 text-theme-xs font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500">Active</span>
+                                        @elseif ($driver->status === 'On Leave')
+                                            <span class="rounded-full bg-warning-50 px-2 py-0.5 text-theme-xs font-medium text-warning-600 dark:bg-warning-500/15 dark:text-warning-500">On Leave</span>
+                                        @elseif ($driver->status === 'Suspended')
+                                            <span class="rounded-full bg-error-50 px-2 py-0.5 text-theme-xs font-medium text-error-600 dark:bg-error-500/15 dark:text-error-500">Suspended</span>
+                                        @else
+                                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-theme-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">Inactive</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <a href="{{ route('drivers.show', $driver) }}" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300" title="View">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            </a>
+                                            <a href="{{ route('drivers.edit', $driver) }}" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-brand-500 dark:hover:bg-gray-800" title="Edit">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center">
+                                            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                                                <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                            </div>
+                                            <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                                                @if (request('search') || request('status'))
+                                                    No drivers match your filters.
+                                                @else
+                                                    No drivers registered yet.
+                                                @endif
+                                            </p>
+                                            @if (!request('search') && !request('status'))
+                                                <a href="{{ route('drivers.create') }}" class="mt-3 inline-flex rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                                                    Add your first driver
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                @if ($drivers->hasPages())
+                    <div class="border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+                        {{ $drivers->links() }}
+                    </div>
+                @endif
+            </div>
+        </div>
+
         </div>
     </div>
 </x-app-layout>

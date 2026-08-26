@@ -59,7 +59,12 @@ class Driver extends Model
 
     public function buses()
     {
-        return $this->hasMany(Bus::class);
+        return $this->belongsToMany(Bus::class, 'bus_driver', 'driver_id', 'bus_id');
+    }
+
+    public function routes()
+    {
+        return $this->belongsToMany(Route::class, 'driver_route', 'driver_id', 'route_id');
     }
 
     public function trips()
@@ -74,14 +79,7 @@ class Driver extends Model
 
     public function attendances()
     {
-        return $this->hasManyThrough(
-            Attendance::class,
-            Bus::class,
-            'driver_id', // FK on buses
-            'bus_id',    // FK on attendances
-            'id',        // local key on drivers
-            'id',        // local key on buses
-        );
+        return Attendance::whereIn('bus_id', $this->buses()->pluck('buses.id'));
     }
 
     public function getFullNameAttribute(): string

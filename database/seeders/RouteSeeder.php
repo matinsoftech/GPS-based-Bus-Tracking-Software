@@ -128,10 +128,14 @@ class RouteSeeder extends Seeder
                     ])
                 );
 
+                if ($driver) {
+                    $route->drivers()->syncWithoutDetaching([$driver->id]);
+                }
+
                 Bus::whereIn('bus_number', $busNumbers)->each(function ($bus) use ($route, $driver) {
                     $bus->routes()->syncWithoutDetaching([$route->id]);
                     if ($driver) {
-                        $bus->update(['driver_id' => $driver->id]);
+                        $bus->drivers()->syncWithoutDetaching([$driver->id]);
                     }
                 });
 

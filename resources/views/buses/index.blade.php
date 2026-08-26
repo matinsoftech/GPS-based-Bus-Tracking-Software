@@ -81,7 +81,7 @@
                             </td>
                             <td class="px-5 py-3">{{ $bus->capacity }}</td>
                             <td class="px-5 py-3">{{ $bus->routes->pluck('name')->join(', ') ?: '—' }}</td>
-                            <td class="px-5 py-3">{{ $bus->driver?->full_name ?? '—' }}</td>
+                            <td class="px-5 py-3">{{ $bus->drivers->first()?->full_name ?? '—' }}</td>
                             <td class="px-5 py-3">{{ $bus->school->name ?? '—' }}</td>
                             <td class="px-5 py-3">
                                 @if ($bus->status === 'Active')

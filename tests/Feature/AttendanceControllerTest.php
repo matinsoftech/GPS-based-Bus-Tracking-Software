@@ -62,14 +62,19 @@ class AttendanceControllerTest extends TestCase
 
     private function createBus(School $school, string $busNumber, ?Driver $driver = null): Bus
     {
-        return Bus::create([
+        $bus = Bus::create([
             'school_id' => $school->id,
             'bus_number' => $busNumber,
             'registration_number' => "BA {$busNumber}",
             'capacity' => 40,
             'status' => 'Active',
-            'driver_id' => $driver?->id,
         ]);
+
+        if ($driver) {
+            $bus->drivers()->attach($driver->id);
+        }
+
+        return $bus;
     }
 
     private function createStudent(School $school, Bus $bus, string $admissionNo, ?ParentProfile $parent = null): Student
