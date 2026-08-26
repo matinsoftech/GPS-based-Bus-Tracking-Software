@@ -134,7 +134,7 @@ class DriverController extends Controller
 
             'date_of_birth' => 'required|date|before:today',
 
-            'phone' => 'required|digits_between:10,15',
+            'phone' => ['required', 'regex:/^[+]?[\d\s\-\(\)]{10,20}$/'],
 
             'email' => 'required|email|max:255|unique:users,email',
 
@@ -180,7 +180,7 @@ class DriverController extends Controller
 
             'emergency_contact_name' => 'nullable|string|max:100',
 
-            'emergency_contact_phone' => 'nullable|digits_between:10,15',
+            'emergency_contact_phone' => ['nullable', 'regex:/^[+]?[\d\s\-\(\)]{10,20}$/'],
 
             'remarks' => 'nullable|string',
 
@@ -388,11 +388,12 @@ class DriverController extends Controller
 
             'date_of_birth' => 'required|date|before:today',
 
-            'phone' => 'required|digits_between:10,15',
+            'phone' => ['required', 'regex:/^[+]?[\d\s\-\(\)]{10,20}$/'],
 
             'email' => 'required|email|max:255|unique:users,email,'.$driver->user_id,
 
             'password' => [
+                'nullable',
                 Rule::requiredIf(! $driver->user),
                 'min:8',
             ],
@@ -437,7 +438,7 @@ class DriverController extends Controller
 
             'emergency_contact_name' => 'nullable|string|max:100',
 
-            'emergency_contact_phone' => 'nullable|digits_between:10,15',
+            'emergency_contact_phone' => ['nullable', 'regex:/^[+]?[\d\s\-\(\)]{10,20}$/'],
 
             'remarks' => 'nullable|string',
 
