@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Parent;
 
 use App\Http\Controllers\Controller;
 use App\Models\Student;
+use App\Models\Trip;
 use App\Services\NazarTrackService;
 use Illuminate\Http\Request;
 
@@ -32,7 +33,7 @@ class ParentBusController extends Controller
         }
 
         $route = $student->route()
-            ->with(['stops', 'buses.gpsDevice', 'drivers', 'school'])
+            ->with(['stops', 'drivers', 'school'])
             ->first();
 
         if (! $route) {
@@ -40,6 +41,11 @@ class ParentBusController extends Controller
                 'message' => 'Route not found for this child.',
             ], 404);
         }
+
+        $activeTrip = Trip::where('route_id', $route->id)
+            ->where('status', 'in_progress')
+            ->with(['bus.gpsDevice', 'driver'])
+            ->first();
 
         return response()->json([
             'message' => 'Parent child route data.',
@@ -74,21 +80,21 @@ class ParentBusController extends Controller
                         'name' => $d->full_name,
                         'phone' => $d->phone,
                     ]),
-                    'buses' => $route->buses->map(fn ($bus) => [
-                        'id' => $bus->id,
-                        'bus_number' => $bus->bus_number,
-                        'registration_number' => $bus->registration_number,
-                        'capacity' => $bus->capacity,
-                        'status' => $bus->status,
-                        'gps_device_id' => $bus->gps_device_id,
-                    ]),
+                    'buses' => $activeTrip?->bus ? [[
+                        'id' => $activeTrip->bus->id,
+                        'bus_number' => $activeTrip->bus->bus_number,
+                        'registration_number' => $activeTrip->bus->registration_number,
+                        'capacity' => $activeTrip->bus->capacity,
+                        'status' => $activeTrip->bus->status,
+                        'gps_device_id' => $activeTrip->bus->gps_device_id,
+                    ]] : [],
                     'school' => $route->school ? [
                         'id' => $route->school->id,
                         'name' => $route->school->name,
                         'address' => $route->school->address,
                     ] : null,
                 ],
-                'live_location' => $this->gps->locationPayload($route->buses->first()),
+                'live_location' => $this->gps->locationPayload($activeTrip?->bus),
             ],
         ]);
     }

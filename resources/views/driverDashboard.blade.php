@@ -114,7 +114,7 @@
                         <dl class="mb-4 flex-1 space-y-1.5 text-sm">
                             <div class="flex justify-between gap-3">
                                 <dt class="text-gray-500 dark:text-gray-400">Route</dt>
-                                <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->routes->pluck('name')->join(', ') ?: '—' }}</dd>
+                                <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->activeTrip?->route?->name ?: '—' }}</dd>
                             </div>
                             <div class="flex justify-between gap-3">
                                 <dt class="text-gray-500 dark:text-gray-400">Capacity</dt>

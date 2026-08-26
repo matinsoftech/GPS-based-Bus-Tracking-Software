@@ -32,22 +32,24 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['route.buses.gpsDevice', 'route.school'])
+            ->with(['route.school', 'route.activeTrip.bus.gpsDevice', 'route.activeTrip.driver'])
             ->get();
 
-        $routeIds = $children->pluck('route_id')->filter()->unique();
+        // Resolve active trip for each child and attach as attribute
+        $children->each(function ($child) {
+            $child->setAttribute('activeTrip', $child->route?->activeTrip);
+        });
 
-        $locationsByBus = collect();
-        if ($routeIds->isNotEmpty()) {
-            $locations = $this->fleetMap->latestLocationsByDevice(
-                $children->pluck('route.buses')->flatten()->pluck('gps_device_id')->filter()->values(),
-                ['gpsDevice']
-            );
+        // Build locations keyed by bus_id from active trips
+        $activeBuses = $children
+            ->filter(fn ($child) => $child->getAttribute('activeTrip')?->bus)
+            ->pluck('activeTrip.bus')
+            ->unique('id');
 
-            $locationsByBus = $locations
-                ->filter(fn ($location) => $location->gpsDevice?->bus_id)
-                ->keyBy(fn ($location) => $location->gpsDevice->bus_id);
-        }
+        $locationsByBus = $this->fleetMap->latestLocationsByDevice(
+            $activeBuses->pluck('id')->values(),
+            ['gpsDevice']
+        )->keyBy(fn ($location) => $location->gpsDevice?->bus_id);
 
         $attendanceByStudent = Attendance::whereIn('student_id', $children->pluck('id'))
             ->where('date', today())
@@ -80,7 +82,7 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['route'])
+            ->with(['route', 'route.activeTrip.driver'])
             ->get();
 
         return view('parents.children', compact('user', 'children'));

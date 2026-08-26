@@ -43,11 +43,6 @@ class Bus extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function routes()
-    {
-        return $this->belongsToMany(Route::class, 'bus_route', 'bus_id', 'route_id');
-    }
-
     public function drivers()
     {
         return $this->belongsToMany(Driver::class, 'bus_driver', 'bus_id', 'driver_id');

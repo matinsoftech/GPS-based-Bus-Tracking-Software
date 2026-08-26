@@ -18,7 +18,10 @@
         @else
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 @foreach ($children as $child)
-                    @php $route = $child->route; @endphp
+                    @php
+                        $route = $child->route;
+                        $activeTrip = $route?->activeTrip;
+                    @endphp
                     <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
                         <div class="flex items-center gap-3">
                             <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-lg font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
@@ -43,7 +46,7 @@
                             </div>
                             <div class="flex justify-between gap-3">
                                 <dt class="text-gray-500 dark:text-gray-400">Driver</dt>
-                                <dd class="font-medium text-gray-900 dark:text-white">{{ $route?->buses->first()?->drivers->first()?->full_name ?? '—' }}</dd>
+                                <dd class="font-medium text-gray-900 dark:text-white">{{ $activeTrip?->driver?->full_name ?? 'No bus running' }}</dd>
                             </div>
                             <div class="flex justify-between gap-3">
                                 <dt class="text-gray-500 dark:text-gray-400">Pickup</dt>

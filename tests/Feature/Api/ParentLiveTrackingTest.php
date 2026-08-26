@@ -8,6 +8,7 @@ use App\Models\ParentProfile;
 use App\Models\Route;
 use App\Models\School;
 use App\Models\Student;
+use App\Models\Trip;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -28,6 +29,8 @@ class ParentLiveTrackingTest extends TestCase
     private ParentProfile $parent;
 
     private Route $route;
+
+    private Driver $driver;
 
     protected function setUp(): void
     {
@@ -65,7 +68,7 @@ class ParentLiveTrackingTest extends TestCase
         ]);
 
         $driverUser = User::factory()->create();
-        $driver = Driver::create([
+        $this->driver = Driver::create([
             'school_id' => $this->school->id,
             'user_id' => $driverUser->id,
             'employee_id' => 'DR-LIVE-1',
@@ -126,18 +129,33 @@ class ParentLiveTrackingTest extends TestCase
         ], $overrides));
     }
 
-    private function makeBus(string $busNumber, ?string $imei = null, ?Route $route = null): Bus
+    private function makeBus(string $busNumber, ?string $imei = null, ?Route $route = null, ?Driver $driver = null): Bus
     {
+        $uniqueSuffix = bin2hex(random_bytes(3));
         $bus = Bus::create([
             'school_id' => $this->school->id,
-            'bus_number' => $busNumber,
-            'registration_number' => 'BA '.$busNumber,
+            'bus_number' => $busNumber.'-'.$uniqueSuffix,
+            'registration_number' => 'BA '.$busNumber.'.'.$uniqueSuffix,
             'capacity' => 40,
-            'gps_device_id' => $imei,
+            'gps_device_id' => $imei ?? 'IMEI-'.bin2hex(random_bytes(7)),
             'status' => 'Active',
         ]);
 
-        $bus->routes()->attach($route?->id ?? $this->route->id);
+        if ($driver) {
+            $bus->drivers()->attach($driver->id);
+            if ($route) {
+                $route->drivers()->attach($driver->id);
+                Trip::create([
+                    'bus_id' => $bus->id,
+                    'driver_id' => $driver->id,
+                    'route_id' => $route->id,
+                    'school_id' => $this->school->id,
+                    'trip_type' => Trip::TYPE_HOME_TO_SCHOOL,
+                    'status' => Trip::STATUS_IN_PROGRESS,
+                    'started_at' => now(),
+                ]);
+            }
+        }
 
         return $bus;
     }
@@ -155,13 +173,33 @@ class ParentLiveTrackingTest extends TestCase
 
     public function test_parent_can_view_live_tracking_for_all_children_buses(): void
     {
+        $driverUser2 = User::factory()->create();
+        $driver2 = Driver::create([
+            'school_id' => $this->school->id,
+            'user_id' => $driverUser2->id,
+            'employee_id' => 'DR-LIVE-2',
+            'first_name' => 'Suresh',
+            'last_name' => 'Thapa',
+            'gender' => 'Male',
+            'date_of_birth' => '1985-01-01',
+            'phone' => '9800000402',
+            'address' => 'Kathmandu',
+            'license_number' => 'LIC-LIVE-2',
+            'license_type' => 'Bus',
+            'license_issue_date' => '2015-01-01',
+            'license_expiry_date' => '2025-01-01',
+            'joining_date' => '2023-01-01',
+            'status' => 'Active',
+            'created_by' => $driverUser2->id,
+        ]);
+
         $route2 = $this->makeRoute('Route 2');
 
         $this->makeStudent();
         $this->makeStudent(['route_id' => $route2->id, 'first_name' => 'Rita', 'roll_no' => '2']);
 
-        $this->makeBus('BUS-1', '123456789012345', $this->route);
-        $this->makeBus('BUS-2', '222222222222222', $route2);
+        $this->makeBus('BUS-1', '123456789012345', $this->route, $this->driver);
+        $this->makeBus('BUS-2', '222222222222222', $route2, $driver2);
 
         $this->fakeLiveTracking([
             [
@@ -271,7 +309,7 @@ class ParentLiveTrackingTest extends TestCase
     {
         $student = $this->makeStudent();
 
-        $this->makeBus('BUS-1', '123456789012345', $this->route);
+        $this->makeBus('BUS-1', '123456789012345', $this->route, $this->driver);
 
         $this->fakeLiveTracking([
             [

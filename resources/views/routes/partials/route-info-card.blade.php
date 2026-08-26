@@ -72,20 +72,20 @@
         <!-- Driver -->
         <div class="rounded-xl bg-gray-50/60 p-4 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/60 flex flex-col justify-between">
             <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Driver</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $route->buses->first()?->drivers->first()?->full_name ?? '—' }}</dd>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $route->activeTrip?->bus?->drivers?->first()?->full_name ?? '—' }}</dd>
         </div>
 
         <!-- Buses -->
         <div class="rounded-xl bg-gray-50/60 p-4 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/60 flex flex-col justify-between sm:col-span-2 lg:col-span-1 xl:col-span-2">
             <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Assigned Buses</dt>
             <dd class="mt-1.5 flex flex-wrap gap-1.5 items-center">
-                @forelse ($route->buses ?? [] as $bus)
+                @if ($route->activeTrip?->bus)
                     <span class="inline-flex items-center rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/10 dark:text-brand-400 border border-brand-200/60 dark:border-brand-500/20">
-                        🚍{{ $bus->bus_number }}
+                        🚍{{ $route->activeTrip->bus->bus_number }}
                     </span>
-                @empty
+                @else
                     <span class="text-sm font-semibold text-gray-500 dark:text-gray-400">—</span>
-                @endforelse
+                @endif
             </dd>
         </div>
 

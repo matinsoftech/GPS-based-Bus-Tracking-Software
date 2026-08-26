@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Api\V1\Driver;
 
 use App\Http\Controllers\Controller;
+use App\Models\SchoolAdmin;
+use App\Models\Student;
 use App\Models\Trip;
+use App\Models\User;
+use App\Notifications\TripStartedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +32,7 @@ class DriverTripController extends Controller
         ]);
 
         $query = $driver->trips()
-            ->with(['bus', 'school'])
+            ->with(['bus', 'route', 'school'])
             ->orderByDesc('started_at');
 
         if (! empty($validated['bus_id'])) {
@@ -81,6 +85,7 @@ class DriverTripController extends Controller
 
         $validated = $request->validate([
             'bus_id' => ['required', 'integer'],
+            'route_id' => ['required', 'integer', 'exists:routes,id'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -94,9 +99,23 @@ class DriverTripController extends Controller
             ], 404);
         }
 
+        $route = $driver->routes()->find($validated['route_id']);
+
+        if (! $route) {
+            return response()->json([
+                'message' => 'Route not found or not assigned to you.',
+            ], 404);
+        }
+
         if ($bus->status !== 'Active') {
             return response()->json([
                 'message' => 'Cannot operate trip on a bus that is not active.',
+            ], 422);
+        }
+
+        if (! $route->is_active) {
+            return response()->json([
+                'message' => 'Cannot start trip on an inactive route.',
             ], 422);
         }
 
@@ -118,12 +137,14 @@ class DriverTripController extends Controller
         $message = null;
         $nextAction = null;
         $trip = null;
+        $shouldNotify = false;
 
         if (! $lastTrip) {
             $trip = DB::transaction(function () use ($bus, $driver, $validated) {
                 return Trip::create([
                     'bus_id' => $bus->id,
                     'driver_id' => $driver->id,
+                    'route_id' => $validated['route_id'],
                     'school_id' => $bus->school_id,
                     'trip_type' => Trip::TYPE_HOME_TO_SCHOOL,
                     'status' => Trip::STATUS_IN_PROGRESS,
@@ -137,12 +158,14 @@ class DriverTripController extends Controller
             $action = 'started';
             $message = 'Trip started (Home to School).';
             $nextAction = 'end_trip';
+            $shouldNotify = true;
 
         } elseif ($lastTrip->trip_type === Trip::TYPE_HOME_TO_SCHOOL && $lastTrip->isCompleted()) {
             $trip = DB::transaction(function () use ($bus, $driver, $validated) {
                 return Trip::create([
                     'bus_id' => $bus->id,
                     'driver_id' => $driver->id,
+                    'route_id' => $validated['route_id'],
                     'school_id' => $bus->school_id,
                     'trip_type' => Trip::TYPE_SCHOOL_TO_HOME,
                     'status' => Trip::STATUS_IN_PROGRESS,
@@ -156,6 +179,7 @@ class DriverTripController extends Controller
             $action = 'started';
             $message = 'Trip started (School to Home).';
             $nextAction = 'end_trip';
+            $shouldNotify = true;
 
         } elseif ($lastTrip->trip_type === Trip::TYPE_HOME_TO_SCHOOL && $lastTrip->isInProgress()) {
             $trip = DB::transaction(function () use ($lastTrip, $validated) {
@@ -166,7 +190,7 @@ class DriverTripController extends Controller
                     'end_longitude' => $validated['longitude'] ?? null,
                 ]);
 
-                return $lastTrip->fresh(['bus', 'school']);
+                return $lastTrip->fresh(['bus', 'route', 'school']);
             });
 
             $action = 'ended';
@@ -182,7 +206,7 @@ class DriverTripController extends Controller
                     'end_longitude' => $validated['longitude'] ?? null,
                 ]);
 
-                return $lastTrip->fresh(['bus', 'school']);
+                return $lastTrip->fresh(['bus', 'route', 'school']);
             });
 
             $action = 'ended';
@@ -191,7 +215,11 @@ class DriverTripController extends Controller
         }
 
         if (is_null($trip->relationLoaded('bus'))) {
-            $trip->load(['bus', 'school']);
+            $trip->load(['bus', 'route', 'school']);
+        }
+
+        if ($shouldNotify) {
+            $this->notifyTripStarted($trip);
         }
 
         return response()->json([
@@ -200,6 +228,49 @@ class DriverTripController extends Controller
             'next_action' => $nextAction,
             'data' => $this->tripResponse($trip),
         ], $action === 'started' ? 201 : 200);
+    }
+
+    private function notifyTripStarted(Trip $trip): void
+    {
+        $notification = new TripStartedNotification($trip);
+
+        $students = Student::where('route_id', $trip->route_id)
+            ->with('parent.user')
+            ->get();
+
+        foreach ($students as $student) {
+            $parent = $student->parent?->user;
+
+            if (! $parent) {
+                continue;
+            }
+
+            $parent->notify($notification);
+        }
+
+        $driverUser = $trip->driver?->user;
+
+        if ($driverUser) {
+            $driverUser->notify($notification);
+        }
+
+        $schoolAdmins = SchoolAdmin::where('school_id', $trip->school_id)
+            ->with('user')
+            ->get();
+
+        foreach ($schoolAdmins as $admin) {
+            if (! $admin->user) {
+                continue;
+            }
+
+            $admin->user->notify($notification);
+        }
+
+        $superAdmins = User::role('Super Admin')->get();
+
+        foreach ($superAdmins as $superAdmin) {
+            $superAdmin->notify($notification);
+        }
     }
 
     private function tripResponse(Trip $trip): array
@@ -211,6 +282,11 @@ class DriverTripController extends Controller
                 'bus_number' => $trip->bus->bus_number,
                 'registration_number' => $trip->bus->registration_number,
             ],
+            'route' => $trip->route ? [
+                'id' => $trip->route->id,
+                'name' => $trip->route->name,
+                'route_code' => $trip->route->route_code,
+            ] : null,
             'school' => [
                 'id' => $trip->school->id,
                 'name' => $trip->school->name,

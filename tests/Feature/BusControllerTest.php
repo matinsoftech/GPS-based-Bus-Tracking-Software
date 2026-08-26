@@ -16,7 +16,7 @@ class BusControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_super_admin_can_create_bus_with_driver_and_route(): void
+    public function test_super_admin_can_create_bus_with_driver(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -31,14 +31,6 @@ class BusControllerTest extends TestCase
             'address' => 'Kathmandu',
             'principal_name' => 'Principal Name',
             'status' => 'active',
-        ]);
-
-        $route = Route::create([
-            'school_id' => $school->id,
-            'name' => 'Baneshwor Shuttle',
-            'route_code' => 'R1',
-            'start_location' => 'Baneshwor',
-            'end_location' => 'School',
         ]);
 
         $driver = Driver::create([
@@ -77,13 +69,12 @@ class BusControllerTest extends TestCase
             'last_service_date' => '2026-01-01',
             'status' => 'Active',
             'notes' => 'Brand new bus',
-            'route_ids' => [$route->id],
+            'driver_ids' => [$driver->id],
         ]);
 
         $response->assertRedirect(route('buses.index'));
 
         $bus = Bus::where('bus_number', 'BUS-001')->first();
-        $bus->drivers()->attach($driver->id);
 
         $this->assertDatabaseHas('buses', [
             'bus_number' => 'BUS-001',
@@ -96,13 +87,7 @@ class BusControllerTest extends TestCase
             'driver_id' => $driver->id,
         ]);
 
-        $this->assertDatabaseHas('bus_route', [
-            'bus_id' => $bus->id,
-            'route_id' => $route->id,
-        ]);
-
         $this->assertNotNull($bus);
-        $this->assertTrue($bus->routes->contains($route));
         $this->assertTrue($bus->drivers->contains($driver));
     }
 
@@ -164,14 +149,6 @@ class BusControllerTest extends TestCase
         $schoolAdmin->school_id = $school->id;
         $schoolAdmin->save();
 
-        $route = Route::create([
-            'school_id' => $school->id,
-            'name' => 'Green Valley Shuttle',
-            'route_code' => 'GV-R1',
-            'start_location' => 'Baneshwor',
-            'end_location' => 'School',
-        ]);
-
         $driver = Driver::create([
             'school_id' => $school->id,
             'employee_id' => 'DR010',
@@ -206,17 +183,15 @@ class BusControllerTest extends TestCase
             'registration_number' => 'BA 1 KHA 1111',
             'capacity' => 50,
             'status' => 'Maintenance',
-            'route_ids' => [$route->id],
+            'driver_ids' => [$driver->id],
         ]);
 
         $response->assertRedirect(route('buses.index'));
 
         $bus->refresh();
-        $bus->drivers()->attach($driver->id);
 
         $this->assertSame(50, $bus->capacity);
         $this->assertSame('Maintenance', $bus->status);
-        $this->assertTrue($bus->routes->contains($route));
         $this->assertTrue($bus->drivers->contains('id', $driver->id));
     }
 }

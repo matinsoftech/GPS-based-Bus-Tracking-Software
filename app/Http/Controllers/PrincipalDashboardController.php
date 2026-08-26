@@ -48,7 +48,7 @@ class PrincipalDashboardController extends Controller
 
         $fleet = (clone $busQuery)->with('drivers')->latest()->limit(5)->get();
 
-        $upcomingRoutes = (clone $routeQuery)->with('buses.drivers', 'stops')->latest()->limit(5)->get();
+        $upcomingRoutes = (clone $routeQuery)->with('activeTrip.bus.drivers', 'stops')->latest()->limit(5)->get();
 
         $expiringBuses = (clone $busQuery)
             ->whereNotNull('insurance_expiry_date')

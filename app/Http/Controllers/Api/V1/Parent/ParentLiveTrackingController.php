@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Parent;
 
 use App\Http\Controllers\Controller;
 use App\Models\Student;
+use App\Models\Trip;
 use App\Services\NazarTrackService;
 use Illuminate\Http\Request;
 
@@ -22,7 +23,7 @@ class ParentLiveTrackingController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['route.buses.gpsDevice'])
+            ->with(['route.activeTrip.bus.gpsDevice'])
             ->orderBy('grade')
             ->orderBy('roll_no')
             ->get();
@@ -42,8 +43,8 @@ class ParentLiveTrackingController extends Controller
                         'name' => $student->route->name,
                         'route_code' => $student->route->route_code,
                     ] : null,
-                    'live_location' => $student->route?->buses->first()
-                        ? $this->gps->locationPayload($student->route->buses->first())
+                    'live_location' => $student->route?->activeTrip?->bus
+                        ? $this->gps->locationPayload($student->route->activeTrip->bus)
                         : null,
                 ]),
             ],
@@ -66,7 +67,7 @@ class ParentLiveTrackingController extends Controller
             ], 403);
         }
 
-        $student->load('route.buses.gpsDevice');
+        $student->load('route.activeTrip.bus.gpsDevice');
 
         return response()->json([
             'message' => 'Parent child live tracking data.',
@@ -83,8 +84,8 @@ class ParentLiveTrackingController extends Controller
                     'name' => $student->route->name,
                     'route_code' => $student->route->route_code,
                 ] : null,
-                'live_location' => $student->route?->buses->first()
-                    ? $this->gps->locationPayload($student->route->buses->first())
+                'live_location' => $student->route?->activeTrip?->bus
+                    ? $this->gps->locationPayload($student->route->activeTrip->bus)
                     : null,
             ],
         ]);

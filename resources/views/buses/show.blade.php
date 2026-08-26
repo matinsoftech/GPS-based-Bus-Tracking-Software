@@ -111,26 +111,6 @@
 
                     <dl class="space-y-4 text-sm">
                         <div class="flex justify-between items-center gap-4">
-                            <dt class="text-gray-500 dark:text-gray-400">Assigned Routes</dt>
-                            <dd class="font-semibold text-gray-900 dark:text-white">
-                                @if ($bus->routes->isNotEmpty())
-                                    <div class="flex flex-wrap gap-1.5">
-                                        @foreach ($bus->routes as $route)
-                                            <a href="{{ route('routes.show', $route) }}" class="inline-flex items-center gap-1.5 text-brand-600 hover:text-brand-700 dark:text-brand-400">
-                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-                                                </svg>
-                                                {{ $route->name }} ({{ $route->route_code }})
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <span class="text-gray-400">— No route assigned —</span>
-                                @endif
-                            </dd>
-                        </div>
-
-                        <div class="flex justify-between items-center gap-4">
                             <dt class="text-gray-500 dark:text-gray-400">Assigned Driver</dt>
                             <dd class="font-semibold text-gray-900 dark:text-white">
                                 @if ($bus->drivers->isNotEmpty())
@@ -261,7 +241,7 @@
 
     const busNumber = @json($bus->bus_number);
     const driverName = @json($bus->drivers->first()?->full_name ?? '—');
-    const routeName = @json($bus->routes->pluck('name')->join(', ') ?: '—');
+    const routeName = 'Dynamic (via active trip)';
     const gpsEndpoint = @json(route('bus_location.latest', ['bus_id' => $bus->id]));
 
     function busMarkerHtml() {
@@ -337,7 +317,7 @@
             const popupHtml = `
                 <div style="font-family:inherit;min-width:180px;padding:2px;">
                     <div style="font-weight:700;font-size:14px;color:#111827;">🚍 Bus #${busNumber}</div>
-                    <div style="font-size:12px;color:#4B5563;margin-top:3px;">Route: <strong>${routeName}</strong></div>
+<div style="font-size:12px;color:#4B5563;margin-top:3px;">Route: <strong>Assigned via active trip</strong></div>
                     <div style="font-size:12px;color:#4B5563;">Driver: <strong>${driverName}</strong></div>
                     <div style="font-size:12px;color:#4B5563;">Speed: <strong>${Math.round(speedVal)} km/h</strong></div>
                     <div style="font-size:11px;color:#6B7280;margin-top:4px;">Recorded: ${lastSignalText}</div>
@@ -398,7 +378,7 @@
         const busDetailsHtml = `
             <div style="font-family:inherit;min-width:180px;padding:2px;">
                 <div style="font-weight:700;font-size:14px;color:#111827;">🚍 Bus #${busNumber}</div>
-                <div style="font-size:12px;color:#4B5563;margin-top:3px;">Route: <strong>${routeName}</strong></div>
+                <div style="font-size:12px;color:#4B5563;margin-top:3px;">Route: <strong>Assigned via active trip</strong></div>
                 <div style="font-size:12px;color:#4B5563;">Driver: <strong>${driverName}</strong></div>
                 <div style="font-size:12px;color:#4B5563;">Speed: <strong>${Math.round(speedVal)} km/h</strong></div>
                 <div style="font-size:11px;color:#6B7280;margin-top:4px;">Recorded: ${lastSignalText}</div>

@@ -132,8 +132,7 @@ class RouteSeeder extends Seeder
                     $route->drivers()->syncWithoutDetaching([$driver->id]);
                 }
 
-                Bus::whereIn('bus_number', $busNumbers)->each(function ($bus) use ($route, $driver) {
-                    $bus->routes()->syncWithoutDetaching([$route->id]);
+                Bus::whereIn('bus_number', $busNumbers)->each(function ($bus) use ($driver) {
                     if ($driver) {
                         $bus->drivers()->syncWithoutDetaching([$driver->id]);
                     }

@@ -9,6 +9,7 @@ use App\Models\Route;
 use App\Models\RouteStop;
 use App\Models\School;
 use App\Models\Student;
+use App\Models\Trip;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -105,9 +106,18 @@ class ParentBusTest extends TestCase
             'status' => 'Active',
         ]);
 
-        $bus->routes()->attach($this->route->id);
         $bus->drivers()->attach($this->driver->id);
         $this->route->drivers()->attach($this->driver->id);
+
+        Trip::create([
+            'bus_id' => $bus->id,
+            'driver_id' => $this->driver->id,
+            'route_id' => $this->route->id,
+            'school_id' => $this->school->id,
+            'trip_type' => Trip::TYPE_HOME_TO_SCHOOL,
+            'status' => Trip::STATUS_IN_PROGRESS,
+            'started_at' => now(),
+        ]);
 
         RouteStop::create([
             'route_id' => $this->route->id,

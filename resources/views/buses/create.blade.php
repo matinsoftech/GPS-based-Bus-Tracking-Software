@@ -271,55 +271,30 @@
 
             <div>
                 <h2 class="mb-4 border-b border-gray-200 pb-3 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
-                    Route & Driver Assignment
+                    Driver Assignment
                 </h2>
 
-                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div>
-                        <label for="route_ids" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Routes</label>
-                        <div class="max-h-48 overflow-y-auto rounded-lg border border-gray-300 p-3 dark:border-gray-600 dark:bg-gray-800">
-                            @forelse ($routes as $route)
-                                <label class="flex items-center gap-2 py-1">
-                                    <input
-                                        type="checkbox"
-                                        name="route_ids[]"
-                                        value="{{ $route->id }}"
-                                        @checked(in_array($route->id, old('route_ids', [])))
-                                        class="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                                    >
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ $route->name }} ({{ $route->route_code }})</span>
-                                </label>
-                            @empty
-                                <p class="text-sm text-gray-500 dark:text-gray-400">No routes available.</p>
-                            @endforelse
-                        </div>
-                        @error('route_ids')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                <div>
+                    <label for="driver_ids" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Drivers</label>
+                    <div class="max-h-48 overflow-y-auto rounded-lg border border-gray-300 p-3 dark:border-gray-600 dark:bg-gray-800">
+                        @forelse ($drivers as $driver)
+                            <label class="flex items-center gap-2 py-1">
+                                <input
+                                    type="checkbox"
+                                    name="driver_ids[]"
+                                    value="{{ $driver->id }}"
+                                    @checked(in_array($driver->id, old('driver_ids', [])))
+                                    class="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                                >
+                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ $driver->full_name }} ({{ $driver->employee_id }})</span>
+                            </label>
+                        @empty
+                            <p class="text-sm text-gray-500 dark:text-gray-400">No drivers available.</p>
+                        @endforelse
                     </div>
-
-                    <div>
-                        <label for="driver_ids" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Drivers</label>
-                        <div class="max-h-48 overflow-y-auto rounded-lg border border-gray-300 p-3 dark:border-gray-600 dark:bg-gray-800">
-                            @forelse ($drivers as $driver)
-                                <label class="flex items-center gap-2 py-1">
-                                    <input
-                                        type="checkbox"
-                                        name="driver_ids[]"
-                                        value="{{ $driver->id }}"
-                                        @checked(in_array($driver->id, old('driver_ids', [])))
-                                        class="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                                    >
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ $driver->full_name }} ({{ $driver->employee_id }})</span>
-                                </label>
-                            @empty
-                                <p class="text-sm text-gray-500 dark:text-gray-400">No drivers available.</p>
-                            @endforelse
-                        </div>
-                        @error('driver_ids')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    @error('driver_ids')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
             </div>
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Driver;
 use App\Http\Controllers\Controller;
 use App\Models\Bus;
 use App\Models\Student;
+use App\Models\Trip;
 use Illuminate\Http\Request;
 
 class DriverBusController extends Controller
@@ -15,9 +16,9 @@ class DriverBusController extends Controller
 
         $driver = $user->driver;
 
-        if (!$driver) {
+        if (! $driver) {
             return response()->json([
-                'message' => 'Driver profile not found.'
+                'message' => 'Driver profile not found.',
             ], 404);
         }
 
@@ -42,9 +43,9 @@ class DriverBusController extends Controller
     {
         $driver = $request->user()->driver;
 
-        if (!$driver) {
+        if (! $driver) {
             return response()->json([
-                'message' => 'Driver profile not found.'
+                'message' => 'Driver profile not found.',
             ], 404);
         }
 
@@ -52,16 +53,13 @@ class DriverBusController extends Controller
             ->where('buses.id', $bus->id)
             ->exists();
 
-        if (!$hasAccess) {
+        if (! $hasAccess) {
             return response()->json([
-                'message' => 'You are not assigned to this bus.'
+                'message' => 'You are not assigned to this bus.',
             ], 403);
         }
 
-        $bus->load([
-            'school',
-            'students'
-        ]);
+        $bus->load('school');
 
         return response()->json([
             'bus' => $bus,
@@ -72,9 +70,9 @@ class DriverBusController extends Controller
     {
         $driver = $request->user()->driver;
 
-        if (!$driver) {
+        if (! $driver) {
             return response()->json([
-                'message' => 'Driver profile not found.'
+                'message' => 'Driver profile not found.',
             ], 404);
         }
 
@@ -82,13 +80,19 @@ class DriverBusController extends Controller
             ->where('buses.id', $bus->id)
             ->exists();
 
-        if (!$hasAccess) {
+        if (! $hasAccess) {
             return response()->json([
-                'message' => 'You are not assigned to this bus.'
+                'message' => 'You are not assigned to this bus.',
             ], 403);
         }
 
-        $routeIds = $bus->routes()->pluck('routes.id');
+        $routeIds = Trip::where('bus_id', $bus->id)
+            ->where('status', Trip::STATUS_IN_PROGRESS)
+            ->pluck('route_id');
+
+        if ($routeIds->isEmpty()) {
+            $routeIds = $driver->routes()->pluck('driver_route.route_id');
+        }
 
         $students = Student::whereIn('route_id', $routeIds)
             ->with('parent.user')

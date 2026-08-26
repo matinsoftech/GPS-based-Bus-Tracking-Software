@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Driver;
+use App\Models\Trip;
 use App\Services\FleetMapService;
 use Illuminate\Support\Facades\Auth;
 
@@ -32,35 +33,29 @@ class DriverDashboardController extends Controller
         }
 
         $buses = $driver->buses()
-            ->with(['routes.students', 'school'])
+            ->with(['school'])
             ->orderBy('bus_number')
             ->get();
 
-        $buses->each(fn ($bus) => $bus->setAttribute(
-            'students_count',
-            $bus->routes->sum(fn ($route) => $route->students->count()),
-        ));
+        $routeIds = $driver->routes()->pluck('driver_route.route_id');
+        $studentsCount = \App\Models\Student::whereIn('route_id', $routeIds)->count();
+        $buses->each(fn ($bus) => $bus->setAttribute('students_count', $studentsCount));
 
         $busIds = $buses->pluck('id');
-        $routeIds = $buses->flatMap(fn ($bus) => $bus->routes->pluck('id'));
 
-        // Live positions come straight from the GPS provider, matched to each
-        // bus by its IMEI (gps_device_id).
         $fleetMap = $this->fleetMap->forSchool(null, $busIds);
 
         $fleetMapRefreshUrl = route('bus_location.latest');
 
-        // Build a map of route_id -> bus_id so we can group attendance back to buses
-        $routeIdToBusId = [];
-        foreach ($buses as $bus) {
-            foreach ($bus->routes as $route) {
-                $routeIdToBusId[$route->id] = $bus->id;
-            }
-        }
+        $activeTrips = Trip::whereIn('bus_id', $busIds)
+            ->where('status', Trip::STATUS_IN_PROGRESS)
+            ->get();
+
+        $routeIdToBusId = $activeTrips->pluck('bus_id', 'route_id')->toArray();
 
         $checkedInByBus = Attendance::query()
             ->whereDate('date', now()->toDateString())
-            ->whereIn('route_id', $routeIds)
+            ->whereIn('route_id', array_keys($routeIdToBusId))
             ->whereNotNull('check_in_at')
             ->get()
             ->groupBy(fn ($record) => $routeIdToBusId[$record->route_id] ?? null)
@@ -96,7 +91,7 @@ class DriverDashboardController extends Controller
         }
 
         $buses = $driver->buses()
-            ->with(['routes', 'school'])
+            ->with(['school'])
             ->orderBy('bus_number')
             ->get();
 

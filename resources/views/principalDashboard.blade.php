@@ -284,7 +284,7 @@
                                                 {{ $route->start_location }} → {{ $route->end_location }}
                                             </p>
                                         </td>
-                                        <td class="py-3.5 text-theme-sm">{{ $route->buses->first()?->drivers->first()?->full_name ?? 'Not assigned' }}</td>
+                                        <td class="py-3.5 text-theme-sm">{{ $route->activeTrip?->bus?->drivers?->first()?->full_name ?? 'Not assigned' }}</td>
                                         <td class="py-3.5 text-theme-sm">{{ $route->stops->count() }}</td>
                                         <td class="py-3.5 text-right">
                                             @if ($route->is_active)

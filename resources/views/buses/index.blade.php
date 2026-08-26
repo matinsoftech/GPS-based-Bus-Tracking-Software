@@ -60,7 +60,6 @@
                         <th class="px-5 py-3 font-medium">Registration No.</th>
                         <th class="px-5 py-3 font-medium">Make / Model</th>
                         <th class="px-5 py-3 font-medium">Capacity</th>
-                        <th class="px-5 py-3 font-medium">Route</th>
                         <th class="px-5 py-3 font-medium">Driver</th>
                         <th class="px-5 py-3 font-medium">School</th>
                         <th class="px-5 py-3 font-medium">Status</th>
@@ -80,7 +79,6 @@
                                 @endif
                             </td>
                             <td class="px-5 py-3">{{ $bus->capacity }}</td>
-                            <td class="px-5 py-3">{{ $bus->routes->pluck('name')->join(', ') ?: '—' }}</td>
                             <td class="px-5 py-3">{{ $bus->drivers->first()?->full_name ?? '—' }}</td>
                             <td class="px-5 py-3">{{ $bus->school->name ?? '—' }}</td>
                             <td class="px-5 py-3">
@@ -125,7 +123,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
+                            <td colspan="7" class="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
                                 No buses found.
                             </td>
                         </tr>

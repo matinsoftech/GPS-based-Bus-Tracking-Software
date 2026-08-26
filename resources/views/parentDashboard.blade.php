@@ -108,7 +108,9 @@
                             @forelse ($children as $child)
                                 @php
                                     $route = $child->route;
-                                    $location = $route?->buses->first() ? $locationsByBus->get($route->buses->first()->id) : null;
+                                    $activeTrip = $child->getAttribute('activeTrip');
+                                    $bus = $activeTrip?->bus;
+                                    $location = $bus ? $locationsByBus->get($bus->id) : null;
                                     $online = $location && $location->recorded_at?->gt(now()->subMinutes(10));
                                     $records = $attendanceByStudent->get($child->id, collect());
                                     $pickup = $records->firstWhere('trip', \App\Models\Attendance::TRIP_HOME_TO_SCHOOL);
@@ -141,7 +143,7 @@
                                         </div>
                                         <div class="rounded-lg bg-gray-50 p-3 dark:bg-white/[0.03]">
                                             <p class="text-theme-xs text-gray-500 dark:text-gray-400">Driver</p>
-                                            <p class="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{{ $route?->buses->first()?->drivers->first()?->full_name ?? '—' }}</p>
+                                            <p class="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">{{ $activeTrip?->driver?->full_name ?? 'No bus running' }}</p>
                                             <p class="text-theme-xs text-gray-500 dark:text-gray-400">Speed: {{ $location?->speed ?? '—' }} km/h</p>
                                         </div>
                                         <div class="rounded-lg bg-gray-50 p-3 dark:bg-white/[0.03]">
