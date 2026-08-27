@@ -38,11 +38,15 @@ Route::prefix('v1')->group(function () {
             Route::post('/profile/photo', [DriverProfileController::class, 'uploadPhoto']);
             Route::get('/buses', [DriverBusController::class, 'index']);
             Route::get('/buses/{bus}', [DriverBusController::class, 'show']);
-            Route::get('/buses/{bus}/students', [DriverBusController::class, 'students']);
+            Route::get('/routes', [DriverBusController::class, 'routes']);
+            Route::get('/routes/{route}/stops', [DriverBusController::class, 'stops']);
+            Route::get('/routes/{route}/students', [DriverBusController::class, 'students']);
             Route::get('/live-tracking', [DriverLiveTrackingController::class, 'index']);
 
             Route::get('/trips', [DriverTripController::class, 'index'])->middleware('permission:trip.view');
-            Route::post('/trips/toggle', [DriverTripController::class, 'toggle'])->middleware('permission:trip.start');
+            Route::post('/trips/start', [DriverTripController::class, 'start'])->middleware('permission:trip.start');
+            Route::get('/trips/{trip}', [DriverTripController::class, 'show'])->middleware('permission:trip.view');
+            Route::post('/trips/{trip}/end', [DriverTripController::class, 'end'])->middleware('permission:trip.start');
 
             Route::prefix('attendances')->group(function () {
                 Route::get('/', [DriverAttendanceController::class, 'index']);

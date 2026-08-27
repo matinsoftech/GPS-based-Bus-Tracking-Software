@@ -74,7 +74,35 @@ class DriverTripController extends Controller
         ]);
     }
 
-    public function toggle(Request $request): JsonResponse
+    public function show(Request $request, Trip $trip): JsonResponse
+    {
+        $driver = $request->user()->driver;
+
+        if (! $driver) {
+            return response()->json([
+                'message' => 'Driver profile not found.',
+            ], 404);
+        }
+
+        $hasAccess = $driver->trips()
+            ->whereKey($trip->id)
+            ->exists();
+
+        if (! $hasAccess) {
+            return response()->json([
+                'message' => 'Trip not found for this driver.',
+            ], 404);
+        }
+
+        $trip->load(['bus', 'route', 'school']);
+
+        return response()->json([
+            'message' => 'Trip details.',
+            'data' => $this->tripResponse($trip),
+        ]);
+    }
+
+    public function start(Request $request): JsonResponse
     {
         $driver = $request->user()->driver;
 
@@ -85,8 +113,9 @@ class DriverTripController extends Controller
         }
 
         $validated = $request->validate([
-            'bus_id' => ['required', 'integer'],
+            'bus_id' => ['required', 'integer', 'exists:buses,id'],
             'route_id' => ['required', 'integer', 'exists:routes,id'],
+            'trip_type' => ['nullable', 'string', 'in:home_to_school,school_to_home'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -120,124 +149,161 @@ class DriverTripController extends Controller
             ], 422);
         }
 
-        $todayTrips = $bus->trips()
-            ->whereDate('started_at', now()->toDateString())
-            ->orderBy('started_at')
-            ->get();
+        $busActive = Trip::where('bus_id', $bus->id)
+            ->where('status', Trip::STATUS_IN_PROGRESS)
+            ->exists();
 
-        $lastTrip = $todayTrips->last();
-
-        if ($lastTrip && $lastTrip->isCompleted() && $lastTrip->trip_type === Trip::TYPE_SCHOOL_TO_HOME) {
+        if ($busActive) {
             return response()->json([
-                'message' => 'All trips for today are completed.',
-                'next_action' => 'day_complete',
+                'message' => 'This bus already has an active trip started by another driver.',
             ], 422);
         }
 
-        $action = null;
-        $message = null;
-        $nextAction = null;
-        $trip = null;
-        $isStarting = false;
+        $routeActive = Trip::where('route_id', $route->id)
+            ->where('status', Trip::STATUS_IN_PROGRESS)
+            ->exists();
 
-        if (! $lastTrip) {
-            $trip = DB::transaction(function () use ($bus, $driver, $validated) {
-                return Trip::create([
-                    'bus_id' => $bus->id,
-                    'driver_id' => $driver->id,
-                    'route_id' => $validated['route_id'],
-                    'school_id' => $bus->school_id,
-                    'trip_type' => Trip::TYPE_HOME_TO_SCHOOL,
-                    'status' => Trip::STATUS_IN_PROGRESS,
-                    'started_at' => now(),
-                    'start_latitude' => $validated['latitude'] ?? null,
-                    'start_longitude' => $validated['longitude'] ?? null,
-                    'notes' => $validated['notes'] ?? null,
-                ]);
-            });
-
-            $action = 'started';
-            $message = 'Trip started (Home to School).';
-            $nextAction = 'end_trip';
-            $isStarting = true;
-
-        } elseif ($lastTrip->trip_type === Trip::TYPE_HOME_TO_SCHOOL && $lastTrip->isCompleted()) {
-            $trip = DB::transaction(function () use ($bus, $driver, $validated) {
-                return Trip::create([
-                    'bus_id' => $bus->id,
-                    'driver_id' => $driver->id,
-                    'route_id' => $validated['route_id'],
-                    'school_id' => $bus->school_id,
-                    'trip_type' => Trip::TYPE_SCHOOL_TO_HOME,
-                    'status' => Trip::STATUS_IN_PROGRESS,
-                    'started_at' => now(),
-                    'start_latitude' => $validated['latitude'] ?? null,
-                    'start_longitude' => $validated['longitude'] ?? null,
-                    'notes' => $validated['notes'] ?? null,
-                ]);
-            });
-
-            $action = 'started';
-            $message = 'Trip started (School to Home).';
-            $nextAction = 'end_trip';
-            $isStarting = true;
-
-        } elseif ($lastTrip->trip_type === Trip::TYPE_HOME_TO_SCHOOL && $lastTrip->isInProgress()) {
-            $trip = DB::transaction(function () use ($lastTrip, $validated) {
-                $lastTrip->update([
-                    'status' => Trip::STATUS_COMPLETED,
-                    'ended_at' => now(),
-                    'end_latitude' => $validated['latitude'] ?? null,
-                    'end_longitude' => $validated['longitude'] ?? null,
-                ]);
-
-                return $lastTrip->fresh(['bus', 'route', 'school']);
-            });
-
-            $action = 'ended';
-            $message = 'Trip ended (Home to School).';
-            $nextAction = 'start_next_trip';
-            $isStarting = false;
-
-        } elseif ($lastTrip->trip_type === Trip::TYPE_SCHOOL_TO_HOME && $lastTrip->isInProgress()) {
-            $trip = DB::transaction(function () use ($lastTrip, $validated) {
-                $lastTrip->update([
-                    'status' => Trip::STATUS_COMPLETED,
-                    'ended_at' => now(),
-                    'end_latitude' => $validated['latitude'] ?? null,
-                    'end_longitude' => $validated['longitude'] ?? null,
-                ]);
-
-                return $lastTrip->fresh(['bus', 'route', 'school']);
-            });
-
-            $action = 'ended';
-            $message = 'Trip ended (School to Home). All trips completed for today.';
-            $nextAction = 'day_complete';
-            $isStarting = false;
+        if ($routeActive) {
+            return response()->json([
+                'message' => 'This route already has an active trip started by another driver.',
+            ], 422);
         }
 
-        if (is_null($trip->relationLoaded('bus'))) {
-            $trip->load(['bus', 'route', 'school']);
+        $driverActive = $driver->trips()
+            ->where('status', Trip::STATUS_IN_PROGRESS)
+            ->exists();
+
+        if ($driverActive) {
+            return response()->json([
+                'message' => 'You already have an active trip. End it first.',
+            ], 422);
         }
 
-        if ($isStarting) {
-            $this->notifyTripStarted($trip);
-        } else {
-            $this->notifyTripEnded($trip);
-        }
+        $tripType = $validated['trip_type'] ?? Trip::tripTypeByTime();
+
+        $trip = DB::transaction(function () use ($bus, $driver, $validated, $tripType) {
+            return Trip::create([
+                'bus_id' => $bus->id,
+                'driver_id' => $driver->id,
+                'route_id' => $validated['route_id'],
+                'school_id' => $bus->school_id,
+                'trip_type' => $tripType,
+                'status' => Trip::STATUS_IN_PROGRESS,
+                'started_at' => now(),
+                'start_latitude' => $validated['latitude'] ?? null,
+                'start_longitude' => $validated['longitude'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+        });
+
+        $trip->load(['bus', 'route', 'school']);
+
+        $this->notifyTripStarted($trip);
 
         return response()->json([
-            'message' => $message,
-            'action' => $action,
-            'next_action' => $nextAction,
+            'message' => 'Trip started.',
+            'action' => 'started',
             'data' => $this->tripResponse($trip),
-        ], $action === 'started' ? 201 : 200);
+        ], 201);
+    }
+
+    public function end(Request $request, Trip $trip): JsonResponse
+    {
+        $driver = $request->user()->driver;
+
+        if (! $driver) {
+            return response()->json([
+                'message' => 'Driver profile not found.',
+            ], 404);
+        }
+
+        $hasAccess = $driver->trips()
+            ->whereKey($trip->id)
+            ->exists();
+
+        if (! $hasAccess) {
+            return response()->json([
+                'message' => 'Trip not found for this driver.',
+            ], 404);
+        }
+
+        if (! $trip->isInProgress()) {
+            return response()->json([
+                'message' => 'Trip is not in progress.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+        ]);
+
+        $trip = DB::transaction(function () use ($trip, $validated) {
+            $trip->update([
+                'status' => Trip::STATUS_COMPLETED,
+                'ended_at' => now(),
+                'end_latitude' => $validated['latitude'] ?? null,
+                'end_longitude' => $validated['longitude'] ?? null,
+            ]);
+
+            return $trip->fresh(['bus', 'route', 'school']);
+        });
+
+        $this->notifyTripEnded($trip);
+
+        return response()->json([
+            'message' => 'Trip ended.',
+            'action' => 'ended',
+            'data' => $this->tripResponse($trip),
+        ]);
     }
 
     private function notifyTripStarted(Trip $trip): void
     {
         $notification = new TripStartedNotification($trip);
+
+        $students = Student::where('route_id', $trip->route_id)
+            ->with('parent.user')
+            ->get();
+
+        foreach ($students as $student) {
+            $parent = $student->parent?->user;
+
+            if (! $parent) {
+                continue;
+            }
+
+            $parent->notify($notification);
+        }
+
+        $driverUser = $trip->driver?->user;
+
+        if ($driverUser) {
+            $driverUser->notify($notification);
+        }
+
+        $schoolAdmins = SchoolAdmin::where('school_id', $trip->school_id)
+            ->with('user')
+            ->get();
+
+        foreach ($schoolAdmins as $admin) {
+            if (! $admin->user) {
+                continue;
+            }
+
+            $admin->user->notify($notification);
+        }
+
+        $superAdmins = User::role('Super Admin')->get();
+
+        foreach ($superAdmins as $superAdmin) {
+            $superAdmin->notify($notification);
+        }
+    }
+
+    private function notifyTripEnded(Trip $trip): void
+    {
+        $notification = new TripEndedNotification($trip);
 
         $students = Student::where('route_id', $trip->route_id)
             ->with('parent.user')
