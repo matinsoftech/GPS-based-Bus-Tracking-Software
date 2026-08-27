@@ -50,9 +50,9 @@ class SuperAdminDashboardController extends Controller
             ->whereNotNull('check_in_at')
             ->count();
 
-        $fleet = Bus::with(['drivers', 'school', 'routes'])->latest()->limit(5)->get();
+        $fleet = Bus::with(['drivers', 'school'])->latest()->limit(5)->get();
 
-        $latestRoutes = Route::with(['buses.drivers', 'stops'])->latest()->limit(5)->get();
+        $latestRoutes = Route::with(['activeTrip.bus.drivers', 'stops'])->latest()->limit(5)->get();
 
         $expiringBuses = Bus::whereNotNull('insurance_expiry_date')
             ->get()

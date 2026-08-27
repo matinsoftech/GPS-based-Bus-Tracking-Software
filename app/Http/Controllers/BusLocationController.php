@@ -126,7 +126,7 @@ class BusLocationController extends Controller
             $schoolId = $user->school_id
                 ?? SchoolAdmin::where('user_id', $user->id)->value('school_id');
 
-            $bus = Bus::with(['routes.stops', 'drivers', 'school'])->find($busId);
+            $bus = Bus::with(['drivers', 'school'])->find($busId);
 
             if (! $bus || ($schoolId && $bus->school_id != $schoolId)) {
                 abort(403, 'You are not authorized to view this bus.');
