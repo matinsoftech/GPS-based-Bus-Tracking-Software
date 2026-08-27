@@ -34,7 +34,7 @@
 @endif
 
 <!-- Fleet Overview Map -->
-<div class="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+<div class="{{ $fleetMapShowCards ? 'mt-6' : '' }} overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-800">
         <div>
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $fleetMapTitle }}</h2>

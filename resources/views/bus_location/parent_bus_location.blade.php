@@ -219,6 +219,7 @@
                     'fleetMapTitle' => 'My Bus Location',
                     'fleetMapSubtitle' => 'Live GPS position of your children\'s buses, route paths, and stops.',
                     'fleetMapCompact' => true,
+                    'fleetMapShowCards' => false,
                 ])
             </div>
 
