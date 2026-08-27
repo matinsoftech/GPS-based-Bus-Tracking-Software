@@ -435,13 +435,40 @@
                 row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
-            if (vehicle.latitude && vehicle.longitude && map) {
-                map.setView([vehicle.latitude, vehicle.longitude], 15);
+            animatedZoomToVehicle(assetId, 16, () => {
                 const marker = markerLayer[assetId];
                 if (marker) marker.openPopup();
-            }
+            });
 
             openDetailPanel(vehicle);
+        }
+
+        let zoomAnimating = false;
+
+        function animatedZoomToVehicle(assetId, targetZoom, onDone) {
+            if (zoomAnimating) return;
+
+            const vehicle = allVehicles.find(v => v.asset_id === assetId);
+            if (!vehicle || !vehicle.latitude || !vehicle.longitude || !map) return;
+
+            zoomAnimating = true;
+            const lat = vehicle.latitude;
+            const lng = vehicle.longitude;
+            const minZoom = 8;
+
+            map.flyTo([lat, lng], minZoom, {
+                duration: 0.45,
+                easeLinearity: 0.2,
+            });
+
+            setTimeout(() => {
+                map.flyTo([lat, lng], targetZoom == null ? 16 : targetZoom, {
+                    duration: 0.9,
+                    easeLinearity: 0.25,
+                });
+                zoomAnimating = false;
+                if (onDone) setTimeout(onDone, 550);
+            }, 500);
         }
 
         function openDetailPanel(v) {
@@ -496,11 +523,12 @@
 
         function centerOnVehicle(assetId) {
             const vehicle = allVehicles.find(v => v.asset_id === assetId);
-            if (!vehicle || !vehicle.latitude || !vehicle.longitude || !map) return;
+            if (!vehicle) return;
 
-            map.setView([vehicle.latitude, vehicle.longitude], 16);
-            const marker = markerLayer[assetId];
-            if (marker) marker.openPopup();
+            animatedZoomToVehicle(assetId, 17, () => {
+                const marker = markerLayer[assetId];
+                if (marker) marker.openPopup();
+            });
         }
 
         async function refreshData() {
