@@ -24,7 +24,7 @@
 
             {{-- Left Column: Vehicle List --}}
             <div class="w-full lg:w-1/5">
-                <div class="flex flex-col rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden" style="height: 560px;">
+                <div class="flex flex-col rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden" style="height: 645px;">
                     {{-- Search --}}
                     <div class="border-b border-gray-200 dark:border-gray-800 p-3">
                         <div class="relative">
@@ -68,7 +68,7 @@
                     </div>
 
                     {{-- Vehicle List --}}
-                    <div id="vehicleList" class="flex-1 overflow-y-auto">
+                    <div id="vehicleList" class="flex-1 overflow-y-auto no-scrollbar">
                         {{-- Populated by JS --}}
                     </div>
 
