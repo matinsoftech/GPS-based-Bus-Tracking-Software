@@ -38,9 +38,9 @@
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                     @forelse ($trips as $trip)
                         <tr class="text-gray-700 dark:text-gray-200">
-                            <td class="px-5 py-3">{{ $trip->started_at->format('M d, Y') }}</td>
-                            <td class="px-5 py-3">{{ $trip->bus->bus_number }}</td>
-                            <td class="px-5 py-3">{{ $trip->route->name }}</td>
+                            <td class="px-5 py-3">{{ $trip->started_at?->format('M d, Y') ?? '—' }}</td>
+                            <td class="px-5 py-3">{{ $trip->bus?->bus_number ?? '—' }}</td>
+                            <td class="px-5 py-3">{{ $trip->route?->name ?? '—' }}</td>
                             <td class="px-5 py-3">
                                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
                                     @if ($trip->trip_type === 'home_to_school')
