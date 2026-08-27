@@ -72,6 +72,7 @@ class DriverTripWebController extends Controller
         $validated = $request->validate([
             'bus_id'    => ['required', 'integer', 'exists:buses,id'],
             'route_id'  => ['required', 'integer', 'exists:routes,id'],
+            'trip_type' => ['nullable', 'string', 'in:home_to_school,school_to_home'],
             'latitude'  => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'notes'     => ['nullable', 'string', 'max:1000'],
@@ -80,6 +81,7 @@ class DriverTripWebController extends Controller
             'bus_id.exists'     => 'Selected bus not found.',
             'route_id.required' => 'Please select a route.',
             'route_id.exists'   => 'Selected route not found.',
+            'trip_type.in'      => 'Invalid trip type.',
             'latitude.numeric'  => 'Invalid latitude.',
             'longitude.numeric' => 'Invalid longitude.',
         ]);
@@ -107,17 +109,11 @@ class DriverTripWebController extends Controller
             ->get();
         $lastTrip = $todayTrips->last();
 
-        if ($lastTrip && $lastTrip->isCompleted() && $lastTrip->trip_type === Trip::TYPE_SCHOOL_TO_HOME) {
-            return back()->withErrors(['base' => 'All trips for today are completed.'])->withInput();
-        }
-
         $isStarting = ! $lastTrip || $lastTrip->isCompleted();
 
         $trip = DB::transaction(function () use ($bus, $driver, $route, $validated, $lastTrip, $isStarting) {
             if ($isStarting) {
-                $tripType = ! $lastTrip || $lastTrip->trip_type === Trip::TYPE_SCHOOL_TO_HOME
-                    ? Trip::TYPE_HOME_TO_SCHOOL
-                    : Trip::TYPE_SCHOOL_TO_HOME;
+                $tripType = $validated['trip_type'] ?? Trip::TYPE_HOME_TO_SCHOOL;
 
                 return Trip::create([
                     'bus_id'          => $bus->id,

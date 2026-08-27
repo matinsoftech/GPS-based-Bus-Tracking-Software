@@ -57,6 +57,7 @@ class BusLocationController extends Controller
                 'parent',
                 'children',
                 'selectedChild',
+                'route',
                 'bus',
                 'routes',
                 'latestLocation',
