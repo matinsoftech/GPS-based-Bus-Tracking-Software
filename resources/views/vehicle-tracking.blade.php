@@ -290,29 +290,11 @@
 
         function buildPopupHtml(v) {
             const color = STATUS_COLORS[v.status] || '#6b7280';
-            const busInfo = v.bus_number
-                ? `Bus #${v.bus_number}${v.bus_registration ? ' (' + v.bus_registration + ')' : ''}`
-                : 'No assigned bus';
-
-            const driverInfo = v.matched_driver_name || v.driver_name || '—';
-            const phoneInfo = v.driver_phone || '';
 
             return `
-                <div style="padding:12px 14px;font-family:system-ui,-apple-system,sans-serif;">
-                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-                        <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0;"></span>
-                        <strong style="font-size:14px;color:#111827;">${v.asset_name}</strong>
-                        ${v.plate_number ? '<span style="font-size:11px;color:#6b7280;margin-left:auto;">' + v.plate_number + '</span>' : ''}
-                    </div>
-                    <div style="font-size:12px;color:#4b5563;line-height:1.6;">
-                        <div><strong>Bus:</strong> ${busInfo}</div>
-                        ${v.school_name ? '<div><strong>School:</strong> ' + v.school_name + '</div>' : ''}
-                        <div><strong>Driver:</strong> ${driverInfo}${phoneInfo ? ' (' + phoneInfo + ')' : ''}</div>
-                        <div><strong>Speed:</strong> ${Math.round(v.speed_kmh)} km/h</div>
-                        <div><strong>Status:</strong> <span style="color:${color};font-weight:600;">${v.status_label}</span></div>
-                        ${v.latitude && v.longitude ? '<div style="font-size:11px;color:#9ca3af;margin-top:4px;">' + Number(v.latitude).toFixed(5) + ', ' + Number(v.longitude).toFixed(5) + '</div>' : ''}
-                        ${v.last_updated_ago ? '<div style="font-size:11px;color:#9ca3af;">Updated: ' + v.last_updated_ago + '</div>' : ''}
-                    </div>
+                <div style="padding:6px 10px;font-family:system-ui,-apple-system,sans-serif;">
+                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle;"></span>
+                    <strong style="font-size:13px;color:#111827;white-space:nowrap;">${v.asset_name}</strong>
                 </div>
             `;
         }
