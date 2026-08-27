@@ -44,7 +44,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/live-tracking', [DriverLiveTrackingController::class, 'index']);
 
             Route::get('/trips', [DriverTripController::class, 'index'])->middleware('permission:trip.view');
-            Route::post('/trips/toggle', [DriverTripController::class, 'toggle'])->middleware('permission:trip.start');
+            Route::post('/trips', [DriverTripController::class, 'start'])->middleware('permission:trip.start');
+            Route::get('/trips/{trip}', [DriverTripController::class, 'show'])->middleware('permission:trip.view');
+            Route::post('/trips/{trip}/end', [DriverTripController::class, 'end'])->middleware('permission:trip.start');
 
             Route::prefix('attendances')->group(function () {
                 Route::get('/', [DriverAttendanceController::class, 'index']);
