@@ -45,7 +45,8 @@
         [
             'title' => 'Monitoring',
             'items' => [
-                ['key' => 'live-tracking', 'label' => 'Live Tracking', 'route' => 'bus_location', 'active' => 'live-tracking', 'icon' => 'heroicon-o-eye', 'permission' => null, 'dropdown' => null],
+                // ['key' => 'live-tracking', 'label' => 'Live Tracking', 'route' => 'bus_location', 'active' => 'live-tracking', 'icon' => 'heroicon-o-eye', 'permission' => null, 'dropdown' => null],
+                ['key' => 'vehicle-tracking', 'label' => 'Vehicle Tracking', 'route' => 'vehicle-tracking', 'active' => 'vehicle-tracking', 'icon' => 'heroicon-o-map-pin', 'permission' => null, 'dropdown' => null],
                 ['key' => 'attendance', 'label' => 'Attendance', 'route' => 'attendance.index', 'active' => 'attendance', 'icon' => 'heroicon-o-document-check', 'permission' => 'attendance.view', 'dropdown' => null],
                 // ['key' => 'notifications', 'label' => 'Notifications', 'route' => 'dashboard', 'active' => 'notifications', 'icon' => 'heroicon-o-bell', 'permission' => null, 'dropdown' => null],
             ],
