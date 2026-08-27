@@ -110,7 +110,7 @@ class RouteController extends Controller
     {
         $this->authorizeRoute($route);
 
-        $route->load(['school', 'buses.drivers']);
+        $route->load(['school', 'activeTrip.bus.drivers']);
 
         return view('routes.show', compact('route'));
     }
