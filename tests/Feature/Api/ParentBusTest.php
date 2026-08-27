@@ -9,6 +9,7 @@ use App\Models\Route;
 use App\Models\RouteStop;
 use App\Models\School;
 use App\Models\Student;
+use App\Models\Trip;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -31,8 +32,6 @@ class ParentBusTest extends TestCase
     private Driver $driver;
 
     private Route $route;
-
-    private Bus $bus;
 
     protected function setUp(): void
     {
@@ -92,10 +91,32 @@ class ParentBusTest extends TestCase
         $this->route = Route::create([
             'school_id' => $this->school->id,
             'name' => 'Route 1',
-            'route_code' => 'RT-BUS-1',
-            'start_location' => 'Chabahil',
-            'end_location' => 'School',
+            'route_code' => 'RT-PBT-001',
+            'start_location' => 'Start',
+            'end_location' => 'End',
             'is_active' => true,
+        ]);
+
+        $bus = Bus::create([
+            'school_id' => $this->school->id,
+            'bus_number' => 'BUS-001',
+            'registration_number' => 'BA-1-KHA-1234',
+            'capacity' => 40,
+            'gps_device_id' => '123456789012345',
+            'status' => 'Active',
+        ]);
+
+        $bus->drivers()->attach($this->driver->id);
+        $this->route->drivers()->attach($this->driver->id);
+
+        Trip::create([
+            'bus_id' => $bus->id,
+            'driver_id' => $this->driver->id,
+            'route_id' => $this->route->id,
+            'school_id' => $this->school->id,
+            'trip_type' => Trip::TYPE_HOME_TO_SCHOOL,
+            'status' => Trip::STATUS_IN_PROGRESS,
+            'started_at' => now(),
         ]);
 
         RouteStop::create([
@@ -115,17 +136,6 @@ class ParentBusTest extends TestCase
             'stop_order' => 2,
             'drop_time' => '15:30:00',
         ]);
-
-        $this->bus = Bus::create([
-            'school_id' => $this->school->id,
-            'bus_number' => 'PARENT-BUS-1',
-            'registration_number' => 'BA PARENT-BUS-1',
-            'capacity' => 40,
-            'gps_device_id' => '123456789012345',
-            'status' => 'Active',
-        ]);
-        $this->bus->drivers()->attach($this->driver->id);
-        $this->bus->routes()->attach($this->route->id);
     }
 
     private function makeStudent(array $overrides = []): Student
@@ -133,7 +143,7 @@ class ParentBusTest extends TestCase
         return Student::create(array_merge([
             'school_id' => $this->school->id,
             'parent_id' => $this->parent->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'admission_no' => 'ADM-BUS-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Bahadur',
@@ -185,13 +195,12 @@ class ParentBusTest extends TestCase
 
         $this->getJson('/api/v1/parent/children/'.$student->id.'/bus')
             ->assertOk()
-            ->assertJsonPath('message', 'Parent child bus data.')
+            ->assertJsonPath('message', 'Parent child route data.')
             ->assertJsonPath('data.student.full_name', 'Sita Bahadur')
-            ->assertJsonPath('data.bus.bus_number', 'PARENT-BUS-1')
-            ->assertJsonPath('data.bus.drivers.0.name', 'Ramesh Sharma')
-            ->assertJsonPath('data.bus.routes.0.name', 'Route 1')
-            ->assertJsonCount(2, 'data.bus.routes.0.stops')
-            ->assertJsonPath('data.bus.routes.0.stops.0.name', 'Chabahil')
+            ->assertJsonPath('data.route.name', 'Route 1')
+            ->assertJsonPath('data.route.drivers.0.name', 'Ramesh Sharma')
+            ->assertJsonCount(2, 'data.route.stops')
+            ->assertJsonPath('data.route.stops.0.name', 'Chabahil')
             ->assertJsonPath('data.live_location.imei', '123456789012345')
             ->assertJsonPath('data.live_location.latitude', 27.7172)
             ->assertJsonPath('data.live_location.longitude', 85.324)
@@ -201,28 +210,14 @@ class ParentBusTest extends TestCase
                 'message',
                 'data' => [
                     'student' => ['id', 'full_name', 'grade', 'section', 'photo', 'pickup_location', 'drop_location'],
-                    'bus' => [
+                    'route' => [
                         'id',
-                        'bus_number',
-                        'registration_number',
-                        'make',
-                        'model',
-                        'year',
-                        'capacity',
-                        'fuel_type',
-                        'status',
+                        'name',
+                        'route_code',
+                        'is_active',
                         'drivers' => [['id', 'name', 'phone']],
-                        'routes' => [
-                            [
-                                'id',
-                                'name',
-                                'route_code',
-                                'start_location',
-                                'end_location',
-                                'stops' => [
-                                    '*' => ['id', 'name', 'latitude', 'longitude', 'stop_order', 'pickup_time', 'drop_time'],
-                                ],
-                            ],
+                        'stops' => [
+                            '*' => ['id', 'name', 'latitude', 'longitude', 'stop_order', 'pickup_time', 'drop_time'],
                         ],
                         'school' => ['id', 'name', 'address'],
                     ],
@@ -233,8 +228,6 @@ class ParentBusTest extends TestCase
 
     public function test_bus_without_gps_device_shows_null_live_location(): void
     {
-        $this->bus->update(['gps_device_id' => null]);
-
         $student = $this->makeStudent();
 
         $this->fakeLiveTracking([]);
@@ -243,7 +236,7 @@ class ParentBusTest extends TestCase
 
         $this->getJson('/api/v1/parent/children/'.$student->id.'/bus')
             ->assertOk()
-            ->assertJsonPath('data.bus.bus_number', 'PARENT-BUS-1')
+            ->assertJsonPath('data.route.name', 'Route 1')
             ->assertJsonPath('data.live_location', null);
     }
 
@@ -262,7 +255,7 @@ class ParentBusTest extends TestCase
         $otherStudent = Student::create([
             'school_id' => $this->school->id,
             'parent_id' => $otherParent->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'admission_no' => 'ADM-BUS-OTHER-'.uniqid(),
             'first_name' => 'Gita',
             'last_name' => 'Sharma',
@@ -280,12 +273,12 @@ class ParentBusTest extends TestCase
 
         $this->getJson('/api/v1/parent/children/'.$otherStudent->id.'/bus')
             ->assertForbidden()
-            ->assertJsonPath('message', "You are not authorized to view this student's bus.");
+            ->assertJsonPath('message', "You are not authorized to view this student's route.");
     }
 
     public function test_child_without_bus_returns_404(): void
     {
-        $student = $this->makeStudent(['bus_id' => null]);
+        $student = $this->makeStudent(['route_id' => null]);
 
         $this->fakeLiveTracking([]);
 
@@ -293,7 +286,7 @@ class ParentBusTest extends TestCase
 
         $this->getJson('/api/v1/parent/children/'.$student->id.'/bus')
             ->assertNotFound()
-            ->assertJsonPath('message', 'Bus not found for this child.');
+            ->assertJsonPath('message', 'Route not found for this child.');
     }
 
     public function test_user_without_parent_profile_gets_404(): void

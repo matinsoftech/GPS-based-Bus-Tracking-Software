@@ -4,10 +4,6 @@ namespace App\Services;
 
 use App\Models\Bus;
 use App\Models\GpsDevice;
-use App\Models\SchoolAdmin;
-use App\Models\User;
-use App\Notifications\BusStartedNotification;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class BusTrackingService
@@ -48,10 +44,6 @@ class BusTrackingService
         $longitude = $data['longitude'] ?? null;
         $hasFix = is_numeric($latitude) && is_numeric($longitude);
 
-        // Determine whether the bus was online before this update, so we only
-        // notify when it transitions from offline -> online.
-        $wasOnline = $this->wasRecentlyOnline($gpsDevice);
-
         if ($hasFix) {
             $gpsDevice->locations()->create([
                 'latitude' => $latitude,
@@ -61,10 +53,6 @@ class BusTrackingService
                 'altitude' => $data['altitude'] ?? null,
                 'recorded_at' => now(),
             ]);
-        }
-
-        if ($hasFix && ! $wasOnline && $this->canNotifyBusStarted($bus)) {
-            $this->notifyBusStarted($bus);
         }
     }
 
@@ -85,77 +73,23 @@ class BusTrackingService
         ]);
     }
 
-    private function wasRecentlyOnline(GpsDevice $gpsDevice): bool
+    public function getLastKnownLocation(int $busId): ?array
     {
-        $lastLocation = $gpsDevice->locations()
-            ->latest('recorded_at')
-            ->first();
+        $bus = Bus::with('gpsDevice')->find($busId);
+
+        if (! $bus || ! $bus->gpsDevice) {
+            return null;
+        }
+
+        $lastLocation = $bus->gpsDevice->locations()->latest('recorded_at')->first();
 
         if (! $lastLocation) {
-            return false;
+            return null;
         }
 
-        $threshold = (int) config('gps.offline_threshold_minutes', 10);
-
-        return $lastLocation->recorded_at
-            ->greaterThanOrEqualTo(now()->subMinutes($threshold));
-    }
-
-    private function canNotifyBusStarted(Bus $bus): bool
-    {
-        $cooldown = (int) config('gps.bus_started_cooldown_minutes', 180);
-
-        return Cache::add(
-            "bus_started_notified:{$bus->id}",
-            now()->toDateTimeString(),
-            now()->addMinutes($cooldown),
-        );
-    }
-
-    private function notifyBusStarted(Bus $bus): void
-    {
-        $notification = new BusStartedNotification($bus);
-
-        // Notify parents of students on this bus
-        $students = $bus->students()
-            ->with('parent.user')
-            ->get();
-
-        foreach ($students as $student) {
-            $parent = $student->parent?->user;
-
-            if (! $parent) {
-                continue;
-            }
-
-            $parent->notify($notification);
-        }
-
-        // Notify the driver assigned to this bus
-        $driverUser = $bus->drivers->first()?->user;
-
-        if ($driverUser) {
-            $driverUser->notify($notification);
-        }
-
-        // Notify all school admins for this bus's school
-        $schoolAdmins = SchoolAdmin::where('school_id', $bus->school_id)
-            ->with('user')
-            ->get();
-
-        foreach ($schoolAdmins as $admin) {
-            if (! $admin->user) {
-                continue;
-            }
-
-            $admin->user->notify($notification);
-        }
-
-        // Notify all super admins
-        $superAdmins = User::role('Super Admin')->get();
-
-        foreach ($superAdmins as $superAdmin) {
-            $superAdmin->notify($notification);
-        }
+        return [
+            'latitude' => $lastLocation->latitude,
+            'longitude' => $lastLocation->longitude,
+        ];
     }
 }

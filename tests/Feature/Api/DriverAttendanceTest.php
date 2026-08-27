@@ -3,9 +3,9 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Attendance;
-use App\Models\Bus;
 use App\Models\Driver;
 use App\Models\ParentProfile;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\Student;
 use App\Models\User;
@@ -23,7 +23,7 @@ class DriverAttendanceTest extends TestCase
 
     private User $driverUser;
 
-    private Bus $bus;
+    private Route $route;
 
     protected function setUp(): void
     {
@@ -58,14 +58,15 @@ class DriverAttendanceTest extends TestCase
             'created_by' => $this->driverUser->id,
         ]);
 
-        $this->bus = Bus::create([
+        $this->route = Route::create([
+            'name' => 'Route API-1',
+            'route_code' => 'RT-DAT-001',
             'school_id' => $this->school->id,
-            'bus_number' => 'API-BUS-1',
-            'registration_number' => 'BA API-BUS-1',
-            'capacity' => 40,
-            'status' => 'Active',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
         ]);
-        $this->bus->drivers()->attach($this->driver->id);
+        $this->route->drivers()->attach($this->driver->id);
     }
 
     private function makeStudent(array $overrides = []): Student
@@ -81,7 +82,7 @@ class DriverAttendanceTest extends TestCase
         return Student::create(array_merge([
             'school_id' => $this->school->id,
             'parent_id' => $parent->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'admission_no' => 'ADM-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Sharma',
@@ -103,7 +104,7 @@ class DriverAttendanceTest extends TestCase
 
         Sanctum::actingAs($this->driverUser);
 
-        $response = $this->getJson('/api/v1/driver/attendances?bus_id='.$this->bus->id);
+        $response = $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id);
 
         $response->assertOk()
             ->assertJsonPath('data.total_students', 2)
@@ -112,7 +113,7 @@ class DriverAttendanceTest extends TestCase
             ->assertJsonStructure([
                 'message',
                 'data' => [
-                    'bus' => ['id', 'bus_number', 'registration_number', 'status'],
+                    'route' => ['id', 'name', 'is_active'],
                     'total_students',
                     'students' => [
                         '*' => [
@@ -135,13 +136,13 @@ class DriverAttendanceTest extends TestCase
             ]);
     }
 
-    public function test_bus_id_is_required(): void
+    public function test_route_id_is_required(): void
     {
         Sanctum::actingAs($this->driverUser);
 
         $this->getJson('/api/v1/driver/attendances')
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('bus_id');
+            ->assertJsonValidationErrors('route_id');
     }
 
     public function test_cannot_view_another_drivers_bus(): void
@@ -166,18 +167,19 @@ class DriverAttendanceTest extends TestCase
             'created_by' => $otherDriverUser->id,
         ]);
 
-        $otherBus = Bus::create([
+        $otherRoute = Route::create([
+            'name' => 'Route API-2',
+            'route_code' => 'RT-DAT-002',
             'school_id' => $this->school->id,
-            'bus_number' => 'API-BUS-2',
-            'registration_number' => 'BA API-BUS-2',
-            'capacity' => 40,
-            'status' => 'Active',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
         ]);
-        $otherBus->drivers()->attach($otherDriver->id);
+        $otherRoute->drivers()->attach($otherDriver->id);
 
         Sanctum::actingAs($this->driverUser);
 
-        $this->getJson('/api/v1/driver/attendances?bus_id='.$otherBus->id)
+        $this->getJson('/api/v1/driver/attendances?route_id='.$otherRoute->id)
             ->assertNotFound();
     }
 
@@ -187,7 +189,7 @@ class DriverAttendanceTest extends TestCase
 
         Sanctum::actingAs($parentUser);
 
-        $this->getJson('/api/v1/driver/attendances?bus_id='.$this->bus->id)
+        $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id)
             ->assertNotFound();
     }
 
@@ -198,7 +200,7 @@ class DriverAttendanceTest extends TestCase
         Sanctum::actingAs($this->driverUser);
 
         $this->postJson('/api/v1/driver/attendances/mark', [
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'student_id' => $student->id,
         ])
             ->assertOk()
@@ -207,7 +209,7 @@ class DriverAttendanceTest extends TestCase
             ->assertJsonStructure(['data' => ['check_in_at']]);
 
         $this->postJson('/api/v1/driver/attendances/mark', [
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'student_id' => $student->id,
         ])
             ->assertOk()
@@ -215,7 +217,7 @@ class DriverAttendanceTest extends TestCase
             ->assertJsonStructure(['data' => ['check_out_at']]);
 
         $this->postJson('/api/v1/driver/attendances/mark', [
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'student_id' => $student->id,
         ])
             ->assertOk()
@@ -223,7 +225,7 @@ class DriverAttendanceTest extends TestCase
             ->assertJsonPath('data.trip', 'school_to_home');
 
         $this->postJson('/api/v1/driver/attendances/mark', [
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'student_id' => $student->id,
         ])
             ->assertOk()
@@ -255,13 +257,13 @@ class DriverAttendanceTest extends TestCase
 
         foreach (range(1, 4) as $i) {
             $this->postJson('/api/v1/driver/attendances/mark', [
-                'bus_id' => $this->bus->id,
+                'route_id' => $this->route->id,
                 'student_id' => $student->id,
             ])->assertOk();
         }
 
         $this->postJson('/api/v1/driver/attendances/mark', [
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'student_id' => $student->id,
         ])
             ->assertUnprocessable()
@@ -274,7 +276,7 @@ class DriverAttendanceTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'home_to_school',
             'date' => now(),
             'check_in_at' => now()->subHours(2),
@@ -283,7 +285,7 @@ class DriverAttendanceTest extends TestCase
         Sanctum::actingAs($this->driverUser);
 
         $this->postJson('/api/v1/driver/attendances/mark', [
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'student_id' => $student->id,
         ])
             ->assertOk()
@@ -314,50 +316,50 @@ class DriverAttendanceTest extends TestCase
             'created_by' => $otherDriverUser->id,
         ]);
 
-        $otherBus = Bus::create([
+        $otherRoute = Route::create([
+            'name' => 'Route API-3',
+            'route_code' => 'RT-DAT-003',
             'school_id' => $this->school->id,
-            'bus_number' => 'API-BUS-3',
-            'registration_number' => 'BA API-BUS-3',
-            'capacity' => 40,
-            'status' => 'Active',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
         ]);
-        $otherBus->drivers()->attach($otherDriver->id);
+        $otherRoute->drivers()->attach($otherDriver->id);
 
-        $student = $this->makeStudent(['bus_id' => $otherBus->id]);
+        $student = $this->makeStudent(['route_id' => $otherRoute->id]);
 
         Sanctum::actingAs($this->driverUser);
 
         $this->postJson('/api/v1/driver/attendances/mark', [
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'student_id' => $student->id,
         ])
             ->assertUnprocessable()
-            ->assertJsonPath('message', 'Student not found on this bus.');
+            ->assertJsonPath('message', 'Student not found on this route.');
     }
 
     public function test_cannot_mark_on_inactive_bus(): void
     {
-        $this->bus->update(['status' => 'Inactive']);
+        $this->route->update(['is_active' => false]);
 
         $student = $this->makeStudent();
 
         Sanctum::actingAs($this->driverUser);
 
         $this->postJson('/api/v1/driver/attendances/mark', [
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'student_id' => $student->id,
         ])
-            ->assertUnprocessable()
-            ->assertJsonPath('message', 'Attendance can only be marked on active buses.');
+            ->assertForbidden();
     }
 
-    public function test_mark_requires_bus_id_and_student_id(): void
+    public function test_mark_requires_route_id_and_student_id(): void
     {
         Sanctum::actingAs($this->driverUser);
 
         $this->postJson('/api/v1/driver/attendances/mark')
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['bus_id', 'student_id']);
+            ->assertJsonValidationErrors(['route_id', 'student_id']);
     }
 
     public function test_cannot_mark_on_another_drivers_bus(): void
@@ -382,21 +384,22 @@ class DriverAttendanceTest extends TestCase
             'created_by' => $otherDriverUser->id,
         ]);
 
-        $otherBus = Bus::create([
+        $otherRoute = Route::create([
+            'name' => 'Route API-4',
+            'route_code' => 'RT-DAT-004',
             'school_id' => $this->school->id,
-            'bus_number' => 'API-BUS-4',
-            'registration_number' => 'BA API-BUS-4',
-            'capacity' => 40,
-            'status' => 'Active',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
         ]);
-        $otherBus->drivers()->attach($otherDriver->id);
+        $otherRoute->drivers()->attach($otherDriver->id);
 
         $student = $this->makeStudent();
 
         Sanctum::actingAs($this->driverUser);
 
         $this->postJson('/api/v1/driver/attendances/mark', [
-            'bus_id' => $otherBus->id,
+            'route_id' => $otherRoute->id,
             'student_id' => $student->id,
         ])
             ->assertNotFound();
@@ -408,7 +411,7 @@ class DriverAttendanceTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'home_to_school',
             'date' => now(),
             'check_in_at' => now()->setTime(7, 15, 0),
@@ -418,7 +421,7 @@ class DriverAttendanceTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'school_to_home',
             'date' => now(),
             'check_in_at' => now()->setTime(15, 30, 0),
@@ -428,7 +431,7 @@ class DriverAttendanceTest extends TestCase
 
         Sanctum::actingAs($this->driverUser);
 
-        $this->getJson('/api/v1/driver/attendances/history?bus_id='.$this->bus->id)
+        $this->getJson('/api/v1/driver/attendances/history?route_id='.$this->route->id)
             ->assertOk()
             ->assertJsonPath('data.total_records', 2)
             ->assertJsonCount(2, 'data.records')
@@ -439,7 +442,7 @@ class DriverAttendanceTest extends TestCase
             ->assertJsonStructure([
                 'message',
                 'data' => [
-                    'bus' => ['id', 'bus_number', 'registration_number', 'status'],
+                    'route' => ['id', 'name', 'route_code'],
                     'from',
                     'to',
                     'total_records',
@@ -461,13 +464,13 @@ class DriverAttendanceTest extends TestCase
             ]);
     }
 
-    public function test_history_requires_bus_id(): void
+    public function test_history_requires_route_id(): void
     {
         Sanctum::actingAs($this->driverUser);
 
         $this->getJson('/api/v1/driver/attendances/history')
             ->assertUnprocessable()
-            ->assertJsonValidationErrors('bus_id');
+            ->assertJsonValidationErrors('route_id');
     }
 
     public function test_cannot_view_history_for_another_drivers_bus(): void
@@ -492,18 +495,19 @@ class DriverAttendanceTest extends TestCase
             'created_by' => $otherDriverUser->id,
         ]);
 
-        $otherBus = Bus::create([
+        $otherRoute = Route::create([
+            'name' => 'Route API-5',
+            'route_code' => 'RT-DAT-005',
             'school_id' => $this->school->id,
-            'bus_number' => 'API-BUS-5',
-            'registration_number' => 'BA API-BUS-5',
-            'capacity' => 40,
-            'status' => 'Active',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
         ]);
-        $otherBus->drivers()->attach($otherDriver->id);
+        $otherRoute->drivers()->attach($otherDriver->id);
 
         Sanctum::actingAs($this->driverUser);
 
-        $this->getJson('/api/v1/driver/attendances/history?bus_id='.$otherBus->id)
+        $this->getJson('/api/v1/driver/attendances/history?route_id='.$otherRoute->id)
             ->assertNotFound();
     }
 
@@ -513,7 +517,7 @@ class DriverAttendanceTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'home_to_school',
             'date' => now()->subDays(45),
             'check_in_at' => now()->subDays(45)->setTime(7, 15, 0),
@@ -523,7 +527,7 @@ class DriverAttendanceTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'home_to_school',
             'date' => now()->subDays(3),
             'check_in_at' => now()->subDays(3)->setTime(7, 15, 0),
@@ -533,16 +537,16 @@ class DriverAttendanceTest extends TestCase
 
         Sanctum::actingAs($this->driverUser);
 
-        $this->getJson('/api/v1/driver/attendances/history?bus_id='.$this->bus->id)
+        $this->getJson('/api/v1/driver/attendances/history?route_id='.$this->route->id)
             ->assertOk()
             ->assertJsonPath('data.total_records', 1);
 
-        $this->getJson('/api/v1/driver/attendances/history?bus_id='.$this->bus->id
+        $this->getJson('/api/v1/driver/attendances/history?route_id='.$this->route->id
             .'&from='.now()->subDays(50)->toDateString().'&to='.now()->toDateString())
             ->assertOk()
             ->assertJsonPath('data.total_records', 2);
 
-        $this->getJson('/api/v1/driver/attendances/history?bus_id='.$this->bus->id
+        $this->getJson('/api/v1/driver/attendances/history?route_id='.$this->route->id
             .'&from='.now()->subDays(10)->toDateString().'&to='.now()->subDays(5)->toDateString())
             ->assertOk()
             ->assertJsonPath('data.total_records', 0);
@@ -552,7 +556,7 @@ class DriverAttendanceTest extends TestCase
     {
         Sanctum::actingAs($this->driverUser);
 
-        $this->getJson('/api/v1/driver/attendances/history?bus_id='.$this->bus->id
+        $this->getJson('/api/v1/driver/attendances/history?route_id='.$this->route->id
             .'&from='.now()->toDateString().'&to='.now()->subDays(5)->toDateString())
             ->assertUnprocessable()
             ->assertJsonValidationErrors('to');
@@ -560,13 +564,13 @@ class DriverAttendanceTest extends TestCase
 
     public function test_history_works_for_inactive_bus(): void
     {
-        $this->bus->update(['status' => 'Inactive']);
+        $this->route->update(['is_active' => false]);
 
         $student = $this->makeStudent();
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'home_to_school',
             'date' => now(),
             'check_in_at' => now()->setTime(7, 15, 0),
@@ -576,7 +580,7 @@ class DriverAttendanceTest extends TestCase
 
         Sanctum::actingAs($this->driverUser);
 
-        $this->getJson('/api/v1/driver/attendances/history?bus_id='.$this->bus->id)
+        $this->getJson('/api/v1/driver/attendances/history?route_id='.$this->route->id)
             ->assertOk()
             ->assertJsonPath('data.total_records', 1);
     }
@@ -587,7 +591,7 @@ class DriverAttendanceTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'home_to_school',
             'date' => now(),
             'check_in_at' => now()->setTime(7, 15, 0),
@@ -597,7 +601,7 @@ class DriverAttendanceTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'school_to_home',
             'date' => now(),
             'check_in_at' => now()->setTime(15, 30, 0),
@@ -606,7 +610,7 @@ class DriverAttendanceTest extends TestCase
 
         Sanctum::actingAs($this->driverUser);
 
-        $this->getJson('/api/v1/driver/attendances?bus_id='.$this->bus->id)
+        $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id)
             ->assertOk()
             ->assertJsonPath('data.students.0.today_attendance.home_to_school.status', 'completed')
             ->assertJsonPath('data.students.0.today_attendance.school_to_home.status', 'checked_in')
@@ -634,7 +638,7 @@ class DriverAttendanceTest extends TestCase
 
         Sanctum::actingAs($this->driverUser);
 
-        $this->getJson('/api/v1/driver/attendances?bus_id='.$this->bus->id)
+        $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id)
             ->assertOk()
             ->assertJsonPath('data.students.0.today_attendance.home_to_school.status', 'not_checked_in')
             ->assertJsonPath('data.students.0.today_attendance.school_to_home.status', 'not_checked_in')
@@ -649,7 +653,7 @@ class DriverAttendanceTest extends TestCase
         foreach (['home_to_school', 'school_to_home'] as $trip) {
             Attendance::create([
                 'student_id' => $student->id,
-                'bus_id' => $this->bus->id,
+                'route_id' => $this->route->id,
                 'trip' => $trip,
                 'date' => now(),
                 'check_in_at' => now()->setTime(7, 15, 0),
@@ -660,7 +664,7 @@ class DriverAttendanceTest extends TestCase
 
         Sanctum::actingAs($this->driverUser);
 
-        $this->getJson('/api/v1/driver/attendances?bus_id='.$this->bus->id)
+        $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id)
             ->assertOk()
             ->assertJsonPath('data.students.0.today_attendance.home_to_school.status', 'completed')
             ->assertJsonPath('data.students.0.today_attendance.school_to_home.status', 'completed')

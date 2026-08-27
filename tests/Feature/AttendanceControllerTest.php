@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Attendance;
-use App\Models\Bus;
 use App\Models\Driver;
 use App\Models\ParentProfile;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\Student;
 use App\Models\User;
@@ -60,31 +60,26 @@ class AttendanceControllerTest extends TestCase
         ]);
     }
 
-    private function createBus(School $school, string $busNumber, ?Driver $driver = null): Bus
+    private function createRoute(School $school, string $routeName, bool $isActive = true): Route
     {
-        $bus = Bus::create([
+        return Route::create([
+            'name' => $routeName,
+            'route_code' => 'RT-'.strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $routeName), 0, 8)).'-'.bin2hex(random_bytes(3)),
             'school_id' => $school->id,
-            'bus_number' => $busNumber,
-            'registration_number' => "BA {$busNumber}",
-            'capacity' => 40,
-            'status' => 'Active',
+            'is_active' => $isActive,
+            'start_location' => 'Start Point',
+            'end_location' => 'End Point',
         ]);
-
-        if ($driver) {
-            $bus->drivers()->attach($driver->id);
-        }
-
-        return $bus;
     }
 
-    private function createStudent(School $school, Bus $bus, string $admissionNo, ?ParentProfile $parent = null): Student
+    private function createStudent(School $school, Route $route, string $admissionNo, ?ParentProfile $parent = null): Student
     {
         $parent ??= $this->createParent($school);
 
         return Student::create([
             'school_id' => $school->id,
             'parent_id' => $parent->id,
-            'bus_id' => $bus->id,
+            'route_id' => $route->id,
             'admission_no' => $admissionNo,
             'first_name' => 'Aarav',
             'last_name' => 'Shrestha',
@@ -113,7 +108,7 @@ class AttendanceControllerTest extends TestCase
         ]);
     }
 
-    public function test_school_admin_can_view_attendance_for_own_school_buses(): void
+    public function test_school_admin_can_view_attendance_for_own_school_routes(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -124,18 +119,18 @@ class AttendanceControllerTest extends TestCase
         $admin->school_id = $school->id;
         $admin->save();
 
-        $bus = $this->createBus($school, 'BUS-100');
+        $route = $this->createRoute($school, 'Route 100');
 
         $this->actingAs($admin)->get(route('attendance.index'))
             ->assertOk()
-            ->assertSee('BUS-100');
+            ->assertSee('Route 100');
 
-        $this->actingAs($admin)->get(route('attendance.buses.show', $bus))
+        $this->actingAs($admin)->get(route('attendance.routes.show', $route))
             ->assertOk()
-            ->assertSee('BUS-100');
+            ->assertSee('Route 100');
     }
 
-    public function test_school_admin_cannot_access_another_schools_bus(): void
+    public function test_school_admin_cannot_access_another_schools_route(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -147,13 +142,13 @@ class AttendanceControllerTest extends TestCase
         $admin->save();
 
         $otherSchool = $this->createSchool('SCH102');
-        $bus = $this->createBus($otherSchool, 'BUS-101');
+        $route = $this->createRoute($otherSchool, 'Route 101');
 
-        $this->actingAs($admin)->get(route('attendance.buses.show', $bus))
+        $this->actingAs($admin)->get(route('attendance.routes.show', $route))
             ->assertForbidden();
     }
 
-    public function test_super_admin_sees_all_buses(): void
+    public function test_super_admin_sees_all_routes(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -161,17 +156,17 @@ class AttendanceControllerTest extends TestCase
         $superAdmin->assignRole('Super Admin');
 
         $school = $this->createSchool('SCH103');
-        $bus = $this->createBus($school, 'BUS-102');
+        $route = $this->createRoute($school, 'Route 102');
 
         $this->actingAs($superAdmin)->get(route('attendance.index'))
             ->assertOk()
-            ->assertSee('BUS-102');
+            ->assertSee('Route 102');
 
-        $this->actingAs($superAdmin)->get(route('attendance.buses.show', $bus))
+        $this->actingAs($superAdmin)->get(route('attendance.routes.show', $route))
             ->assertOk();
     }
 
-    public function test_driver_only_sees_their_own_bus(): void
+    public function test_driver_only_sees_their_own_route(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -181,15 +176,17 @@ class AttendanceControllerTest extends TestCase
         $school = $this->createSchool('SCH104');
         $driver = $this->createDriver($school, $driverUser, '104');
 
-        $ownBus = $this->createBus($school, 'BUS-103', $driver);
-        $otherBus = $this->createBus($school, 'BUS-104');
+        $ownRoute = $this->createRoute($school, 'Route 103');
+        $otherRoute = $this->createRoute($school, 'Route 104');
+
+        $ownRoute->drivers()->attach($driver->id);
 
         $this->actingAs($driverUser)->get(route('attendance.index'))
             ->assertOk()
-            ->assertSee('BUS-103')
-            ->assertDontSee('BUS-104');
+            ->assertSee('Route 103')
+            ->assertDontSee('Route 104');
 
-        $this->actingAs($driverUser)->get(route('attendance.buses.show', $otherBus))
+        $this->actingAs($driverUser)->get(route('attendance.routes.show', $otherRoute))
             ->assertForbidden();
     }
 
@@ -215,22 +212,22 @@ class AttendanceControllerTest extends TestCase
         $admin->school_id = $school->id;
         $admin->save();
 
-        $bus = $this->createBus($school, 'BUS-105');
-        $student = $this->createStudent($school, $bus, 'ADM105');
+        $route = $this->createRoute($school, 'Route 105');
+        $student = $this->createStudent($school, $route, 'ADM105');
 
         $this->actingAs($admin)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'home_to_school',
             ])
-            ->assertRedirect(route('attendance.buses.show', [
-                'bus' => $bus,
+            ->assertRedirect(route('attendance.routes.show', [
+                'route' => $route,
                 'date' => now()->toDateString(),
             ]));
 
         $this->assertDatabaseHas('attendances', [
             'student_id' => $student->id,
-            'bus_id' => $bus->id,
+            'route_id' => $route->id,
             'trip' => 'home_to_school',
         ]);
 
@@ -251,19 +248,21 @@ class AttendanceControllerTest extends TestCase
 
         $school = $this->createSchool('SCH105B');
         $driver = $this->createDriver($school, $driverUser, '105B');
-        $bus = $this->createBus($school, 'BUS-105B', $driver);
-        $student = $this->createStudent($school, $bus, 'ADM105B');
+        $route = $this->createRoute($school, 'Route 105B');
+        $student = $this->createStudent($school, $route, 'ADM105B');
+
+        $route->drivers()->attach($driver->id);
 
         foreach (['home_to_school', 'school_to_home'] as $trip) {
             $this->actingAs($driverUser)
-                ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+                ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                     'action' => 'check_in',
                     'trip' => $trip,
                 ])
                 ->assertRedirect();
 
             $this->actingAs($driverUser)
-                ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+                ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                     'action' => 'check_out',
                     'trip' => $trip,
                 ])
@@ -296,11 +295,11 @@ class AttendanceControllerTest extends TestCase
         $admin->school_id = $school->id;
         $admin->save();
 
-        $bus = $this->createBus($school, 'BUS-106');
-        $student = $this->createStudent($school, $bus, 'ADM106');
+        $route = $this->createRoute($school, 'Route 106');
+        $student = $this->createStudent($school, $route, 'ADM106');
 
         $this->actingAs($admin)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_out',
                 'trip' => 'home_to_school',
             ])
@@ -320,18 +319,18 @@ class AttendanceControllerTest extends TestCase
         $admin->school_id = $school->id;
         $admin->save();
 
-        $bus = $this->createBus($school, 'BUS-107');
-        $student = $this->createStudent($school, $bus, 'ADM107');
+        $route = $this->createRoute($school, 'Route 107');
+        $student = $this->createStudent($school, $route, 'ADM107');
 
         $this->actingAs($admin)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'home_to_school',
             ])
             ->assertRedirect();
 
         $this->actingAs($admin)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'home_to_school',
             ])
@@ -351,32 +350,32 @@ class AttendanceControllerTest extends TestCase
         $admin->school_id = $school->id;
         $admin->save();
 
-        $bus = $this->createBus($school, 'BUS-108');
-        $student = $this->createStudent($school, $bus, 'ADM108');
+        $route = $this->createRoute($school, 'Route 108');
+        $student = $this->createStudent($school, $route, 'ADM108');
 
         $this->actingAs($admin)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'home_to_school',
             ])
             ->assertRedirect();
 
         $this->actingAs($admin)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_out',
                 'trip' => 'home_to_school',
             ])
             ->assertRedirect();
 
         $this->actingAs($admin)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_out',
                 'trip' => 'home_to_school',
             ])
             ->assertSessionHasErrors('trip');
     }
 
-    public function test_student_from_another_bus_is_rejected(): void
+    public function test_student_from_another_route_is_rejected(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -387,12 +386,12 @@ class AttendanceControllerTest extends TestCase
         $admin->school_id = $school->id;
         $admin->save();
 
-        $bus = $this->createBus($school, 'BUS-109');
-        $otherBus = $this->createBus($school, 'BUS-110');
-        $student = $this->createStudent($school, $otherBus, 'ADM109');
+        $route = $this->createRoute($school, 'Route 109');
+        $otherRoute = $this->createRoute($school, 'Route 110');
+        $student = $this->createStudent($school, $otherRoute, 'ADM109');
 
         $this->actingAs($admin)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'home_to_school',
             ])
@@ -401,7 +400,7 @@ class AttendanceControllerTest extends TestCase
         $this->assertDatabaseCount('attendances', 0);
     }
 
-    public function test_index_lists_all_buses_regardless_of_status(): void
+    public function test_index_lists_all_routes_regardless_of_status(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -409,23 +408,23 @@ class AttendanceControllerTest extends TestCase
         $superAdmin->assignRole('Super Admin');
 
         $school = $this->createSchool('SCH110');
-        $activeBus = $this->createBus($school, 'BUS-111');
-        $maintenanceBus = Bus::create([
+        $activeRoute = $this->createRoute($school, 'Route 111');
+        $inactiveRoute = Route::create([
+            'name' => 'Route 112',
+            'route_code' => 'RT-112',
             'school_id' => $school->id,
-            'bus_number' => 'BUS-112',
-            'registration_number' => 'BA BUS-112',
-            'capacity' => 40,
-            'status' => 'Maintenance',
+            'is_active' => false,
+            'start_location' => 'Start Point',
+            'end_location' => 'End Point',
         ]);
 
         $this->actingAs($superAdmin)->get(route('attendance.index'))
             ->assertOk()
-            ->assertSee('BUS-111')
-            ->assertSee('BUS-112')
-            ->assertSee('Maintenance');
+            ->assertSee('Route 111')
+            ->assertSee('Route 112');
     }
 
-    public function test_attendance_is_blocked_for_non_active_buses(): void
+    public function test_attendance_is_blocked_for_inactive_routes(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -436,20 +435,14 @@ class AttendanceControllerTest extends TestCase
         $admin->school_id = $school->id;
         $admin->save();
 
-        $bus = Bus::create([
-            'school_id' => $school->id,
-            'bus_number' => 'BUS-113',
-            'registration_number' => 'BA BUS-113',
-            'capacity' => 40,
-            'status' => 'Inactive',
-        ]);
-        $student = $this->createStudent($school, $bus, 'ADM110');
+        $route = $this->createRoute($school, 'Route 113', false);
+        $student = $this->createStudent($school, $route, 'ADM110');
 
-        $this->actingAs($admin)->get(route('attendance.buses.show', $bus))
+        $this->actingAs($admin)->get(route('attendance.routes.show', $route))
             ->assertForbidden();
 
         $this->actingAs($admin)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'home_to_school',
             ])
@@ -458,7 +451,7 @@ class AttendanceControllerTest extends TestCase
         $this->assertDatabaseCount('attendances', 0);
     }
 
-    public function test_school_admin_can_view_bus_attendance_history(): void
+    public function test_school_admin_can_view_route_attendance_history(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -469,25 +462,25 @@ class AttendanceControllerTest extends TestCase
         $admin->school_id = $school->id;
         $admin->save();
 
-        $bus = $this->createBus($school, 'BUS-114');
-        $student = $this->createStudent($school, $bus, 'ADM111');
+        $route = $this->createRoute($school, 'Route 114');
+        $student = $this->createStudent($school, $route, 'ADM111');
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $bus->id,
+            'route_id' => $route->id,
             'date' => now()->toDateString(),
             'check_in_at' => now(),
             'marked_by' => $admin->id,
         ]);
 
-        $this->actingAs($admin)->get(route('attendance.buses.history', $bus))
+        $this->actingAs($admin)->get(route('attendance.routes.history', $route))
             ->assertOk()
             ->assertSee($student->full_name)
             ->assertSee('ADM111')
             ->assertSee('Admin Who Marked');
     }
 
-    public function test_school_admin_cannot_view_another_schools_bus_history(): void
+    public function test_school_admin_cannot_view_another_schools_route_history(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -499,13 +492,13 @@ class AttendanceControllerTest extends TestCase
         $admin->save();
 
         $otherSchool = $this->createSchool('SCH114');
-        $bus = $this->createBus($otherSchool, 'BUS-115');
+        $route = $this->createRoute($otherSchool, 'Route 115');
 
-        $this->actingAs($admin)->get(route('attendance.buses.history', $bus))
+        $this->actingAs($admin)->get(route('attendance.routes.history', $route))
             ->assertForbidden();
     }
 
-    public function test_driver_can_view_own_bus_history_but_not_others(): void
+    public function test_driver_can_view_own_route_history_but_not_others(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -515,13 +508,15 @@ class AttendanceControllerTest extends TestCase
         $school = $this->createSchool('SCH115');
         $driver = $this->createDriver($school, $driverUser, '115');
 
-        $ownBus = $this->createBus($school, 'BUS-116', $driver);
-        $otherBus = $this->createBus($school, 'BUS-117');
+        $ownRoute = $this->createRoute($school, 'Route 116');
+        $otherRoute = $this->createRoute($school, 'Route 117');
 
-        $this->actingAs($driverUser)->get(route('attendance.buses.history', $ownBus))
+        $ownRoute->drivers()->attach($driver->id);
+
+        $this->actingAs($driverUser)->get(route('attendance.routes.history', $ownRoute))
             ->assertOk();
 
-        $this->actingAs($driverUser)->get(route('attendance.buses.history', $otherBus))
+        $this->actingAs($driverUser)->get(route('attendance.routes.history', $otherRoute))
             ->assertForbidden();
     }
 
@@ -536,14 +531,14 @@ class AttendanceControllerTest extends TestCase
         $admin->school_id = $school->id;
         $admin->save();
 
-        $bus = $this->createBus($school, 'BUS-118');
+        $route = $this->createRoute($school, 'Route 118');
 
-        $studentA = $this->createStudent($school, $bus, 'ADM112');
-        $studentB = $this->createStudent($school, $bus, 'ADM113');
+        $studentA = $this->createStudent($school, $route, 'ADM112');
+        $studentB = $this->createStudent($school, $route, 'ADM113');
 
         Attendance::create([
             'student_id' => $studentA->id,
-            'bus_id' => $bus->id,
+            'route_id' => $route->id,
             'date' => now()->toDateString(),
             'check_in_at' => now(),
             'marked_by' => $admin->id,
@@ -551,14 +546,14 @@ class AttendanceControllerTest extends TestCase
 
         Attendance::create([
             'student_id' => $studentB->id,
-            'bus_id' => $bus->id,
+            'route_id' => $route->id,
             'date' => now()->subDays(40)->toDateString(),
             'check_in_at' => now()->subDays(40),
             'marked_by' => $admin->id,
         ]);
 
-        $this->actingAs($admin)->get(route('attendance.buses.history', [
-            'bus' => $bus,
+        $this->actingAs($admin)->get(route('attendance.routes.history', [
+            'route' => $route,
             'from' => now()->subDays(10)->toDateString(),
             'to' => now()->toDateString(),
         ]))
@@ -576,11 +571,13 @@ class AttendanceControllerTest extends TestCase
 
         $school = $this->createSchool('SCH118');
         $driver = $this->createDriver($school, $driverUser, '118');
-        $bus = $this->createBus($school, 'BUS-120', $driver);
-        $student = $this->createStudent($school, $bus, 'ADM114');
+        $route = $this->createRoute($school, 'Route 120');
+        $student = $this->createStudent($school, $route, 'ADM114');
+
+        $route->drivers()->attach($driver->id);
 
         $this->actingAs($driverUser)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'school_to_home',
             ])
@@ -598,25 +595,27 @@ class AttendanceControllerTest extends TestCase
 
         $school = $this->createSchool('SCH119');
         $driver = $this->createDriver($school, $driverUser, '119');
-        $bus = $this->createBus($school, 'BUS-121', $driver);
-        $student = $this->createStudent($school, $bus, 'ADM115');
+        $route = $this->createRoute($school, 'Route 121');
+        $student = $this->createStudent($school, $route, 'ADM115');
+
+        $route->drivers()->attach($driver->id);
 
         $this->actingAs($driverUser)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'home_to_school',
             ])
             ->assertRedirect();
 
         $this->actingAs($driverUser)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_out',
                 'trip' => 'home_to_school',
             ])
             ->assertRedirect();
 
         $this->actingAs($driverUser)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'school_to_home',
             ])
@@ -634,12 +633,14 @@ class AttendanceControllerTest extends TestCase
 
         $school = $this->createSchool('SCH119B');
         $driver = $this->createDriver($school, $driverUser, '119B');
-        $bus = $this->createBus($school, 'BUS-121B', $driver);
-        $student = $this->createStudent($school, $bus, 'ADM115B');
+        $route = $this->createRoute($school, 'Route 121B');
+        $student = $this->createStudent($school, $route, 'ADM115B');
 
-        $mark = function (string $action, string $trip) use ($bus, $student, $driverUser) {
+        $route->drivers()->attach($driver->id);
+
+        $mark = function (string $action, string $trip) use ($route, $student, $driverUser) {
             return $this->actingAs($driverUser)
-                ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+                ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                     'action' => $action,
                     'trip' => $trip,
                 ]);
@@ -683,8 +684,10 @@ class AttendanceControllerTest extends TestCase
 
         $school = $this->createSchool('SCH120');
         $driver = $this->createDriver($school, $driverUser, '120');
-        $bus = $this->createBus($school, 'BUS-122', $driver);
-        $student = $this->createStudent($school, $bus, 'ADM116');
+        $route = $this->createRoute($school, 'Route 122');
+        $student = $this->createStudent($school, $route, 'ADM116');
+
+        $route->drivers()->attach($driver->id);
 
         foreach ([
             ['action' => 'check_in', 'trip' => 'home_to_school'],
@@ -693,7 +696,7 @@ class AttendanceControllerTest extends TestCase
             ['action' => 'check_out', 'trip' => 'school_to_home'],
         ] as $markup) {
             $this->actingAs($driverUser)
-                ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), $markup)
+                ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), $markup)
                 ->assertRedirect();
         }
 
@@ -713,11 +716,13 @@ class AttendanceControllerTest extends TestCase
 
         $school = $this->createSchool('SCH121');
         $driver = $this->createDriver($school, $driverUser, '121');
-        $bus = $this->createBus($school, 'BUS-123', $driver);
-        $student = $this->createStudent($school, $bus, 'ADM117');
+        $route = $this->createRoute($school, 'Route 123');
+        $student = $this->createStudent($school, $route, 'ADM117');
+
+        $route->drivers()->attach($driver->id);
 
         $this->actingAs($driverUser)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'home_to_school',
             ])
@@ -738,10 +743,12 @@ class AttendanceControllerTest extends TestCase
 
         $school = $this->createSchool('SCH122');
         $driver = $this->createDriver($school, $driverUser, '122');
-        $bus = $this->createBus($school, 'BUS-124', $driver);
-        $student = $this->createStudent($school, $bus, 'ADM118');
+        $route = $this->createRoute($school, 'Route 124');
+        $student = $this->createStudent($school, $route, 'ADM118');
 
-        $response = $this->actingAs($driverUser)->get(route('attendance.buses.show', $bus));
+        $route->drivers()->attach($driver->id);
+
+        $response = $this->actingAs($driverUser)->get(route('attendance.routes.show', $route));
         $response->assertOk();
         $response->assertSee('Picked Up from Home');
         $response->assertSee('Dropped at School');
@@ -750,13 +757,13 @@ class AttendanceControllerTest extends TestCase
         $response->assertSee('Pick Up');
 
         $this->actingAs($driverUser)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'home_to_school',
             ])
             ->assertRedirect();
 
-        $response = $this->actingAs($driverUser)->get(route('attendance.buses.show', $bus));
+        $response = $this->actingAs($driverUser)->get(route('attendance.routes.show', $route));
         $response->assertOk();
         $response->assertSee('Drop at School');
         $response->assertDontSee('name="action" value="check_in"');
@@ -771,13 +778,15 @@ class AttendanceControllerTest extends TestCase
 
         $school = $this->createSchool('SCH123');
         $driver = $this->createDriver($school, $driverUser, '123');
-        $bus = $this->createBus($school, 'BUS-125', $driver);
-        $student = $this->createStudent($school, $bus, 'ADM119');
+        $route = $this->createRoute($school, 'Route 125');
+        $student = $this->createStudent($school, $route, 'ADM119');
+
+        $route->drivers()->attach($driver->id);
 
         $tomorrow = now()->addDay()->toDateString();
 
         $this->actingAs($driverUser)
-            ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), [
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_in',
                 'trip' => 'home_to_school',
                 'date' => $tomorrow,
@@ -796,8 +805,10 @@ class AttendanceControllerTest extends TestCase
 
         $school = $this->createSchool('SCH124');
         $driver = $this->createDriver($school, $driverUser, '124');
-        $bus = $this->createBus($school, 'BUS-126', $driver);
-        $student = $this->createStudent($school, $bus, 'ADM120');
+        $route = $this->createRoute($school, 'Route 126');
+        $student = $this->createStudent($school, $route, 'ADM120');
+
+        $route->drivers()->attach($driver->id);
 
         foreach ([
             ['action' => 'check_in', 'trip' => 'home_to_school'],
@@ -806,11 +817,11 @@ class AttendanceControllerTest extends TestCase
             ['action' => 'check_out', 'trip' => 'school_to_home'],
         ] as $markup) {
             $this->actingAs($driverUser)
-                ->post(route('attendance.mark', ['bus' => $bus, 'student' => $student]), $markup)
+                ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), $markup)
                 ->assertRedirect();
         }
 
-        $response = $this->actingAs($driverUser)->get(route('attendance.buses.show', $bus));
+        $response = $this->actingAs($driverUser)->get(route('attendance.routes.show', $route));
         $response->assertOk();
         $response->assertSee("Today's attendance has already been taken. Please try again tomorrow.", false);
         $response->assertDontSee('name="action" value="check_in"');
@@ -826,13 +837,15 @@ class AttendanceControllerTest extends TestCase
 
         $school = $this->createSchool('SCH125');
         $driver = $this->createDriver($school, $driverUser, '125');
-        $bus = $this->createBus($school, 'BUS-127', $driver);
-        $this->createStudent($school, $bus, 'ADM121');
+        $route = $this->createRoute($school, 'Route 127');
+        $this->createStudent($school, $route, 'ADM121');
+
+        $route->drivers()->attach($driver->id);
 
         $yesterday = now()->subDay()->toDateString();
 
-        $response = $this->actingAs($driverUser)->get(route('attendance.buses.show', [
-            'bus' => $bus,
+        $response = $this->actingAs($driverUser)->get(route('attendance.routes.show', [
+            'route' => $route,
             'date' => $yesterday,
         ]));
         $response->assertOk();
@@ -852,9 +865,9 @@ class AttendanceControllerTest extends TestCase
         $admin->school_id = $school->id;
         $admin->save();
 
-        $bus = $this->createBus($school, 'BUS-119');
+        $route = $this->createRoute($school, 'Route 119');
 
-        $this->actingAs($admin)->get(route('attendance.buses.history', $bus))
+        $this->actingAs($admin)->get(route('attendance.routes.history', $route))
             ->assertOk()
             ->assertSee('No attendance records found for this period.');
     }

@@ -78,6 +78,43 @@
                         <h4 class="mt-2 text-3xl font-bold text-emerald-600 dark:text-emerald-400">{{ $onlineCount }}</h4>
                     </div>
                 </div>
+
+                <!-- Trip Actions Card -->
+                <div class="flex min-h-[150px] flex-col rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/15">
+                        <svg class="fill-brand-500" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.5 5.25a.75.75 0 01.75-.75h.75v-.75a.75.75 0 011.5 0v.75h3.75a.75.75 0 010 1.5h-.75v.75a.75.75 0 01-1.5 0v-.75h-3.75a.75.75 0 010-1.5H12V7.5zM7.5 12a.75.75 0 000 1.5h9a.75.75 0 000-1.5h-9z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div class="mt-5 flex-1">
+                        @if ($activeTrip)
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Active Trip</span>
+                            <h4 class="mt-2 text-3xl font-bold text-gray-800 dark:text-white/90">{{ $activeTrip->route->name }}</h4>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $activeTrip->trip_type_label }} &bull; Bus {{ $activeTrip->bus->bus_number }}</p>
+                            <div class="mt-4">
+                                <form action="{{ route('driver.trips.toggle') }}" method="POST" class="inline">
+                                    @csrf
+                                    <input type="hidden" name="bus_id" value="{{ $activeTrip->bus_id }}">
+                                    <input type="hidden" name="route_id" value="{{ $activeTrip->route_id }}">
+                                    <button type="submit"
+                                        class="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600">
+                                        End Trip
+                                    </button>
+                                </form>
+                            </div>
+                        @else
+                            <span class="text-sm text-gray-500 dark:text-gray-400">No Active Trip</span>
+                            <h4 class="mt-2 text-3xl font-bold text-gray-800 dark:text-white/90">Ready to Drive</h4>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start your first trip of the day</p>
+                            <div class="mt-4">
+                                <a href="{{ route('driver.trips.create') }}"
+                                    class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 inline-block">
+                                    Start Trip
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 gap-x-4 gap-y-6 xl:grid-cols-2 xl:gap-6">
@@ -114,7 +151,7 @@
                         <dl class="mb-4 flex-1 space-y-1.5 text-sm">
                             <div class="flex justify-between gap-3">
                                 <dt class="text-gray-500 dark:text-gray-400">Route</dt>
-                                <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->routes->pluck('name')->join(', ') ?: '—' }}</dd>
+                                <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->activeTrip?->route?->name ?: '—' }}</dd>
                             </div>
                             <div class="flex justify-between gap-3">
                                 <dt class="text-gray-500 dark:text-gray-400">Capacity</dt>
@@ -153,7 +190,7 @@
 
                         <div class="grid grid-cols-2 gap-2">
                             <a
-                                href="{{ route('attendance.buses.show', ['bus' => $bus]) }}"
+                                href="{{ route('attendance.index') }}"
                                 class="rounded-lg bg-brand-500 px-4 py-2 text-center text-sm font-medium text-white hover:bg-brand-600"
                             >
                                 Mark Attendance
@@ -166,6 +203,17 @@
                                 Track Bus
                             </button>
                         </div>
+
+                        @if (!$activeTrip || $activeTrip->bus_id !== $bus->id)
+                            <a href="{{ route('driver.trips.create') }}"
+                                class="mt-2 block w-full rounded-lg bg-green-500 px-4 py-2 text-center text-sm font-medium text-white hover:bg-green-600">
+                                Start Trip with This Bus
+                            </a>
+                        @else
+                            <span class="mt-2 block w-full rounded-lg bg-green-100 px-4 py-2 text-center text-sm font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                                Active Trip on This Bus
+                            </span>
+                        @endif
                     </div>
                 @endforeach
                     </div>

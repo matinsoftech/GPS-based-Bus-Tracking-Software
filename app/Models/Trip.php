@@ -16,6 +16,7 @@ class Trip extends Model
     protected $fillable = [
         'bus_id',
         'driver_id',
+        'route_id',
         'school_id',
         'trip_type',
         'status',
@@ -45,6 +46,11 @@ class Trip extends Model
     public function driver(): BelongsTo
     {
         return $this->belongsTo(Driver::class);
+    }
+
+    public function route(): BelongsTo
+    {
+        return $this->belongsTo(Route::class);
     }
 
     public function school(): BelongsTo
@@ -100,6 +106,16 @@ class Trip extends Model
         ];
     }
 
+    public function getTripTypeLabelAttribute(): string
+    {
+        return self::types()[$this->trip_type] ?? $this->trip_type;
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return self::statuses()[$this->status] ?? $this->status;
+    }
+
     public static function tripTypeByTime(?string $time = null): string
     {
         $hour = ($time ? \Carbon\Carbon::parse($time) : now())->hour;
@@ -107,5 +123,13 @@ class Trip extends Model
         return $hour < 12
             ? self::TYPE_HOME_TO_SCHOOL
             : self::TYPE_SCHOOL_TO_HOME;
+    }
+
+    public static function activeForRoute(int $routeId): ?self
+    {
+        return static::where('route_id', $routeId)
+            ->where('status', self::STATUS_IN_PROGRESS)
+            ->with(['bus.gpsDevice', 'driver'])
+            ->first();
     }
 }

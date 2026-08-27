@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Bus;
 use App\Models\Driver;
-use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\User;
@@ -19,6 +18,7 @@ use Throwable;
 class BusController extends Controller
 {
     public function __construct(private readonly NazarTrackService $gpsService) {}
+
     /**
      * Display all buses.
      */
@@ -26,7 +26,7 @@ class BusController extends Controller
     {
         $user = Auth::user();
 
-        $query = Bus::with(['school', 'routes', 'drivers']);
+        $query = Bus::with(['school', 'drivers']);
 
         if ($this->isSchoolLevelAdmin($user)) {
             $schoolId = $this->getUserSchoolId($user);
@@ -73,9 +73,8 @@ class BusController extends Controller
         }
 
         $drivers = $this->availableDrivers($school);
-        $routes = $this->availableRoutes($school);
 
-        return view('buses.create', compact('school', 'schools', 'drivers', 'routes'));
+        return view('buses.create', compact('school', 'schools', 'drivers'));
     }
 
     /**
@@ -122,15 +121,12 @@ class BusController extends Controller
         }
 
         $validated['created_by'] = $user->id;
-        $routeIds = $validated['route_ids'] ?? [];
-        unset($validated['route_ids']);
         $driverIds = $validated['driver_ids'] ?? [];
         unset($validated['driver_ids']);
 
         try {
-            DB::transaction(function () use ($validated, $routeIds, $driverIds) {
+            DB::transaction(function () use ($validated, $driverIds) {
                 $bus = Bus::create($validated);
-                $bus->routes()->sync($routeIds);
                 $bus->drivers()->sync($driverIds);
             });
         } catch (Throwable $e) {
@@ -151,7 +147,7 @@ class BusController extends Controller
     {
         $this->authorizeBus($bus);
 
-        $bus->load(['school', 'creator', 'routes', 'drivers', 'gpsDevice']);
+        $bus->load(['school', 'creator', 'drivers', 'gpsDevice']);
 
         $latestLocation = $this->gpsService->locationPayload($bus);
 
@@ -178,11 +174,10 @@ class BusController extends Controller
         }
 
         $drivers = $this->availableDrivers($school, $bus);
-        $routes = $this->availableRoutes($school, $bus);
 
-        $bus->load(['routes', 'drivers']);
+        $bus->load(['drivers']);
 
-        return view('buses.edit', compact('bus', 'school', 'schools', 'drivers', 'routes'));
+        return view('buses.edit', compact('bus', 'school', 'schools', 'drivers'));
     }
 
     /**
@@ -215,15 +210,12 @@ class BusController extends Controller
             }
         }
 
-        $routeIds = $validated['route_ids'] ?? [];
-        unset($validated['route_ids']);
         $driverIds = $validated['driver_ids'] ?? [];
         unset($validated['driver_ids']);
 
         try {
-            DB::transaction(function () use ($bus, $validated, $routeIds, $driverIds) {
+            DB::transaction(function () use ($bus, $validated, $driverIds) {
                 $bus->update($validated);
-                $bus->routes()->sync($routeIds);
                 $bus->drivers()->sync($driverIds);
             });
         } catch (Throwable $e) {
@@ -306,9 +298,6 @@ class BusController extends Controller
 
             'notes' => 'nullable|string',
 
-            'route_ids' => 'nullable|array',
-            'route_ids.*' => 'exists:routes,id',
-
             'driver_ids' => 'nullable|array',
             'driver_ids.*' => 'exists:drivers,id',
         ];
@@ -338,32 +327,6 @@ class BusController extends Controller
         }
 
         return $query->orderBy('first_name')->get();
-    }
-
-    /**
-     * Routes the current user may assign to a bus.
-     */
-    private function availableRoutes(?School $school, ?Bus $bus = null): Collection
-    {
-        $user = Auth::user();
-
-        $query = Route::query()->with('school');
-
-        $schoolId = $school?->id;
-
-        if (! $schoolId) {
-            $schoolId = $this->getUserSchoolId($user);
-        }
-
-        if (! $schoolId && $bus) {
-            $schoolId = $bus->school_id;
-        }
-
-        if ($schoolId) {
-            $query->where('school_id', $schoolId);
-        }
-
-        return $query->orderBy('name')->get();
     }
 
     /**

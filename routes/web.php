@@ -5,6 +5,7 @@ use App\Http\Controllers\BusController;
 use App\Http\Controllers\BusLocationController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\DriverDashboardController;
+use App\Http\Controllers\DriverTripWebController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\ParentProfileController;
@@ -98,6 +99,12 @@ Route::middleware('auth')->group(function () {
         ])
         ->name('principal.dashboard.fleet-data');
 
+    Route::prefix('principal')->name('principal.')->middleware(['auth', 'role:School Admin'])->group(function () {
+        Route::get('/trips', [PrincipalDashboardController::class, 'tripsIndex'])
+            ->middleware('permission:trip.view')
+            ->name('trips.index');
+    });
+
     /*
     |--------------------------------------------------------------------------
     | Driver Dashboard
@@ -123,6 +130,26 @@ Route::middleware('auth')->group(function () {
             'role:Driver',
         ])
         ->name('driver.live-tracking');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Driver Trips (Web)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('driver')->name('driver.')->middleware(['auth', 'role:Driver'])->group(function () {
+        Route::get('/trips', [DriverTripWebController::class, 'index'])
+            ->middleware('permission:trip.view')
+            ->name('trips.index');
+
+        Route::get('/trips/start', [DriverTripWebController::class, 'create'])
+            ->middleware('permission:trip.start')
+            ->name('trips.create');
+
+        Route::post('/trips/toggle', [DriverTripWebController::class, 'toggle'])
+            ->middleware('permission:trip.start')
+            ->name('trips.toggle');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -467,21 +494,21 @@ Route::middleware('auth')->group(function () {
         ])
         ->name('attendance.index');
 
-    Route::get('/attendance/buses/{bus}', [AttendanceController::class, 'show'])
+    Route::get('/attendance/routes/{route}', [AttendanceController::class, 'show'])
         ->middleware([
             'permission:attendance.view',
             'role:Super Admin|School Admin|Driver',
         ])
-        ->name('attendance.buses.show');
+        ->name('attendance.routes.show');
 
-    Route::get('/attendance/buses/{bus}/history', [AttendanceController::class, 'history'])
+    Route::get('/attendance/routes/{route}/history', [AttendanceController::class, 'history'])
         ->middleware([
             'permission:attendance.view',
             'role:Super Admin|School Admin|Driver',
         ])
-        ->name('attendance.buses.history');
+        ->name('attendance.routes.history');
 
-    Route::post('/attendance/buses/{bus}/students/{student}', [AttendanceController::class, 'mark'])
+    Route::post('/attendance/routes/{route}/students/{student}', [AttendanceController::class, 'mark'])
         ->middleware([
             'permission:attendance.mark',
             'role:Super Admin|School Admin|Driver',

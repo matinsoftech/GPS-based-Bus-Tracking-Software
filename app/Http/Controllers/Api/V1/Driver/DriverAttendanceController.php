@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Driver;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\Route;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -21,20 +22,21 @@ class DriverAttendanceController extends Controller
         }
 
         $validated = $request->validate([
-            'bus_id' => ['required', 'integer'],
+            'route_id' => ['required', 'integer'],
         ]);
 
-        $bus = $driver->buses()
-            ->with(['routes', 'students.parent.user'])
-            ->find($validated['bus_id']);
+        $route = $driver->routes()
+            ->with('school')
+            ->find($validated['route_id']);
 
-        if (! $bus) {
+        if (! $route) {
             return response()->json([
-                'message' => 'Bus not found for this driver.',
+                'message' => 'Route not found for this driver.',
             ], 404);
         }
 
-        $students = $bus->students()
+        $students = $route->students()
+            ->with('parent.user')
             ->orderBy('grade')
             ->orderBy('roll_no')
             ->get();
@@ -46,17 +48,13 @@ class DriverAttendanceController extends Controller
             ->keyBy(fn ($record) => $record->student_id.'-'.$record->trip);
 
         return response()->json([
-            'message' => 'Students for driver bus.',
+            'message' => 'Students for driver route.',
             'data' => [
-                'bus' => [
-                    'id' => $bus->id,
-                    'bus_number' => $bus->bus_number,
-                    'registration_number' => $bus->registration_number,
-                    'status' => $bus->status,
-                    'routes' => $bus->routes->map(fn ($route) => [
-                        'id' => $route->id,
-                        'name' => $route->name,
-                    ]),
+                'route' => [
+                    'id' => $route->id,
+                    'name' => $route->name,
+                    'route_code' => $route->route_code,
+                    'is_active' => $route->is_active,
                 ],
                 'total_students' => $students->count(),
                 'students' => $students->map(fn ($student) => [
@@ -131,18 +129,17 @@ class DriverAttendanceController extends Controller
         }
 
         $validated = $request->validate([
-            'bus_id' => ['required', 'integer'],
+            'route_id' => ['required', 'integer'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
 
-        $bus = $driver->buses()
-            ->with('routes')
-            ->find($validated['bus_id']);
+        $route = $driver->routes()
+            ->find($validated['route_id']);
 
-        if (! $bus) {
+        if (! $route) {
             return response()->json([
-                'message' => 'Bus not found for this driver.',
+                'message' => 'Route not found for this driver.',
             ], 404);
         }
 
@@ -156,24 +153,19 @@ class DriverAttendanceController extends Controller
 
         $records = Attendance::query()
             ->with(['student', 'markedBy'])
-            ->where('bus_id', $bus->id)
+            ->where('route_id', $route->id)
             ->whereBetween('date', [$from, $to])
             ->orderByDesc('date')
             ->orderByDesc('id')
             ->paginate(50);
 
         return response()->json([
-            'message' => 'Driver bus attendance history.',
+            'message' => 'Driver route attendance history.',
             'data' => [
-                'bus' => [
-                    'id' => $bus->id,
-                    'bus_number' => $bus->bus_number,
-                    'registration_number' => $bus->registration_number,
-                    'status' => $bus->status,
-                    'routes' => $bus->routes->map(fn ($route) => [
-                        'id' => $route->id,
-                        'name' => $route->name,
-                    ]),
+                'route' => [
+                    'id' => $route->id,
+                    'name' => $route->name,
+                    'route_code' => $route->route_code,
                 ],
                 'from' => $from->toDateString(),
                 'to' => $to->toDateString(),
@@ -224,31 +216,31 @@ class DriverAttendanceController extends Controller
         }
 
         $validated = $request->validate([
-            'bus_id' => ['required', 'integer'],
+            'route_id' => ['required', 'integer'],
             'student_id' => ['required', 'integer'],
         ]);
 
-        $bus = $driver->buses()->find($validated['bus_id']);
+        $route = $driver->routes()->find($validated['route_id']);
 
-        if (! $bus) {
+        if (! $route) {
             return response()->json([
-                'message' => 'Bus not found for this driver.',
+                'message' => 'Route not found for this driver.',
             ], 404);
         }
 
-        if ($bus->status !== 'Active') {
+        if (! $route->is_active) {
             return response()->json([
-                'message' => 'Attendance can only be marked on active buses.',
-            ], 422);
+                'message' => 'Attendance can only be marked on active routes.',
+            ], 403);
         }
 
         $student = Student::where('id', $validated['student_id'])
-            ->where('bus_id', $bus->id)
+            ->where('route_id', $route->id)
             ->first();
 
         if (! $student) {
             return response()->json([
-                'message' => 'Student not found on this bus.',
+                'message' => 'Student not found on this route.',
             ], 422);
         }
 
@@ -273,7 +265,7 @@ class DriverAttendanceController extends Controller
                     'trip' => Attendance::TRIP_HOME_TO_SCHOOL,
                 ],
                 [
-                    'bus_id' => $bus->id,
+                    'route_id' => $route->id,
                     'check_in_at' => $date,
                     'marked_by' => $request->user()->id,
                 ]
@@ -296,7 +288,7 @@ class DriverAttendanceController extends Controller
                     'trip' => Attendance::TRIP_SCHOOL_TO_HOME,
                 ],
                 [
-                    'bus_id' => $bus->id,
+                    'route_id' => $route->id,
                     'check_in_at' => $date,
                     'marked_by' => $request->user()->id,
                 ]
@@ -322,7 +314,7 @@ class DriverAttendanceController extends Controller
             'data' => [
                 'id' => $attendance->id,
                 'student_id' => $attendance->student_id,
-                'bus_id' => $attendance->bus_id,
+                'route_id' => $attendance->route_id,
                 'trip' => $attendance->trip,
                 'date' => $attendance->date?->toDateString(),
                 'check_in_at' => $attendance->check_in_at?->toIso8601String(),

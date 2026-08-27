@@ -12,7 +12,7 @@ class Student extends Model
     protected $fillable = [
         'school_id',
         'parent_id',
-        'bus_id',
+        'route_id',
         'admission_no',
         'first_name',
         'last_name',
@@ -51,8 +51,8 @@ class Student extends Model
         return trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
     }
 
-    public function bus()
+    public function route()
     {
-        return $this->belongsTo(Bus::class);
+        return $this->belongsTo(Route::class);
     }
 }

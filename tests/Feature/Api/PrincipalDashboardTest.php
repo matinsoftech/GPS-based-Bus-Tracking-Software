@@ -146,12 +146,12 @@ class PrincipalDashboardTest extends TestCase
         ]);
     }
 
-    private function makeStudent(int $busId, ParentProfile $parent): Student
+    private function makeStudent(int $routeId, ParentProfile $parent): Student
     {
         return Student::create([
             'school_id' => $this->school->id,
             'parent_id' => $parent->id,
-            'bus_id' => $busId,
+            'route_id' => $routeId,
             'admission_no' => 'ADM-PR-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Sharma',
@@ -190,39 +190,43 @@ class PrincipalDashboardTest extends TestCase
         $this->makeBus('PR-BUS-3', null, 'Inactive');
 
         $parent = $this->makeParent();
-        $student = $this->makeStudent($bus->id, $parent);
 
-        $this->makeRoute('Route A', 'R-PR-1', true);
+        $route = $this->makeRoute('Route A', 'R-PR-1', true);
         $this->makeRoute('Route B', 'R-PR-2', false);
 
+        $student = $this->makeStudent($route->id, $parent);
+
         $otherParent = $this->makeParent();
-        $otherBus = Bus::create([
+        $otherRoute = Route::create([
             'school_id' => $this->otherSchool->id,
-            'bus_number' => 'OTH-BUS-1',
-            'registration_number' => 'BA OTH-BUS-1',
-            'capacity' => 40,
-            'status' => 'Active',
+            'name' => 'Other Route',
+            'route_code' => 'R-OTH-1',
+            'start_location' => 'Balkumari',
+            'end_location' => 'School',
+            'estimated_distance' => 3,
+            'estimated_duration' => 15,
+            'is_active' => true,
         ]);
-        $this->makeStudentFor($otherBus, $this->otherSchool, $otherParent);
+        $this->makeStudentFor($otherRoute, $this->otherSchool, $otherParent);
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $bus->id,
+            'route_id' => $route->id,
             'trip' => 'home_to_school',
             'date' => today()->toDateString(),
             'check_in_at' => now()->subHour(),
             'marked_by' => $this->principal->id,
         ]);
 
-        return ['bus' => $bus, 'student' => $student];
+        return ['route' => $route, 'student' => $student];
     }
 
-    private function makeStudentFor(Bus $bus, School $school, ParentProfile $parent): Student
+    private function makeStudentFor(Route $route, School $school, ParentProfile $parent): Student
     {
         return Student::create([
             'school_id' => $school->id,
             'parent_id' => $parent->id,
-            'bus_id' => $bus->id,
+            'route_id' => $route->id,
             'admission_no' => 'ADM-OTH-'.uniqid(),
             'first_name' => 'Rita',
             'last_name' => 'Sharma',

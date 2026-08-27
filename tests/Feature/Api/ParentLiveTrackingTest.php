@@ -5,8 +5,10 @@ namespace Tests\Feature\Api;
 use App\Models\Bus;
 use App\Models\Driver;
 use App\Models\ParentProfile;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\Student;
+use App\Models\Trip;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -26,7 +28,9 @@ class ParentLiveTrackingTest extends TestCase
 
     private ParentProfile $parent;
 
-    private Bus $bus;
+    private Route $route;
+
+    private Driver $driver;
 
     protected function setUp(): void
     {
@@ -64,7 +68,7 @@ class ParentLiveTrackingTest extends TestCase
         ]);
 
         $driverUser = User::factory()->create();
-        $driver = Driver::create([
+        $this->driver = Driver::create([
             'school_id' => $this->school->id,
             'user_id' => $driverUser->id,
             'employee_id' => 'DR-LIVE-1',
@@ -83,26 +87,25 @@ class ParentLiveTrackingTest extends TestCase
             'created_by' => $driverUser->id,
         ]);
 
-        $this->bus = Bus::create([
+        $this->route = Route::create([
+            'name' => 'Route 1',
+            'route_code' => 'RT-PLT-001',
             'school_id' => $this->school->id,
-            'bus_number' => 'LIVE-BUS-1',
-            'registration_number' => 'BA LIVE-BUS-1',
-            'capacity' => 40,
-            'gps_device_id' => '123456789012345',
-            'status' => 'Active',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
         ]);
-        $this->bus->drivers()->attach($driver->id);
     }
 
-    private function makeBus(string $busNumber, ?string $imei = null): Bus
+    private function makeRoute(string $name): Route
     {
-        return Bus::create([
+        return Route::create([
+            'name' => $name,
+            'route_code' => 'RT-'.strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $name), 0, 8)).'-'.bin2hex(random_bytes(3)),
             'school_id' => $this->school->id,
-            'bus_number' => $busNumber,
-            'registration_number' => 'BA '.$busNumber,
-            'capacity' => 40,
-            'gps_device_id' => $imei,
-            'status' => 'Active',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
         ]);
     }
 
@@ -111,7 +114,7 @@ class ParentLiveTrackingTest extends TestCase
         return Student::create(array_merge([
             'school_id' => $this->school->id,
             'parent_id' => $this->parent->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'admission_no' => 'ADM-LIVE-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Bahadur',
@@ -124,6 +127,37 @@ class ParentLiveTrackingTest extends TestCase
             'drop_location' => 'School',
             'is_active' => true,
         ], $overrides));
+    }
+
+    private function makeBus(string $busNumber, ?string $imei = null, ?Route $route = null, ?Driver $driver = null): Bus
+    {
+        $uniqueSuffix = bin2hex(random_bytes(3));
+        $bus = Bus::create([
+            'school_id' => $this->school->id,
+            'bus_number' => $busNumber.'-'.$uniqueSuffix,
+            'registration_number' => 'BA '.$busNumber.'.'.$uniqueSuffix,
+            'capacity' => 40,
+            'gps_device_id' => $imei ?? 'IMEI-'.bin2hex(random_bytes(7)),
+            'status' => 'Active',
+        ]);
+
+        if ($driver) {
+            $bus->drivers()->attach($driver->id);
+            if ($route) {
+                $route->drivers()->attach($driver->id);
+                Trip::create([
+                    'bus_id' => $bus->id,
+                    'driver_id' => $driver->id,
+                    'route_id' => $route->id,
+                    'school_id' => $this->school->id,
+                    'trip_type' => Trip::TYPE_HOME_TO_SCHOOL,
+                    'status' => Trip::STATUS_IN_PROGRESS,
+                    'started_at' => now(),
+                ]);
+            }
+        }
+
+        return $bus;
     }
 
     private function fakeLiveTracking(array $devices): void
@@ -139,10 +173,33 @@ class ParentLiveTrackingTest extends TestCase
 
     public function test_parent_can_view_live_tracking_for_all_children_buses(): void
     {
-        $bus2 = $this->makeBus('LIVE-BUS-2', '222222222222222');
+        $driverUser2 = User::factory()->create();
+        $driver2 = Driver::create([
+            'school_id' => $this->school->id,
+            'user_id' => $driverUser2->id,
+            'employee_id' => 'DR-LIVE-2',
+            'first_name' => 'Suresh',
+            'last_name' => 'Thapa',
+            'gender' => 'Male',
+            'date_of_birth' => '1985-01-01',
+            'phone' => '9800000402',
+            'address' => 'Kathmandu',
+            'license_number' => 'LIC-LIVE-2',
+            'license_type' => 'Bus',
+            'license_issue_date' => '2015-01-01',
+            'license_expiry_date' => '2025-01-01',
+            'joining_date' => '2023-01-01',
+            'status' => 'Active',
+            'created_by' => $driverUser2->id,
+        ]);
+
+        $route2 = $this->makeRoute('Route 2');
 
         $this->makeStudent();
-        $this->makeStudent(['bus_id' => $bus2->id, 'first_name' => 'Rita', 'roll_no' => '2']);
+        $this->makeStudent(['route_id' => $route2->id, 'first_name' => 'Rita', 'roll_no' => '2']);
+
+        $this->makeBus('BUS-1', '123456789012345', $this->route, $this->driver);
+        $this->makeBus('BUS-2', '222222222222222', $route2, $driver2);
 
         $this->fakeLiveTracking([
             [
@@ -185,14 +242,14 @@ class ParentLiveTrackingTest extends TestCase
             ->assertJsonPath('data.children_count', 2)
             ->assertJsonCount(2, 'data.children')
             ->assertJsonPath('data.children.0.full_name', 'Sita Bahadur')
-            ->assertJsonPath('data.children.0.bus.bus_number', 'LIVE-BUS-1')
+            ->assertJsonPath('data.children.0.route.name', 'Route 1')
             ->assertJsonPath('data.children.0.live_location.imei', '123456789012345')
             ->assertJsonPath('data.children.0.live_location.latitude', 27.7172)
             ->assertJsonPath('data.children.0.live_location.longitude', 85.324)
             ->assertJsonPath('data.children.0.live_location.speed_kmh', 45)
             ->assertJsonPath('data.children.0.live_location.status_label', 'Moving')
             ->assertJsonPath('data.children.0.live_location.is_moving', true)
-            ->assertJsonPath('data.children.1.bus.bus_number', 'LIVE-BUS-2')
+            ->assertJsonPath('data.children.1.route.name', 'Route 2')
             ->assertJsonPath('data.children.1.live_location.imei', '222222222222222')
             ->assertJsonPath('data.children.1.live_location.status_label', 'Stopped')
             ->assertJsonStructure([
@@ -206,7 +263,7 @@ class ParentLiveTrackingTest extends TestCase
                             'grade',
                             'section',
                             'photo',
-                            'bus' => ['id', 'bus_number', 'registration_number', 'status'],
+                            'route' => ['id', 'name', 'route_code'],
                             'live_location',
                         ],
                     ],
@@ -216,7 +273,7 @@ class ParentLiveTrackingTest extends TestCase
 
     public function test_child_without_bus_has_null_live_location(): void
     {
-        $this->makeStudent(['bus_id' => null]);
+        $this->makeStudent(['route_id' => null]);
 
         $this->fakeLiveTracking([]);
 
@@ -224,13 +281,12 @@ class ParentLiveTrackingTest extends TestCase
 
         $this->getJson('/api/v1/parent/live-tracking')
             ->assertOk()
-            ->assertJsonPath('data.children.0.bus', null)
+            ->assertJsonPath('data.children.0.route', null)
             ->assertJsonPath('data.children.0.live_location', null);
     }
 
     public function test_bus_without_matching_imei_shows_null_live_location(): void
     {
-        $this->bus->update(['gps_device_id' => '999999999999999']);
         $this->makeStudent();
 
         $this->fakeLiveTracking([
@@ -252,6 +308,8 @@ class ParentLiveTrackingTest extends TestCase
     public function test_parent_can_view_single_child_live_tracking(): void
     {
         $student = $this->makeStudent();
+
+        $this->makeBus('BUS-1', '123456789012345', $this->route, $this->driver);
 
         $this->fakeLiveTracking([
             [
@@ -277,7 +335,7 @@ class ParentLiveTrackingTest extends TestCase
             ->assertOk()
             ->assertJsonPath('message', 'Parent child live tracking data.')
             ->assertJsonPath('data.student.full_name', 'Sita Bahadur')
-            ->assertJsonPath('data.bus.bus_number', 'LIVE-BUS-1')
+            ->assertJsonPath('data.route.name', 'Route 1')
             ->assertJsonPath('data.live_location.imei', '123456789012345')
             ->assertJsonPath('data.live_location.speed_kmh', 45)
             ->assertJsonPath('data.live_location.status_label', 'Moving')
@@ -285,7 +343,7 @@ class ParentLiveTrackingTest extends TestCase
                 'message',
                 'data' => [
                     'student' => ['id', 'full_name', 'grade', 'section', 'photo'],
-                    'bus' => ['id', 'bus_number', 'registration_number', 'status'],
+                    'route' => ['id', 'name', 'route_code'],
                     'live_location',
                 ],
             ]);

@@ -7,6 +7,7 @@ use App\Models\BusLocation;
 use App\Models\Route;
 use App\Models\RouteStop;
 use App\Models\School;
+use App\Models\Trip;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -29,7 +30,7 @@ class FleetMapService
     /** A live bus is considered stopped when speed is at or below this (km/h). */
     public const STOPPED_SPEED_KPH = 3;
 
-    /** Distance (km) within which a stopped bus is treated as "Arrived" at a stop. */
+    /** Distance (km) within which a stopped bus is considered "Arrived" at a stop. */
     public const ARRIVED_RADIUS_KM = 0.25;
 
     public function __construct(private readonly NazarTrackService $gps) {}
@@ -73,7 +74,7 @@ class FleetMapService
      */
     public function forSchool(?int $schoolId, ?Collection $busIds = null): array
     {
-        $busQuery = Bus::query()->with(['drivers', 'routes.stops', 'gpsDevice', 'school']);
+        $busQuery = Bus::query()->with(['drivers', 'gpsDevice', 'school']);
 
         if ($schoolId) {
             $busQuery->where('school_id', $schoolId);
@@ -87,8 +88,14 @@ class FleetMapService
 
         $locationsByBus = $this->gps->getBusLocations($buses);
 
+        // Build route info from active trips on these buses
+        $activeTrips = Trip::whereIn('bus_id', $buses->pluck('id'))
+            ->where('status', Trip::STATUS_IN_PROGRESS)
+            ->with(['route', 'driver'])
+            ->get();
+
         $busArrays = $buses->map(
-            fn (Bus $bus) => $this->busToArray($bus, $locationsByBus[$bus->id] ?? null)
+            fn (Bus $bus) => $this->busToArray($bus, $locationsByBus[$bus->id] ?? null, $activeTrips)
         )->values();
 
         $routeQuery = Route::query()->with('stops');
@@ -97,10 +104,9 @@ class FleetMapService
             $routeQuery->where('school_id', $schoolId);
         }
 
-        if ($busIds !== null) {
-            $routeIds = $buses->flatMap(fn ($bus) => $bus->routes->pluck('id'))->unique()->values();
-            $routeQuery->whereIn('id', $routeIds);
-        }
+        // Get routes that have active trips
+        $routeIds = $activeTrips->pluck('route_id')->unique()->values();
+        $routeQuery->whereIn('id', $routeIds);
 
         $routes = $routeQuery->orderBy('name')->get();
 
@@ -140,10 +146,14 @@ class FleetMapService
      * Serialize a bus (with its latest API location) into the map payload shape.
      *
      * @param  array|null  $location  A normalized device payload from NazarTrackService.
+     * @param  Collection  $activeTrips  Active trips to resolve route info.
      */
-    private function busToArray(Bus $bus, ?array $location): array
+    private function busToArray(Bus $bus, ?array $location, Collection $activeTrips): array
     {
-        $nearestStop = $location ? $this->nearestStop($bus, $location) : null;
+        $activeTrip = $activeTrips->firstWhere('bus_id', $bus->id);
+        $route = $activeTrip?->route;
+
+        $nearestStop = $location && $route ? $this->nearestStop($route, $location) : null;
         $status = $this->trackingStatus($bus, $location, $nearestStop);
 
         return [
@@ -152,8 +162,8 @@ class FleetMapService
             'registration_number' => $bus->registration_number,
             'status' => $bus->status,
             'driver_name' => $bus->drivers->first()?->full_name,
-            'route_id' => $bus->routes->first()?->id,
-            'route_name' => $bus->routes->pluck('name')->join(', '),
+            'route_id' => $route?->id,
+            'route_name' => $route?->name,
             'school_name' => $bus->school?->name,
             'latitude' => $location['latitude'] ?? null,
             'longitude' => $location['longitude'] ?? null,
@@ -202,7 +212,7 @@ class FleetMapService
      * @param  array  $location
      * @return array{stop: RouteStop|null, distance_km: float|null}|null
      */
-    private function nearestStop(Bus $bus, array $location): ?array
+    private function nearestStop(Route $route, array $location): ?array
     {
         $lat = $location['latitude'] ?? null;
         $lng = $location['longitude'] ?? null;
@@ -211,16 +221,16 @@ class FleetMapService
             return null;
         }
 
-        $allStops = $bus->routes->flatMap(fn ($route) => $route->stops ?? collect());
+        $stops = $route->stops;
 
-        if ($allStops->isEmpty()) {
+        if ($stops->isEmpty()) {
             return null;
         }
 
         $nearest = null;
         $nearestDistance = PHP_FLOAT_MAX;
 
-        foreach ($allStops as $stop) {
+        foreach ($stops as $stop) {
             $distance = $this->haversineKm(
                 (float) $lat,
                 (float) $lng,

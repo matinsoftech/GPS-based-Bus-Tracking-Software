@@ -18,7 +18,7 @@ class RouteController extends Controller
     {
         $user = Auth::user();
 
-        $query = Route::with('school', 'buses.drivers');
+        $query = Route::with('school', 'activeTrip.bus');
 
         if ($this->isSchoolLevelAdmin($user)) {
             $schoolId = $this->getUserSchoolId($user);

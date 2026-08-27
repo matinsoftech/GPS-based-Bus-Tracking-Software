@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bus;
 use App\Models\ParentProfile;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
@@ -23,7 +23,7 @@ class StudentController extends Controller
     {
         $user = Auth::user();
 
-        $query = Student::with(['school', 'parent.user', 'bus']);
+        $query = Student::with(['school', 'parent.user', 'route']);
 
         if ($this->isSchoolLevelAdmin($user)) {
             $schoolId = $this->getUserSchoolId($user);
@@ -76,13 +76,12 @@ class StudentController extends Controller
 
         $parents = $this->availableParents($parentsSchoolId);
 
-        $buses = Bus::query()
-            ->with('school')
+        $routes = Route::query()
             ->when($school, fn ($query) => $query->where('school_id', $school->id))
-            ->orderBy('bus_number')
+            ->orderBy('name')
             ->get();
 
-        return view('students.create', compact('school', 'schools', 'parents', 'buses'));
+        return view('students.create', compact('school', 'schools', 'parents', 'routes'));
     }
 
     /**
@@ -110,7 +109,7 @@ class StudentController extends Controller
             'pickup_longitude' => 'nullable|numeric|between:-180,180',
             'drop_latitude' => 'nullable|numeric|between:-90,90',
             'drop_longitude' => 'nullable|numeric|between:-180,180',
-            'bus_id' => 'nullable|exists:buses,id',
+            'route_id' => 'nullable|exists:routes,id',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active' => 'nullable|boolean',
         ];
@@ -146,13 +145,13 @@ class StudentController extends Controller
                 ->withErrors(['parent_id' => 'The selected parent does not belong to the selected school.']);
         }
 
-        if (! empty($validated['bus_id'])) {
-            $bus = Bus::find($validated['bus_id']);
+        if (! empty($validated['route_id'])) {
+            $route = Route::find($validated['route_id']);
 
-            if (! $bus || (int) $bus->school_id !== (int) $validated['school_id']) {
+            if (! $route || (int) $route->school_id !== (int) $validated['school_id']) {
                 return back()
                     ->withInput()
-                    ->withErrors(['bus_id' => 'The selected bus does not belong to the selected school.']);
+                    ->withErrors(['route_id' => 'The selected route does not belong to the selected school.']);
             }
         }
 
@@ -178,7 +177,7 @@ class StudentController extends Controller
     {
         $this->authorizeStudent($student);
 
-        $student->load(['school', 'parent.user', 'bus.route']);
+        $student->load(['school', 'parent.user', 'route']);
 
         return view('students.show', compact('student'));
     }
@@ -206,15 +205,14 @@ class StudentController extends Controller
 
         $parents = $this->availableParents($parentsSchoolId);
 
-        $buses = Bus::query()
-            ->with('school')
+        $routes = Route::query()
             ->when($school, fn ($query) => $query->where('school_id', $school->id))
-            ->orderBy('bus_number')
+            ->orderBy('name')
             ->get();
 
-        $student->load(['school', 'parent.user', 'bus']);
+        $student->load(['school', 'parent.user', 'route']);
 
-        return view('students.edit', compact('student', 'school', 'schools', 'parents', 'buses'));
+        return view('students.edit', compact('student', 'school', 'schools', 'parents', 'routes'));
     }
 
     /**
@@ -244,7 +242,7 @@ class StudentController extends Controller
             'pickup_longitude' => 'nullable|numeric|between:-180,180',
             'drop_latitude' => 'nullable|numeric|between:-90,90',
             'drop_longitude' => 'nullable|numeric|between:-180,180',
-            'bus_id' => 'nullable|exists:buses,id',
+            'route_id' => 'nullable|exists:routes,id',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active' => 'nullable|boolean',
         ];
@@ -280,13 +278,13 @@ class StudentController extends Controller
                 ->withErrors(['parent_id' => 'The selected parent does not belong to the selected school.']);
         }
 
-        if (! empty($validated['bus_id'])) {
-            $bus = Bus::find($validated['bus_id']);
+        if (! empty($validated['route_id'])) {
+            $route = Route::find($validated['route_id']);
 
-            if (! $bus || (int) $bus->school_id !== (int) $validated['school_id']) {
+            if (! $route || (int) $route->school_id !== (int) $validated['school_id']) {
                 return back()
                     ->withInput()
-                    ->withErrors(['bus_id' => 'The selected bus does not belong to the selected school.']);
+                    ->withErrors(['route_id' => 'The selected route does not belong to the selected school.']);
             }
         }
 

@@ -3,7 +3,6 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Attendance;
-use App\Models\Bus;
 use App\Models\Driver;
 use App\Models\ParentProfile;
 use App\Models\Route;
@@ -26,7 +25,7 @@ class ParentChildTest extends TestCase
 
     private ParentProfile $parent;
 
-    private Bus $bus;
+    private Route $route;
 
     protected function setUp(): void
     {
@@ -59,7 +58,7 @@ class ParentChildTest extends TestCase
         ]);
 
         $driverUser = User::factory()->create();
-        $driver = Driver::create([
+        Driver::create([
             'school_id' => $this->school->id,
             'user_id' => $driverUser->id,
             'employee_id' => 'DR-CHILD-1',
@@ -78,24 +77,14 @@ class ParentChildTest extends TestCase
             'created_by' => $driverUser->id,
         ]);
 
-        $route = Route::create([
+        $this->route = Route::create([
             'school_id' => $this->school->id,
             'name' => 'Route 1',
-            'route_code' => 'RT-CHILD-1',
-            'start_location' => 'Chabahil',
-            'end_location' => 'School',
+            'route_code' => 'RT-PCT-' . strtoupper(bin2hex(random_bytes(3))),
+            'start_location' => 'Start',
+            'end_location' => 'End',
             'is_active' => true,
         ]);
-
-        $this->bus = Bus::create([
-            'school_id' => $this->school->id,
-            'bus_number' => 'CHILD-BUS-1',
-            'registration_number' => 'BA CHILD-BUS-1',
-            'capacity' => 40,
-            'status' => 'Active',
-        ]);
-        $this->bus->drivers()->attach($driver->id);
-        $this->bus->routes()->attach($route->id);
     }
 
     private function makeStudent(array $overrides = []): Student
@@ -103,7 +92,7 @@ class ParentChildTest extends TestCase
         return Student::create(array_merge([
             'school_id' => $this->school->id,
             'parent_id' => $this->parent->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'admission_no' => 'ADM-CHILD-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Bahadur',
@@ -132,8 +121,7 @@ class ParentChildTest extends TestCase
             ->assertJsonPath('data.children_count', 2)
             ->assertJsonCount(2, 'data.children')
             ->assertJsonPath('data.children.0.full_name', 'Sita Bahadur')
-            ->assertJsonPath('data.children.0.bus.bus_number', 'CHILD-BUS-1')
-            ->assertJsonPath('data.children.0.bus.drivers.0.name', 'Ramesh Sharma')
+            ->assertJsonPath('data.children.0.route.name', 'Route 1')
             ->assertJsonPath('data.children.0.today_attendance.next_action.key', 'picked_up_home')
             ->assertJsonStructure([
                 'message',
@@ -154,13 +142,11 @@ class ParentChildTest extends TestCase
                             'pickup_location',
                             'drop_location',
                             'is_active',
-                            'bus' => [
+                            'route' => [
                                 'id',
-                                'bus_number',
-                                'registration_number',
-                                'status',
-                                'routes',
-                                'drivers' => [['id', 'name', 'phone']],
+                                'name',
+                                'route_code',
+                                'is_active',
                             ],
                             'today_attendance' => [
                                 'home_to_school' => ['check_in_at', 'check_out_at', 'status'],
@@ -190,7 +176,7 @@ class ParentChildTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'home_to_school',
             'date' => now(),
             'check_in_at' => now()->setTime(7, 15, 0),
@@ -205,8 +191,7 @@ class ParentChildTest extends TestCase
             ->assertJsonPath('message', 'Parent child data.')
             ->assertJsonPath('data.student.full_name', 'Sita Bahadur')
             ->assertJsonPath('data.student.school.name', 'Bright Future School')
-            ->assertJsonPath('data.bus.bus_number', 'CHILD-BUS-1')
-            ->assertJsonPath('data.bus.routes.0.name', 'Route 1')
+            ->assertJsonPath('data.route.name', 'Route 1')
             ->assertJsonPath('data.today_attendance.home_to_school.status', 'completed')
             ->assertJsonPath('data.today_attendance.next_action.key', 'picked_up_school')
             ->assertJsonStructure([
@@ -233,18 +218,11 @@ class ParentChildTest extends TestCase
                         'is_active',
                         'school' => ['id', 'name', 'address'],
                     ],
-                    'bus' => [
+                    'route' => [
                         'id',
-                        'bus_number',
-                        'registration_number',
-                        'make',
-                        'model',
-                        'year',
-                        'capacity',
-                        'fuel_type',
-                        'status',
-                        'routes' => [['id', 'name', 'route_code', 'start_location', 'end_location']],
-                        'drivers' => [['id', 'name', 'phone']],
+                        'name',
+                        'route_code',
+                        'is_active',
                     ],
                     'today_attendance' => [
                         'home_to_school' => ['check_in_at', 'check_out_at', 'status'],
@@ -258,13 +236,13 @@ class ParentChildTest extends TestCase
 
     public function test_child_detail_returns_null_bus_when_unassigned(): void
     {
-        $student = $this->makeStudent(['bus_id' => null]);
+        $student = $this->makeStudent(['route_id' => null]);
 
         Sanctum::actingAs($this->parentUser);
 
         $this->getJson('/api/v1/parent/children/'.$student->id)
             ->assertOk()
-            ->assertJsonPath('data.bus', null);
+            ->assertJsonPath('data.route', null);
     }
 
     public function test_parent_can_view_child_attendance_history(): void
@@ -273,7 +251,7 @@ class ParentChildTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'home_to_school',
             'date' => now(),
             'check_in_at' => now()->setTime(7, 15, 0),
@@ -283,7 +261,7 @@ class ParentChildTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'school_to_home',
             'date' => now(),
             'check_in_at' => now()->setTime(15, 30, 0),
@@ -331,7 +309,7 @@ class ParentChildTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'home_to_school',
             'date' => now()->subDays(45),
             'check_in_at' => now()->subDays(45)->setTime(7, 15, 0),
@@ -341,7 +319,7 @@ class ParentChildTest extends TestCase
 
         Attendance::create([
             'student_id' => $student->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'trip' => 'home_to_school',
             'date' => now()->subDays(3),
             'check_in_at' => now()->subDays(3)->setTime(7, 15, 0),
@@ -393,7 +371,7 @@ class ParentChildTest extends TestCase
         $otherStudent = Student::create([
             'school_id' => $this->school->id,
             'parent_id' => $otherParent->id,
-            'bus_id' => $this->bus->id,
+            'route_id' => $this->route->id,
             'admission_no' => 'ADM-CHILD-OTHER-'.uniqid(),
             'first_name' => 'Gita',
             'last_name' => 'Sharma',

@@ -8,7 +8,9 @@ use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
+use App\Models\Trip;
 use App\Services\FleetMapService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PrincipalDashboardController extends Controller
@@ -48,7 +50,7 @@ class PrincipalDashboardController extends Controller
 
         $fleet = (clone $busQuery)->with('drivers')->latest()->limit(5)->get();
 
-        $upcomingRoutes = (clone $routeQuery)->with('buses.drivers', 'stops')->latest()->limit(5)->get();
+        $upcomingRoutes = (clone $routeQuery)->with('activeTrip.bus.drivers', 'stops')->latest()->limit(5)->get();
 
         $expiringBuses = (clone $busQuery)
             ->whereNotNull('insurance_expiry_date')
@@ -93,6 +95,26 @@ class PrincipalDashboardController extends Controller
         $user = Auth::user();
 
         return response()->json($this->fleetMap->forSchool($this->resolveSchoolId($user)));
+    }
+
+    /**
+     * Show trip history for the school.
+     */
+    public function tripsIndex(Request $request)
+    {
+        $user = Auth::user();
+        $schoolId = $this->resolveSchoolId($user);
+
+        $query = Trip::with(['bus', 'route', 'driver', 'school'])
+            ->orderByDesc('started_at');
+
+        if ($schoolId) {
+            $query->where('school_id', $schoolId);
+        }
+
+        $trips = $query->paginate(20)->withQueryString();
+
+        return view('principal.trips.index', compact('trips'));
     }
 
     /**

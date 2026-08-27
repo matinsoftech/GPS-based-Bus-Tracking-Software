@@ -21,7 +21,7 @@ class ParentChildController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['bus.routes', 'bus.drivers'])
+            ->with(['route'])
             ->orderBy('grade')
             ->orderBy('roll_no')
             ->get();
@@ -50,20 +50,11 @@ class ParentChildController extends Controller
                     'pickup_location' => $student->pickup_location,
                     'drop_location' => $student->drop_location,
                     'is_active' => $student->is_active,
-                    'bus' => $student->bus ? [
-                        'id' => $student->bus->id,
-                        'bus_number' => $student->bus->bus_number,
-                        'registration_number' => $student->bus->registration_number,
-                        'status' => $student->bus->status,
-                        'routes' => $student->bus->routes->map(fn ($route) => [
-                            'id' => $route->id,
-                            'name' => $route->name,
-                        ]),
-                        'drivers' => $student->bus->drivers->map(fn ($d) => [
-                            'id' => $d->id,
-                            'name' => $d->full_name,
-                            'phone' => $d->phone,
-                        ]),
+                    'route' => $student->route ? [
+                        'id' => $student->route->id,
+                        'name' => $student->route->name,
+                        'route_code' => $student->route->route_code,
+                        'is_active' => $student->route->is_active,
                     ] : null,
                     'today_attendance' => $this->todayAttendanceFor(
                         $todayRecords->get($student->id.'-'.Attendance::TRIP_HOME_TO_SCHOOL),
@@ -90,7 +81,7 @@ class ParentChildController extends Controller
             ], 403);
         }
 
-        $student->load(['school', 'bus.routes', 'bus.drivers']);
+        $student->load(['school', 'route']);
 
         $todayRecords = Attendance::query()
             ->where('student_id', $student->id)
@@ -126,28 +117,13 @@ class ParentChildController extends Controller
                         'address' => $student->school->address,
                     ] : null,
                 ],
-                'bus' => $student->bus ? [
-                    'id' => $student->bus->id,
-                    'bus_number' => $student->bus->bus_number,
-                    'registration_number' => $student->bus->registration_number,
-                    'make' => $student->bus->make,
-                    'model' => $student->bus->model,
-                    'year' => $student->bus->year,
-                    'capacity' => $student->bus->capacity,
-                    'fuel_type' => $student->bus->fuel_type,
-                    'status' => $student->bus->status,
-                    'routes' => $student->bus->routes->map(fn ($route) => [
-                        'id' => $route->id,
-                        'name' => $route->name,
-                        'route_code' => $route->route_code,
-                        'start_location' => $route->start_location,
-                        'end_location' => $route->end_location,
-                    ]),
-                    'drivers' => $student->bus->drivers->map(fn ($d) => [
-                        'id' => $d->id,
-                        'name' => $d->full_name,
-                        'phone' => $d->phone,
-                    ]),
+                'route' => $student->route ? [
+                    'id' => $student->route->id,
+                    'name' => $student->route->name,
+                    'route_code' => $student->route->route_code,
+                    'start_location' => $student->route->start_location,
+                    'end_location' => $student->route->end_location,
+                    'is_active' => $student->route->is_active,
                 ] : null,
                 'today_attendance' => $this->todayAttendanceFor(
                     $todayRecords->get(Attendance::TRIP_HOME_TO_SCHOOL),
@@ -187,7 +163,7 @@ class ParentChildController extends Controller
             : now()->endOfDay();
 
         $records = Attendance::query()
-            ->with(['bus', 'markedBy'])
+            ->with(['route', 'markedBy'])
             ->where('student_id', $student->id)
             ->whereBetween('date', [$from, $to])
             ->orderByDesc('date')

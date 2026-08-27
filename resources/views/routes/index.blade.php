@@ -79,13 +79,13 @@
                             <td class="px-5 py-3">{{ $route->estimated_duration ? $route->estimated_duration . ' min' : '—' }}</td>
                             <td class="px-5 py-3">{{ $route->school->name ?? '—' }}</td>
                             <td class="px-5 py-3">
-                                @forelse ($route->buses as $bus)
-                                    <span class="mr-1 inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700 dark:bg-brand-900/20 dark:text-brand-400">
-                                        {{ $bus->bus_number }}
+                                @if ($route->activeTrip?->bus)
+                                    <span class="inline-block rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700 dark:bg-brand-900/20 dark:text-brand-400">
+                                        {{ $route->activeTrip->bus->bus_number }}
                                     </span>
-                                @empty
+                                @else
                                     —
-                                @endforelse
+                                @endif
                             </td>
                             <td class="px-5 py-3">
                                 @if ($route->is_active)

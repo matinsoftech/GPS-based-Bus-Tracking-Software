@@ -35,8 +35,8 @@
                         {{ strtoupper(substr($child->first_name ?? $child->full_name, 0, 1)) }}
                     </span>
                     <span>{{ $child->full_name }}</span>
-                    @if ($child->bus)
-                    <span class="text-[10px] opacity-80 font-mono">({{ $child->bus->bus_number }})</span>
+                    @if ($child->route)
+                    <span class="text-[10px] opacity-80 font-mono">({{ $child->route->name }})</span>
                     @endif
                 </a>
                 @endforeach

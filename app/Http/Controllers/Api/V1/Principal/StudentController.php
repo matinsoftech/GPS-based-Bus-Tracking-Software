@@ -23,7 +23,7 @@ class StudentController extends Controller
         }
 
         $students = Student::query()
-            ->with(['school', 'parent.user', 'bus'])
+            ->with(['school', 'parent.user', 'route'])
             ->where('school_id', $schoolId)
             ->when($request->filled('q'), fn ($q) => $q
                 ->where(fn ($query) => $query
@@ -73,7 +73,7 @@ class StudentController extends Controller
 
         $student = Student::create($validated);
 
-        $student->load(['school', 'parent.user', 'bus']);
+        $student->load(['school', 'parent.user', 'route']);
 
         return response()->json([
             'message' => 'Student created successfully.',
@@ -91,7 +91,7 @@ class StudentController extends Controller
             ], 403);
         }
 
-        $student->load(['school', 'parent.user', 'bus']);
+        $student->load(['school', 'parent.user', 'route']);
 
         return response()->json([
             'message' => 'Student details.',
@@ -125,7 +125,7 @@ class StudentController extends Controller
 
         $student->update($validated);
 
-        $student->load(['school', 'parent.user', 'bus']);
+        $student->load(['school', 'parent.user', 'route']);
 
         return response()->json([
             'message' => 'Student updated successfully.',
@@ -176,7 +176,7 @@ class StudentController extends Controller
             ->store('students', 'public');
         $student->save();
 
-        $student->load(['school', 'parent.user', 'bus']);
+        $student->load(['school', 'parent.user', 'route']);
 
         return response()->json([
             'message' => 'Student photo updated.',
@@ -210,11 +210,11 @@ class StudentController extends Controller
             'drop_latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'drop_longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'parent_id' => ['required', Rule::exists('parent_profiles', 'id')->where('school_id', $schoolId)],
-            'bus_id' => ['nullable', Rule::exists('buses', 'id')->where('school_id', $schoolId)],
+            'route_id' => ['nullable', Rule::exists('routes', 'id')->where('school_id', $schoolId)],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ], [
             'parent_id.exists' => 'The selected parent does not belong to your school.',
-            'bus_id.exists' => 'The selected bus does not belong to your school.',
+            'route_id.exists' => 'The selected route does not belong to your school.',
         ]);
     }
 
@@ -249,16 +249,16 @@ class StudentController extends Controller
                 'name' => $student->parent->user?->name,
                 'phone' => $student->parent->phone,
             ] : null,
-            'bus' => $student->bus ? [
-                'id' => $student->bus->id,
-                'bus_number' => $student->bus->bus_number,
-                'registration_number' => $student->bus->registration_number,
-                'status' => $student->bus->status,
+            'route' => $student->route ? [
+                'id' => $student->route->id,
+                'name' => $student->route->name,
+                'route_code' => $student->route->route_code,
+                'is_active' => $student->route->is_active,
             ] : null,
-            // 'school' => $student->school ? [
-            //     'id' => $student->school->id,
-            //     'name' => $student->school->name,
-            // ] : null,
+            'school' => $student->school ? [
+                'id' => $student->school->id,
+                'name' => $student->school->name,
+            ] : null,
         ];
     }
 

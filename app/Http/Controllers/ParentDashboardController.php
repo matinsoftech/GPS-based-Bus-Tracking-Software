@@ -32,19 +32,24 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['bus.routes', 'bus.drivers', 'bus.school'])
+            ->with(['route.school', 'route.activeTrip.bus.gpsDevice', 'route.activeTrip.driver'])
             ->get();
 
-        $busIds = $children->pluck('bus_id')->filter()->unique();
+        // Resolve active trip for each child and attach as attribute
+        $children->each(function ($child) {
+            $child->setAttribute('activeTrip', $child->route?->activeTrip);
+        });
 
-        $locationsByBus = collect();
-        if ($busIds->isNotEmpty()) {
-            $locations = $this->fleetMap->latestLocationsByDevice($busIds, ['gpsDevice']);
+        // Build locations keyed by bus_id from active trips
+        $activeBuses = $children
+            ->filter(fn ($child) => $child->getAttribute('activeTrip')?->bus)
+            ->pluck('activeTrip.bus')
+            ->unique('id');
 
-            $locationsByBus = $locations
-                ->filter(fn ($location) => $location->gpsDevice?->bus_id)
-                ->keyBy(fn ($location) => $location->gpsDevice->bus_id);
-        }
+        $locationsByBus = $this->fleetMap->latestLocationsByDevice(
+            $activeBuses->pluck('id')->values(),
+            ['gpsDevice']
+        )->keyBy(fn ($location) => $location->gpsDevice?->bus_id);
 
         $attendanceByStudent = Attendance::whereIn('student_id', $children->pluck('id'))
             ->where('date', today())
@@ -77,7 +82,7 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['bus.routes', 'bus.drivers', 'bus.school'])
+            ->with(['route', 'route.activeTrip.driver'])
             ->get();
 
         return view('parents.children', compact('user', 'children'));
@@ -98,10 +103,10 @@ class ParentDashboardController extends Controller
             abort(403, 'You are not authorized to view this student\'s attendance.');
         }
 
-        $student->load(['school', 'bus.routes']);
+        $student->load(['school', 'route']);
 
         $records = Attendance::query()
-            ->with(['bus', 'markedBy'])
+            ->with(['route', 'markedBy'])
             ->where('student_id', $student->id)
             ->orderByDesc('date')
             ->orderByDesc('created_at')

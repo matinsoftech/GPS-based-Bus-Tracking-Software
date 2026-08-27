@@ -31,27 +31,27 @@
             </div>
         @endif
 
-        @if ($buses->isEmpty())
+        @if ($routes->isEmpty())
             <div class="rounded-2xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
-                No active buses available.
+                No active routes available.
             </div>
         @elseif ($groupedBySchool)
-            @foreach ($buses->groupBy('school_id') as $schoolId => $group)
+            @foreach ($routes->groupBy('school_id') as $schoolId => $group)
                 <div class="mb-8">
                     <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                         {{ $group->first()->school->name ?? 'School' }}
                     </h2>
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        @foreach ($group as $bus)
-                            @include('attendance.partials.bus-card')
+                        @foreach ($group as $route)
+                            @include('attendance.partials.route-card')
                         @endforeach
                     </div>
                 </div>
             @endforeach
         @else
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                @foreach ($buses as $bus)
-                    @include('attendance.partials.bus-card')
+                @foreach ($routes as $route)
+                    @include('attendance.partials.route-card')
                 @endforeach
             </div>
         @endif

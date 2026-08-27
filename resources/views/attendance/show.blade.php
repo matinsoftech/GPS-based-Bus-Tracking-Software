@@ -2,15 +2,13 @@
     <div class="mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
         <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $bus->bus_number }}</h1>
+                <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $route->name }}</h1>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {{ $bus->school->name ?? '—' }} ·
-                    Route: {{ $bus->routes->pluck('name')->join(', ') ?: '—' }} ·
-                    Driver: {{ $bus->drivers->first()?->full_name ?? '—' }}
+                    {{ $route->school->name ?? '—' }}@if ($route->route_code) · {{ $route->route_code }}@endif
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
-                <form action="{{ route('attendance.buses.show', $bus) }}" method="GET">
+                <form action="{{ route('attendance.routes.show', $route) }}" method="GET">
                     <div class="flex items-center gap-2">
                         <input
                             type="date"
@@ -28,7 +26,7 @@
                     </div>
                 </form>
                 <a
-                    href="{{ route('attendance.buses.history', $bus) }}"
+                    href="{{ route('attendance.routes.history', $route) }}"
                     class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
                     History
@@ -37,7 +35,7 @@
                     href="{{ route('attendance.index', ['date' => $date]) }}"
                     class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
-                    Back to Buses
+                    Back to Routes
                 </a>
             </div>
         </div>
@@ -170,7 +168,7 @@
                                                 @endif
                                             </div>
                                         @elseif ($button['enabled'] && $canTakeAttendance)
-                                            <form action="{{ route('attendance.mark', ['bus' => $bus, 'student' => $student]) }}" method="POST" class="attendance-mark-form">
+                                            <form action="{{ route('attendance.mark', ['route' => $route, 'student' => $student]) }}" method="POST" class="attendance-mark-form">
                                                 @csrf
                                                 <input type="hidden" name="action" value="{{ $button['action'] }}">
                                                 <input type="hidden" name="trip" value="{{ $button['trip'] }}">
@@ -208,7 +206,7 @@
                         @empty
                             <tr>
                                 <td colspan="6" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
-                                    No students assigned to this bus yet.
+                                    No students assigned to this route yet.
                                 </td>
                             </tr>
                         @endforelse

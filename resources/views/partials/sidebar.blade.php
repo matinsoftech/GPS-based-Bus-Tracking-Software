@@ -94,8 +94,7 @@
         [
             'title' => 'Trip Management',
             'items' => [
-                // ['key' => 'active-trips', 'label' => 'Active Trips', 'route' => 'dashboard', 'active' => 'active-trips', 'icon' => 'heroicon-o-play', 'permission' => null, 'dropdown' => null],
-                // ['key' => 'trip-history', 'label' => 'Trip History', 'route' => 'dashboard', 'active' => 'trip-history', 'icon' => 'heroicon-o-clock', 'permission' => null, 'dropdown' => null],
+                ['key' => 'trips', 'label' => 'Trips', 'route' => 'principal.trips.index', 'active' => 'trips', 'icon' => 'heroicon-o-clipboard-document-list', 'permission' => 'trip.view', 'dropdown' => null],
                 ['key' => 'attendance', 'label' => 'Attendance', 'route' => 'attendance.index', 'active' => 'attendance', 'icon' => 'heroicon-o-document-check', 'permission' => 'attendance.view', 'dropdown' => null],
             ],
         ],
@@ -124,11 +123,7 @@
         [
             'title' => 'Trip Management',
             'items' => [
-                // ['key' => 'today-trip', 'label' => "Today's Trip", 'route' => 'driver.dashboard', 'active' => 'today-trip', 'icon' => 'heroicon-o-clipboard-document-list', 'permission' => null, 'dropdown' => null],
-                // ['key' => 'start-trip', 'label' => 'Start Trip', 'route' => 'driver.dashboard', 'active' => 'start-trip', 'icon' => 'heroicon-o-play', 'permission' => null, 'dropdown' => null],
-                // ['key' => 'end-trip', 'label' => 'End Trip', 'route' => 'driver.dashboard', 'active' => 'end-trip', 'icon' => 'heroicon-o-stop', 'permission' => null, 'dropdown' => null],
-                // ['key' => 'boarding', 'label' => 'Student Boarding', 'route' => 'attendance.index', 'active' => 'boarding', 'icon' => 'heroicon-o-arrow-right', 'permission' => null, 'dropdown' => null],
-                // ['key' => 'drop-off', 'label' => 'Student Drop-off', 'route' => 'attendance.index', 'active' => 'drop-off', 'icon' => 'heroicon-o-arrow-left', 'permission' => null, 'dropdown' => null],
+                ['key' => 'trips', 'label' => 'Trips', 'route' => 'driver.trips.index', 'active' => 'trips', 'icon' => 'heroicon-o-clipboard-document-list', 'permission' => 'trip.view', 'dropdown' => null],
                 ['key' => 'attendance', 'label' => 'Attendance', 'route' => 'attendance.index', 'active' => 'attendance', 'icon' => 'heroicon-o-document-check', 'permission' => 'attendance.view', 'dropdown' => null],
             ],
         ],

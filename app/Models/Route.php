@@ -22,11 +22,6 @@ class Route extends Model
         return $this->belongsTo(School::class);
     }
 
-    public function buses()
-    {
-        return $this->belongsToMany(Bus::class, 'bus_route', 'route_id', 'bus_id');
-    }
-
     public function drivers()
     {
         return $this->belongsToMany(Driver::class, 'driver_route', 'route_id', 'driver_id');
@@ -41,5 +36,15 @@ class Route extends Model
     public function students()
     {
         return $this->hasMany(Student::class);
+    }
+
+    public function trips()
+    {
+        return $this->hasMany(Trip::class);
+    }
+
+    public function activeTrip()
+    {
+        return $this->hasOne(Trip::class)->where('status', Trip::STATUS_IN_PROGRESS);
     }
 }

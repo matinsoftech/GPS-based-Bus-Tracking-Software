@@ -60,7 +60,7 @@
                         <th class="px-5 py-3 font-medium">Admission No</th>
                         <th class="px-5 py-3 font-medium">Name</th>
                         <th class="px-5 py-3 font-medium">Grade</th>
-                        <th class="px-5 py-3 font-medium">Bus</th>
+                        <th class="px-5 py-3 font-medium">Route</th>
                         <th class="px-5 py-3 font-medium">School</th>
                         <th class="px-5 py-3 font-medium">Parent</th>
                         <th class="px-5 py-3 font-medium">Status</th>
@@ -86,7 +86,7 @@
                             <td class="px-5 py-3 font-medium">{{ $student->admission_no }}</td>
                             <td class="px-5 py-3">{{ $student->full_name }}</td>
                             <td class="px-5 py-3">{{ $student->grade }}{{ $student->section ? ' - ' . $student->section : '' }}</td>
-                            <td class="px-5 py-3">{{ $student->bus->bus_number ?? '—' }}</td>
+                            <td class="px-5 py-3">{{ $student->route->name ?? '—' }}</td>
                             <td class="px-5 py-3">{{ $student->school->name ?? '—' }}</td>
                             <td class="px-5 py-3">{{ $student->parent->user->name ?? '—' }}</td>
                             <td class="px-5 py-3">

@@ -35,7 +35,7 @@ class PrincipalDashboardController extends Controller
         $routeQuery = Route::query()->where('school_id', $schoolId);
         $attendanceQuery = Attendance::query()
             ->whereDate('date', today())
-            ->whereHas('bus', fn ($q) => $q->where('school_id', $schoolId));
+            ->whereHas('route', fn ($q) => $q->where('school_id', $schoolId));
 
         return response()->json([
             'message' => 'Principal dashboard data.',

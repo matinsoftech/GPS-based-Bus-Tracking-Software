@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Bus;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\Student;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -14,7 +14,7 @@ class StudentSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Assign seeded students to their school's buses.
+     * Assign seeded students to their school's routes.
      */
     public function run(): void
     {
@@ -28,11 +28,11 @@ class StudentSeeder extends Seeder
 
         DB::transaction(function () use ($schools) {
             foreach ($schools as $school) {
-                $buses = Bus::where('school_id', $school->id)
+                $routes = Route::where('school_id', $school->id)
                     ->orderBy('id')
                     ->get();
 
-                if ($buses->isEmpty()) {
+                if ($routes->isEmpty()) {
                     continue;
                 }
 
@@ -42,12 +42,12 @@ class StudentSeeder extends Seeder
 
                 foreach ($students as $index => $student) {
                     $student->update([
-                        'bus_id' => $buses->get($index % $buses->count())->id,
+                        'route_id' => $routes->get($index % $routes->count())->id,
                     ]);
                 }
             }
         });
 
-        $this->command->info('Students assigned to buses successfully.');
+        $this->command->info('Students assigned to routes successfully.');
     }
 }
