@@ -32,7 +32,7 @@
                         <th class="px-5 py-3 text-left font-medium">Status</th>
                         <th class="px-5 py-3 text-left font-medium">Duration</th>
                         <th class="px-5 py-3 text-left font-medium">Started</th>
-                        <th class="px-5 py-3 text-left font-medium">Actions</th>
+                        <th class="px-5 py-3 text-left font-medium">Ended</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
@@ -64,7 +64,7 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-5 py-3">{{ $trip->duration_minutes ?? '—' }} min</td>
+                            <td class="px-5 py-3">{{ $trip->durationInMinutes() ?? '—' }} min</td>
                             <td class="px-5 py-3">{{ $trip->started_at->format('H:i:s') }}</td>
                             <td class="px-5 py-3">
                                 @if ($trip->status === 'in_progress')
@@ -79,7 +79,7 @@
                                         </button>
                                     </form>
                                 @else
-                                    <span class="text-gray-400 dark:text-gray-500 text-sm">—</span>
+                                    <span class="text-gray-700 dark:text-gray-200">{{ $trip->ended_at?->format('H:i:s') ?? '—' }}</span>
                                 @endif
                             </td>
                         </tr>

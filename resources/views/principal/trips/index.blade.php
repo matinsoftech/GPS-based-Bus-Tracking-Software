@@ -52,7 +52,7 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-5 py-3">{{ $trip->duration_minutes ?? '—' }} min</td>
+                            <td class="px-5 py-3">{{ $trip->durationInMinutes() ?? '—' }} min</td>
                             <td class="px-5 py-3">{{ $trip->started_at->format('H:i:s') }}</td>
                             <td class="px-5 py-3">{{ $trip->ended_at ? $trip->ended_at->format('H:i:s') : '—' }}</td>
                         </tr>
