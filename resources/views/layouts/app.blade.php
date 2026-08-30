@@ -8,6 +8,7 @@
         <title>{{ config('app.name', 'Laravel') }} @isset($title) - {{ $title }} @endisset</title>
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @stack('styles')
     </head>
     <body
         x-data="{ page: '{{ $page ?? 'dashboard' }}', loaded: true, darkMode: false, sidebarToggle: false }"
