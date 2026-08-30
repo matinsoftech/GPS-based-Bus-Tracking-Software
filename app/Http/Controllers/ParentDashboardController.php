@@ -25,6 +25,7 @@ class ParentDashboardController extends Controller
             return view('parentDashboard', [
                 'user' => $user,
                 'parent' => null,
+                'school' => null,
                 'children' => collect(),
                 'locationsByBus' => collect(),
                 'attendanceByStudent' => collect(),
@@ -34,6 +35,8 @@ class ParentDashboardController extends Controller
         $children = $parent->children()
             ->with(['route.school', 'route.activeTrip.bus.gpsDevice', 'route.activeTrip.driver'])
             ->get();
+
+        $school = $parent->school;
 
         // Resolve active trip for each child and attach as attribute
         $children->each(function ($child) {
@@ -59,6 +62,7 @@ class ParentDashboardController extends Controller
         return view('parentDashboard', compact(
             'user',
             'parent',
+            'school',
             'children',
             'locationsByBus',
             'attendanceByStudent',
