@@ -67,6 +67,46 @@ class FleetMapService
     }
 
     /**
+     * Build the map payload for a single route, used by the parent tracking page.
+     *
+     * Unlike forSchool() (which only includes routes that currently have an active
+     * trip), this always includes the given route with its stops so the parent can
+     * see the route path even before a trip starts. The bus marker is only included
+     * when an active trip provides a bus for the route.
+     *
+     * @param  Route  $route  The assigned route to render.
+     * @param  array|null  $location  A normalized device payload from NazarTrackService.
+     */
+    public function forRoute(Route $route, ?array $location = null): array
+    {
+        $route->loadMissing(['stops']);
+
+        $bus = $route->activeTrip?->bus;
+
+        $busArray = $bus
+            ? $this->busToArray($bus, $location, $route)
+            : null;
+
+        $routeData = $this->routeToArray($route);
+
+        return [
+            'buses' => $busArray ? [$busArray] : [],
+            'routes' => $routeData === null ? [] : [$routeData],
+            'summary' => [
+                'total' => $busArray ? 1 : 0,
+                'active' => $busArray && $busArray['status'] === 'Active' ? 1 : 0,
+                'maintenance' => $busArray && $busArray['status'] === 'Maintenance' ? 1 : 0,
+                'inactive' => $busArray && $busArray['status'] === 'Inactive' ? 1 : 0,
+                'moving' => $busArray && $busArray['tracking_status'] === 'Moving' ? 1 : 0,
+                'stopped' => $busArray && in_array($busArray['tracking_status'], ['Stopped', 'Arrived'], true) ? 1 : 0,
+                'routes_running' => ($route->is_active && $busArray) ? 1 : 0,
+            ],
+            'school' => $route->school ? $route->school->only(['name', 'latitude', 'longitude']) : null,
+            'updated_at' => now()->toIso8601String(),
+        ];
+    }
+
+    /**
      * Build the full fleet map payload for a school.
      *
      * @param  int|null  $schoolId  Null = all schools (used by super admin contexts).
@@ -112,20 +152,7 @@ class FleetMapService
 
         return [
             'buses' => $busArrays->all(),
-            'routes' => $routes->map(fn (Route $route) => [
-                'id' => $route->id,
-                'name' => $route->name,
-                'route_code' => $route->route_code,
-                'start_location' => $route->start_location,
-                'end_location' => $route->end_location,
-                'stops' => $route->stops->map(fn (RouteStop $stop) => [
-                    'id' => $stop->id,
-                    'name' => $stop->name,
-                    'latitude' => $stop->latitude,
-                    'longitude' => $stop->longitude,
-                    'stop_order' => $stop->stop_order,
-                ])->values()->all(),
-            ])->values()->all(),
+            'routes' => $routes->map(fn (Route $route) => $this->routeToArray($route))->filter()->values()->all(),
             'summary' => [
                 'total' => $buses->count(),
                 'active' => $buses->where('status', 'Active')->count(),
@@ -143,15 +170,43 @@ class FleetMapService
     }
 
     /**
+     * Serialize a route (with its stops) into the map payload shape.
+     *
+     * @return array{id: int, name: string, route_code: string, start_location: string|null, end_location: string|null, stops: array}|null
+     */
+    private function routeToArray(Route $route): ?array
+    {
+        if ($route->stops->isEmpty()) {
+            return null;
+        }
+
+        return [
+            'id' => $route->id,
+            'name' => $route->name,
+            'route_code' => $route->route_code,
+            'start_location' => $route->start_location,
+            'end_location' => $route->end_location,
+            'stops' => $route->stops->map(fn (RouteStop $stop) => [
+                'id' => $stop->id,
+                'name' => $stop->name,
+                'latitude' => $stop->latitude,
+                'longitude' => $stop->longitude,
+                'stop_order' => $stop->stop_order,
+            ])->values()->all(),
+        ];
+    }
+
+    /**
      * Serialize a bus (with its latest API location) into the map payload shape.
      *
      * @param  array|null  $location  A normalized device payload from NazarTrackService.
-     * @param  Collection  $activeTrips  Active trips to resolve route info.
+     * @param  Route|Collection  $routeOrTrips  The bus's route, or the active trips to resolve it from.
      */
-    private function busToArray(Bus $bus, ?array $location, Collection $activeTrips): array
+    private function busToArray(Bus $bus, ?array $location, Route|Collection $routeOrTrips): array
     {
-        $activeTrip = $activeTrips->firstWhere('bus_id', $bus->id);
-        $route = $activeTrip?->route;
+        $route = $routeOrTrips instanceof Route
+            ? $routeOrTrips
+            : $routeOrTrips->firstWhere('bus_id', $bus->id)?->route;
 
         $nearestStop = $location && $route ? $this->nearestStop($route, $location) : null;
         $status = $this->trackingStatus($bus, $location, $nearestStop);
@@ -188,8 +243,6 @@ class FleetMapService
      * - Arrived: stopped within ARRIVED_RADIUS_KM of a configured stop.
      * - Moving:  online with speed above the stopped threshold.
      * - Stopped: online, but effectively stationary.
-     *
-     * @param  array|null  $location
      */
     private function trackingStatus(Bus $bus, ?array $location, ?array $nearestStop): string
     {
@@ -209,7 +262,6 @@ class FleetMapService
     /**
      * Find the nearest configured stop to the current bus position.
      *
-     * @param  array  $location
      * @return array{stop: RouteStop|null, distance_km: float|null}|null
      */
     private function nearestStop(Route $route, array $location): ?array
@@ -256,8 +308,6 @@ class FleetMapService
 
     /**
      * Estimated minutes to reach the next stop (based on current speed).
-     *
-     * @param  array|null  $location
      */
     private function etaMinutes(string $status, ?array $location, ?array $nearestStop): ?float
     {
@@ -272,8 +322,6 @@ class FleetMapService
 
     /**
      * Whether the provider marks the device online with a valid position.
-     *
-     * @param  array|null  $location
      */
     private function isLive(?array $location): bool
     {
@@ -295,8 +343,6 @@ class FleetMapService
 
     /**
      * Normalize the provider timestamp into an ISO-8601 string.
-     *
-     * @param  array|null  $location
      */
     private function gpsTimestampIso(?array $location): ?string
     {

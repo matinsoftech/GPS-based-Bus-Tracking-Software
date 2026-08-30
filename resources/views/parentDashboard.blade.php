@@ -6,7 +6,17 @@
                     Welcome back, {{ $user->name }}
                 </h1>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Here is the transport status for your children.
+                    @if ($school?->name)
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-0.5 font-semibold text-brand-700 ring-1 ring-inset ring-brand-200 dark:bg-brand-500/15 dark:text-brand-400 dark:ring-brand-500/30">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v1.03c2.906.25 5.142 2.06 6.025 4.56a.75.75 0 11-1.426.465c-.684-2.097-2.473-3.555-4.599-3.555h-1.5c-2.703 0-4.5 1.68-4.5 4 0 1.98 1.5 3 3.65 3.44l.49.1c2.12.435 3.86 1.14 3.86 3.46 0 2.32-1.797 4-4.5 4a4.874 4.874 0 01-4.278-2.416.75.75 0 111.306-.732 3.37 3.37 0 002.972 1.648h1.5c2.703 0 4.5-1.68 4.5-4 0-1.98-1.5-3-3.65-3.44l-.49-.1c-2.12-.435-3.86-1.14-3.86-3.46 0-2.32 1.797-4 4.5-4V3a.75.75 0 01.75-.75zm.75 15.75a.75.75 0 01-.75.75c-.605 0-1.2-.084-1.774-.24a.75.75 0 11.414-1.44c.332.096.748.18 1.36.18a.75.75 0 01.75.75z" fill="currentColor"/>
+                            </svg>
+                            {{ $school->name }}
+                        </span>
+                        <span class="ml-1">Here is the transport status for your children.</span>
+                    @else
+                        Here is the transport status for your children.
+                    @endif
                 </p>
             </div>
             <span class="text-theme-sm inline-flex w-fit items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 font-medium text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
