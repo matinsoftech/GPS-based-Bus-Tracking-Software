@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Parent;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bus;
 use App\Models\Student;
-use App\Models\Trip;
 use App\Services\NazarTrackService;
 use Illuminate\Http\Request;
 
@@ -43,9 +43,7 @@ class ParentLiveTrackingController extends Controller
                         'name' => $student->route->name,
                         'route_code' => $student->route->route_code,
                     ] : null,
-                    'live_location' => $student->route?->activeTrip?->bus
-                        ? $this->gps->locationPayload($student->route->activeTrip->bus)
-                        : null,
+                    'live_location' => $this->liveLocationFor($student->route?->activeTrip?->bus),
                 ]),
             ],
         ]);
@@ -84,10 +82,22 @@ class ParentLiveTrackingController extends Controller
                     'name' => $student->route->name,
                     'route_code' => $student->route->route_code,
                 ] : null,
-                'live_location' => $student->route?->activeTrip?->bus
-                    ? $this->gps->locationPayload($student->route->activeTrip->bus)
-                    : null,
+                'live_location' => $this->liveLocationFor($student->route?->activeTrip?->bus),
             ],
         ]);
+    }
+
+    /**
+     * Resolve a bus's live location, falling back to its last known stored
+     * position when the GPS provider has no live fix.
+     */
+    private function liveLocationFor(?Bus $bus): ?array
+    {
+        if (! $bus) {
+            return null;
+        }
+
+        return $this->gps->locationPayload($bus)
+            ?? $this->gps->lastKnownPayload($bus);
     }
 }

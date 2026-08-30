@@ -25,6 +25,7 @@ class DriverDashboardController extends Controller
             return view('driverDashboard', [
                 'user' => $user,
                 'driver' => null,
+                'school' => null,
                 'buses' => collect(),
                 'fleetMap' => $this->fleetMap->forSchool(null, collect()),
                 'fleetMapRefreshUrl' => route('bus_location.latest'),
@@ -36,6 +37,8 @@ class DriverDashboardController extends Controller
             ->with(['school', 'activeTrip.route'])
             ->orderBy('bus_number')
             ->get();
+
+        $school = $driver->school;
 
         $routes = $driver->routes()->orderBy('name')->get();
 
@@ -71,6 +74,7 @@ class DriverDashboardController extends Controller
         return view('driverDashboard', compact(
             'user',
             'driver',
+            'school',
             'buses',
             'routes',
             'activeTrip',

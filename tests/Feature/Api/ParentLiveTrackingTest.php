@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Bus;
 use App\Models\Driver;
+use App\Models\GpsDevice;
 use App\Models\ParentProfile;
 use App\Models\Route;
 use App\Models\School;
@@ -303,6 +304,48 @@ class ParentLiveTrackingTest extends TestCase
         $this->getJson('/api/v1/parent/live-tracking')
             ->assertOk()
             ->assertJsonPath('data.children.0.live_location', null);
+    }
+
+    public function test_live_location_falls_back_to_last_known_stored_position(): void
+    {
+        $this->makeStudent();
+
+        $bus = $this->makeBus('BUS-1', '999999999999999', $this->route, $this->driver);
+
+        $gpsDevice = GpsDevice::create([
+            'school_id' => $this->school->id,
+            'bus_id' => $bus->id,
+            'device_name' => 'Bus 1 Device',
+            'device_imei' => '999999999999999',
+            'status' => 'active',
+        ]);
+
+        $gpsDevice->locations()->create([
+            'latitude' => 27.7172,
+            'longitude' => 85.324,
+            'speed' => 0,
+            'heading' => 90,
+            'recorded_at' => now()->subMinutes(5),
+        ]);
+
+        // Provider has no live device matching this bus's IMEI.
+        $this->fakeLiveTracking([
+            [
+                'imei' => '111111111111111',
+                'latitude' => 27.7,
+                'longitude' => 85.3,
+                'is_online' => true,
+            ],
+        ]);
+
+        Sanctum::actingAs($this->parentUser);
+
+        $this->getJson('/api/v1/parent/live-tracking')
+            ->assertOk()
+            ->assertJsonPath('data.children.0.live_location.latitude', 27.7172)
+            ->assertJsonPath('data.children.0.live_location.longitude', 85.324)
+            ->assertJsonPath('data.children.0.live_location.status_label', 'Offline')
+            ->assertJsonMissingPath('exception');
     }
 
     public function test_parent_can_view_single_child_live_tracking(): void

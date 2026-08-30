@@ -3,15 +3,18 @@
 namespace App\Services;
 
 use App\Models\Bus;
+use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Exception;
 
 class NazarTrackService
 {
     protected string $baseUrl;
+
     protected string $apiKey;
+
     protected int $timeout;
+
     protected int $cacheTtl;
 
     /**
@@ -43,13 +46,13 @@ class NazarTrackService
                     ->withToken($this->apiKey)
                     ->acceptJson()
                     ->withoutVerifying()
-                    ->get($this->baseUrl . '/api/ext/live-tracking');
+                    ->get($this->baseUrl.'/api/ext/live-tracking');
 
                 if (! $response->successful()) {
                     throw new Exception(
-                        'GPS API Error: ' .
-                            $response->status() .
-                            ' - ' .
+                        'GPS API Error: '.
+                            $response->status().
+                            ' - '.
                             $response->body()
                     );
                 }
@@ -115,7 +118,7 @@ class NazarTrackService
      * Get live GPS data for many buses in a single API request.
      *
      * @param  iterable<Bus>  $buses
-     * @return array<int, array|null>  keyed by bus id
+     * @return array<int, array|null> keyed by bus id
      */
     public function getBusLocations(iterable $buses): array
     {
@@ -151,42 +154,82 @@ class NazarTrackService
         $course = (float) ($location['course'] ?? $location['marker']['heading'] ?? 0);
 
         return [
-            'latitude'        => $location['latitude'] ?? null,
-            'longitude'       => $location['longitude'] ?? null,
-            'speed_kmh'       => (float) ($location['speed_kmh'] ?? $location['speed'] ?? 0),
-            'course'          => $course,
-            'status'          => $status,
-            'status_label'    => $location['status_label'] ?? self::statusLabel($status),
-            'status_color'    => $location['status_color'] ?? self::statusColor($status),
-            'is_moving'       => (bool) ($location['is_moving'] ?? ($status === 'moving')),
-            'gps_time'        => $location['gps_time'] ?? null,
+            'latitude' => $location['latitude'] ?? null,
+            'longitude' => $location['longitude'] ?? null,
+            'speed_kmh' => (float) ($location['speed_kmh'] ?? $location['speed'] ?? 0),
+            'course' => $course,
+            'status' => $status,
+            'status_label' => $location['status_label'] ?? self::statusLabel($status),
+            'status_color' => $location['status_color'] ?? self::statusColor($status),
+            'is_moving' => (bool) ($location['is_moving'] ?? ($status === 'moving')),
+            'gps_time' => $location['gps_time'] ?? null,
             'last_updated_at' => $location['last_updated_at'] ?? null,
-            'last_updated_ago'=> $location['last_updated_ago'] ?? null,
-            'asset_name'      => $location['asset_name'] ?? null,
-            'imei'            => $location['imei'] ?? $bus->gps_device_id,
-            'animate'         => (bool) ($location['animate'] ?? true),
-            'marker'          => $location['marker'] ?? ['heading' => $course],
+            'last_updated_ago' => $location['last_updated_ago'] ?? null,
+            'asset_name' => $location['asset_name'] ?? null,
+            'imei' => $location['imei'] ?? $bus->gps_device_id,
+            'animate' => (bool) ($location['animate'] ?? true),
+            'marker' => $location['marker'] ?? ['heading' => $course],
         ];
     }
 
     public static function statusLabel(string $status): string
     {
         return match ($status) {
-            'moving'  => 'Moving',
+            'moving' => 'Moving',
             'stopped' => 'Stopped',
-            'idle'    => 'Idle',
+            'idle' => 'Idle',
             'offline' => 'Offline',
-            default   => ucfirst($status),
+            default => ucfirst($status),
         };
+    }
+
+    /**
+     * Build a normalized "last known location" payload from the latest stored
+     * BusLocation row. Used as a fallback when the GPS provider has no live fix
+     * for the bus, so the API still returns coordinates instead of null.
+     *
+     * @return array|null The last known payload, or null when no fix is stored.
+     */
+    public function lastKnownPayload(?Bus $bus): ?array
+    {
+        if (! $bus || ! $bus->gpsDevice) {
+            return null;
+        }
+
+        $last = $bus->gpsDevice->locations()
+            ->latest('recorded_at')
+            ->first();
+
+        if (! $last || $last->latitude === null || $last->longitude === null) {
+            return null;
+        }
+
+        return [
+            'latitude' => (float) $last->latitude,
+            'longitude' => (float) $last->longitude,
+            'speed_kmh' => (float) $last->speed,
+            'course' => (float) $last->heading,
+            'status' => 'offline',
+            'status_label' => self::statusLabel('offline'),
+            'status_color' => self::statusColor('offline'),
+            'is_moving' => false,
+            'gps_time' => $last->recorded_at?->toIso8601String(),
+            'last_updated_at' => $last->recorded_at?->toIso8601String(),
+            'last_updated_ago' => $last->recorded_at?->diffForHumans(),
+            'asset_name' => $bus->gpsDevice->device_name,
+            'imei' => $bus->gpsDevice->device_imei ?: $bus->gps_device_id,
+            'animate' => false,
+            'marker' => ['heading' => (float) $last->heading],
+        ];
     }
 
     public static function statusColor(string $status): string
     {
         return match ($status) {
-            'moving'  => '#22c55e',
+            'moving' => '#22c55e',
             'stopped' => '#f59e0b',
-            'idle'    => '#eab308',
-            default   => '#6b7280',
+            'idle' => '#eab308',
+            default => '#6b7280',
         };
     }
 }

@@ -7,11 +7,11 @@ use App\Models\BusLocation;
 use App\Models\Driver;
 use App\Models\ParentProfile;
 use App\Models\SchoolAdmin;
+use App\Notifications\BusStartedNotification;
 use App\Services\FleetMapService;
+use App\Services\NazarTrackService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Services\NazarTrackService;
-use App\Notifications\BusStartedNotification;
 
 class BusLocationController extends Controller
 {
@@ -19,7 +19,6 @@ class BusLocationController extends Controller
         private readonly FleetMapService $fleetMap,
         private readonly NazarTrackService $gpsService,
     ) {}
-
 
     /**
      * Display a listing of the resource.
@@ -50,8 +49,12 @@ class BusLocationController extends Controller
 
             $latestLocation = $bus ? $this->latestLocationForBus($bus) : null;
 
-            $fleetBusIds = $children->pluck('route.activeTrip.bus')->flatten()->pluck('id')->filter();
-            $fleetMap = $this->fleetMap->forSchool(null, $fleetBusIds);
+            // Always include the assigned route so the parent sees the route path
+            // and stops even before a trip starts; the live bus marker/telemetry
+            // only appear once an active trip provides a bus.
+            $fleetMap = $route
+                ? $this->fleetMap->forRoute($route, $latestLocation)
+                : ['buses' => [], 'routes' => [], 'summary' => [], 'school' => null, 'updated_at' => now()->toIso8601String()];
 
             return view('bus_location.parent_bus_location', compact(
                 'parent',
