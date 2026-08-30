@@ -44,7 +44,7 @@
             @endif
         </div>
 
-        @if (!$selectedChild || !$bus || $routes->isEmpty())
+        @if (!$selectedChild || !$route || $routes->isEmpty())
         <!-- Empty / Unassigned State Card -->
         <div class="rounded-2xl border border-gray-200 bg-white p-8 md:p-12 text-center shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 mb-4">
@@ -158,6 +158,7 @@
                     </div>
                 </div>
                 <div class="mt-3">
+                    @if ($bus)
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-bold text-gray-900 dark:text-white">Bus #{{ $bus->bus_number }}</span>
                         @if ($bus->registration_number)
@@ -178,6 +179,12 @@
                         </svg>
                         Call {{ $bus->drivers->first()->phone }}
                     </a>
+                    @endif
+                    @else
+                    <p class="text-sm font-bold text-gray-900 dark:text-white">—</p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        No bus trip is active right now. Live bus details will appear once the trip starts.
+                    </p>
                     @endif
                 </div>
             </div>
