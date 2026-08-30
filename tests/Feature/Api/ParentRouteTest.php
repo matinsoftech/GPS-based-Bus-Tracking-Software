@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
-class ParentBusTest extends TestCase
+class ParentRouteTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -169,7 +169,7 @@ class ParentBusTest extends TestCase
         ]);
     }
 
-    public function test_parent_can_view_child_bus_with_route_stops_driver_and_live_location(): void
+    public function test_parent_can_view_child_route_with_stops_driver_and_live_location(): void
     {
         $student = $this->makeStudent();
 
@@ -193,7 +193,7 @@ class ParentBusTest extends TestCase
 
         Sanctum::actingAs($this->parentUser);
 
-        $this->getJson('/api/v1/parent/children/'.$student->id.'/bus')
+        $this->getJson('/api/v1/parent/children/'.$student->id.'/route')
             ->assertOk()
             ->assertJsonPath('message', 'Parent child route data.')
             ->assertJsonPath('data.student.full_name', 'Sita Bahadur')
@@ -234,7 +234,7 @@ class ParentBusTest extends TestCase
 
         Sanctum::actingAs($this->parentUser);
 
-        $this->getJson('/api/v1/parent/children/'.$student->id.'/bus')
+        $this->getJson('/api/v1/parent/children/'.$student->id.'/route')
             ->assertOk()
             ->assertJsonPath('data.route.name', 'Route 1')
             ->assertJsonPath('data.live_location', null);
@@ -271,12 +271,12 @@ class ParentBusTest extends TestCase
 
         Sanctum::actingAs($this->parentUser);
 
-        $this->getJson('/api/v1/parent/children/'.$otherStudent->id.'/bus')
+        $this->getJson('/api/v1/parent/children/'.$otherStudent->id.'/route')
             ->assertForbidden()
             ->assertJsonPath('message', "You are not authorized to view this student's route.");
     }
 
-    public function test_child_without_bus_returns_404(): void
+    public function test_child_without_route_returns_404(): void
     {
         $student = $this->makeStudent(['route_id' => null]);
 
@@ -284,7 +284,7 @@ class ParentBusTest extends TestCase
 
         Sanctum::actingAs($this->parentUser);
 
-        $this->getJson('/api/v1/parent/children/'.$student->id.'/bus')
+        $this->getJson('/api/v1/parent/children/'.$student->id.'/route')
             ->assertNotFound()
             ->assertJsonPath('message', 'Route not found for this child.');
     }
@@ -300,7 +300,7 @@ class ParentBusTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->getJson('/api/v1/parent/children/'.$student->id.'/bus')
+        $this->getJson('/api/v1/parent/children/'.$student->id.'/route')
             ->assertNotFound()
             ->assertJsonPath('message', 'Parent profile not found.');
     }
@@ -314,17 +314,17 @@ class ParentBusTest extends TestCase
 
         Sanctum::actingAs($driverUser);
 
-        $this->getJson('/api/v1/parent/children/'.$student->id.'/bus')
+        $this->getJson('/api/v1/parent/children/'.$student->id.'/route')
             ->assertForbidden();
     }
 
-    public function test_bus_returns_clean_404_for_nonexistent_student(): void
+    public function test_route_returns_clean_404_for_nonexistent_student(): void
     {
         $this->fakeLiveTracking([]);
 
         Sanctum::actingAs($this->parentUser);
 
-        $this->getJson('/api/v1/parent/children/999999/bus')
+        $this->getJson('/api/v1/parent/children/999999/route')
             ->assertNotFound()
             ->assertJsonPath('message', 'Student not found.')
             ->assertJsonMissingPath('exception')

@@ -8,7 +8,7 @@ use App\Models\Trip;
 use App\Services\NazarTrackService;
 use Illuminate\Http\Request;
 
-class ParentBusController extends Controller
+class ParentRouteController extends Controller
 {
     public function __construct(private readonly NazarTrackService $gps) {}
 
