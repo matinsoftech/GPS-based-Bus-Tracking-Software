@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\ParentProfileController;
 use App\Http\Controllers\PrincipalDashboardController;
+use App\Http\Controllers\PrincipalVehicleTrackingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RouteController;
@@ -124,6 +125,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/trips', [PrincipalDashboardController::class, 'tripsIndex'])
             ->middleware('permission:trip.view')
             ->name('trips.index');
+
+        Route::get('/vehicle-tracking', [PrincipalVehicleTrackingController::class, 'index'])
+            ->middleware('permission:dashboard.view')
+            ->name('vehicle-tracking');
+
+        Route::get('/vehicle-tracking/data', [PrincipalVehicleTrackingController::class, 'data'])
+            ->middleware('permission:dashboard.view')
+            ->name('vehicle-tracking.data');
     });
 
     /*
