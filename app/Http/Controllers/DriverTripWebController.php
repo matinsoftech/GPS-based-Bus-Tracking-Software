@@ -72,6 +72,7 @@ class DriverTripWebController extends Controller
         $validated = $request->validate([
             'bus_id'    => ['required', 'integer', 'exists:buses,id'],
             'route_id'  => ['required', 'integer', 'exists:routes,id'],
+            'trip_id'   => ['nullable', 'integer', 'exists:trips,id'],
             'trip_type' => ['nullable', 'string', 'in:home_to_school,school_to_home'],
             'latitude'  => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
@@ -103,53 +104,66 @@ class DriverTripWebController extends Controller
             return back()->withErrors(['route_id' => 'This route is inactive.'])->withInput();
         }
 
-        $todayTrips = $bus->trips()
-            ->whereDate('started_at', now()->toDateString())
-            ->orderBy('started_at')
-            ->get();
-        $lastTrip = $todayTrips->last();
+        $activeTrip = $bus->trips()
+            ->where('status', Trip::STATUS_IN_PROGRESS)
+            ->latest('started_at')
+            ->first();
 
-        $isStarting = ! $lastTrip || $lastTrip->isCompleted();
+        $isEnding = ($validated['trip_id'] ?? null) !== null;
+        $trip = null;
 
-        $trip = DB::transaction(function () use ($bus, $driver, $route, $validated, $lastTrip, $isStarting) {
-            if ($isStarting) {
-                $tripType = $validated['trip_type'] ?? Trip::TYPE_HOME_TO_SCHOOL;
+        if ($isEnding) {
+            $trip = $activeTrip && $activeTrip->id === (int) $validated['trip_id']
+                ? $activeTrip
+                : $bus->trips()->find($validated['trip_id']);
 
-                return Trip::create([
-                    'bus_id'          => $bus->id,
-                    'driver_id'       => $driver->id,
-                    'route_id'        => $route->id,
-                    'school_id'       => $bus->school_id,
-                    'trip_type'       => $tripType,
-                    'status'          => Trip::STATUS_IN_PROGRESS,
-                    'started_at'      => now(),
-                    'start_latitude'  => $validated['latitude'] ?? null,
-                    'start_longitude' => $validated['longitude'] ?? null,
-                    'notes'           => $validated['notes'] ?? null,
-                ]);
-            } else {
-                $lastTrip->update([
-                    'status'          => Trip::STATUS_COMPLETED,
-                    'ended_at'        => now(),
-                    'end_latitude'    => $validated['latitude'] ?? null,
-                    'end_longitude'   => $validated['longitude'] ?? null,
-                ]);
-                return $lastTrip->fresh(['bus', 'route', 'school']);
+            if (! $trip || ! $trip->isInProgress()) {
+                return redirect()->route('driver.trips.index')
+                    ->with('warning', 'That trip is no longer active.');
             }
-        });
-
-        if ($isStarting) {
-            $this->notifyTripStarted($trip);
-        } else {
-            $this->notifyTripEnded($trip);
+        } elseif ($activeTrip) {
+            return redirect()->route('driver.trips.index')
+                ->with('warning', 'You already have an active trip. End it first.');
         }
 
-        $message = $isStarting
-            ? "Trip started ({$trip->trip_type_label}). Parents have been notified."
-            : "Trip ended ({$trip->trip_type_label}). Parents have been notified.";
+        if ($isEnding) {
+            $trip = DB::transaction(function () use ($trip, $validated) {
+                $trip->update([
+                    'status'        => Trip::STATUS_COMPLETED,
+                    'ended_at'      => now(),
+                    'end_latitude'  => $validated['latitude'] ?? null,
+                    'end_longitude' => $validated['longitude'] ?? null,
+                ]);
+                return $trip->fresh(['bus', 'route', 'school']);
+            });
+
+            $this->notifyTripEnded($trip);
+
+            return redirect()->route('driver.trips.index')
+                ->with('success', "Trip ended ({$trip->trip_type_label}). Parents have been notified.");
+        }
+
+        $trip = DB::transaction(function () use ($bus, $driver, $route, $validated) {
+            $tripType = $validated['trip_type'] ?? Trip::TYPE_HOME_TO_SCHOOL;
+
+            return Trip::create([
+                'bus_id'          => $bus->id,
+                'driver_id'       => $driver->id,
+                'route_id'        => $route->id,
+                'school_id'       => $bus->school_id,
+                'trip_type'       => $tripType,
+                'status'          => Trip::STATUS_IN_PROGRESS,
+                'started_at'      => now(),
+                'start_latitude'  => $validated['latitude'] ?? null,
+                'start_longitude' => $validated['longitude'] ?? null,
+                'notes'           => $validated['notes'] ?? null,
+            ]);
+        });
+
+        $this->notifyTripStarted($trip);
 
         return redirect()->route('driver.trips.index')
-            ->with('success', $message);
+            ->with('success', "Trip started ({$trip->trip_type_label}). Parents have been notified.");
     }
 
     private function notifyTripEnded(Trip $trip): void

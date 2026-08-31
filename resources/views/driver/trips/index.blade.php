@@ -72,6 +72,7 @@
                                         @csrf
                                         <input type="hidden" name="bus_id" value="{{ $trip->bus_id }}">
                                         <input type="hidden" name="route_id" value="{{ $trip->route_id }}">
+                                        <input type="hidden" name="trip_id" value="{{ $trip->id }}">
                                         <button type="submit"
                                             class="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600"
                                             onclick="return confirm('End this trip?')">
