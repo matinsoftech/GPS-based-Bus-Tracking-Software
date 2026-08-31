@@ -14,6 +14,7 @@ use App\Notifications\TripEndedNotification;
 use App\Notifications\TripStartedNotification;
 use App\Services\BusTrackingService;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -137,7 +138,7 @@ class DriverTripWebController extends Controller
                 return $trip->fresh(['bus', 'route', 'school']);
             });
 
-            $this->notifyTripEnded($trip);
+            $this->notifyParentsAndPrincipal($trip, new TripEndedNotification($trip));
 
             return redirect()->route('driver.trips.index')
                 ->with('success', "Trip ended ({$trip->trip_type_label}). Parents have been notified.");
@@ -160,67 +161,41 @@ class DriverTripWebController extends Controller
             ]);
         });
 
-        $this->notifyTripStarted($trip);
+        $this->notifyParentsAndPrincipal($trip, new TripStartedNotification($trip));
 
         return redirect()->route('driver.trips.index')
             ->with('success', "Trip started ({$trip->trip_type_label}). Parents have been notified.");
     }
 
-    private function notifyTripEnded(Trip $trip): void
+    /**
+     * Trip start/end events go to parents and students of students on this route,
+     * and the school's principal(s) (School Admin). The driver already
+     * knows (they triggered it) and Super Admin isn't notified for these
+     * two events.
+     */
+    private function notifyParentsAndPrincipal(Trip $trip, Notification $notification): void
     {
-        $notification = new TripEndedNotification($trip);
-
         $students = Student::where('route_id', $trip->route_id)
-            ->with('parent.user')
+            ->with(['parent.user', 'user'])
             ->get();
 
         foreach ($students as $student) {
             if ($parent = $student->parent?->user) {
                 $parent->notify($notification);
             }
-        }
-
-        if ($driverUser = $trip->driver?->user) {
-            $driverUser->notify($notification);
-        }
-
-        foreach (SchoolAdmin::where('school_id', $trip->school_id)->with('user')->get() as $admin) {
-            if ($admin->user) {
-                $admin->user->notify($notification);
+            if ($studentUser = $student->user) {
+                $studentUser->notify($notification);
             }
         }
 
-        foreach (User::role('Super Admin')->get() as $superAdmin) {
-            $superAdmin->notify($notification);
-        }
-    }
-
-    private function notifyTripStarted(Trip $trip): void
-    {
-        $notification = new TripStartedNotification($trip);
-
-        $students = Student::where('route_id', $trip->route_id)
-            ->with('parent.user')
+        $admins = SchoolAdmin::where('school_id', $trip->school_id)
+            ->with('user')
             ->get();
 
-        foreach ($students as $student) {
-            if ($parent = $student->parent?->user) {
-                $parent->notify($notification);
-            }
-        }
-
-        if ($driverUser = $trip->driver?->user) {
-            $driverUser->notify($notification);
-        }
-
-        foreach (SchoolAdmin::where('school_id', $trip->school_id)->with('user')->get() as $admin) {
+        foreach ($admins as $admin) {
             if ($admin->user) {
                 $admin->user->notify($notification);
             }
-        }
-
-        foreach (User::role('Super Admin')->get() as $superAdmin) {
-            $superAdmin->notify($notification);
         }
     }
 }
