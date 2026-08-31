@@ -10,6 +10,22 @@ use Illuminate\Support\Facades\Auth;
 
 class PrincipalVehicleTrackingController extends Controller
 {
+    private const STATUS_META = [
+        'moving'   => ['label' => 'Moving',   'color' => '#22c55e'],
+        'idle'     => ['label' => 'Idle',     'color' => '#f59e0b'],
+        'stopped'  => ['label' => 'Stopped',  'color' => '#ef4444'],
+        'offline'  => ['label' => 'Offline',  'color' => '#ef4444'],
+        'inactive' => ['label' => 'Inactive', 'color' => '#64748b'],
+    ];
+
+    private const STATUS_SORT_ORDER = [
+        'moving'   => 0,
+        'stopped'  => 1,
+        'idle'     => 2,
+        'inactive' => 3,
+        'offline'  => 4,
+    ];
+
     public function __construct(private readonly NazarTrackService $gps) {}
 
     public function index()
@@ -39,7 +55,6 @@ class PrincipalVehicleTrackingController extends Controller
         $response = $this->gps->getLiveTracking();
         $apiVehicles = $response['data'] ?? [];
 
-        // Get only buses from the principal's school
         $schoolBuses = Bus::query()
             ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
             ->with(['drivers', 'school'])
@@ -49,52 +64,85 @@ class PrincipalVehicleTrackingController extends Controller
         $vehicles = [];
 
         foreach ($apiVehicles as $vehicle) {
-            $imei = $vehicle['imei'] ?? null;
-            $matchedBus = $imei ? ($schoolBuses->get($imei) ?? null) : null;
+            $matchedBus = $this->matchBus($vehicle, $schoolBuses);
 
-            // Skip vehicles not belonging to this school's buses
             if (! $matchedBus) {
                 continue;
             }
 
-           $speed = (float) ($vehicle['speed_kmh'] ?? 0);
-           $rawStatus = strtolower($vehicle['status'] ?? 'inactive');
-           $status = $speed > 0 ? 'moving' : $rawStatus;
-
-            $vehicles[] = [
-                'asset_id' => $vehicle['asset_id'] ?? null,
-                'asset_name' => $vehicle['asset_name'] ?? 'Unknown',
-                'plate_number' => $vehicle['plate_number'] ?? null,
-                'imei' => $imei,
-                'latitude' => $vehicle['latitude'] ?? null,
-                'longitude' => $vehicle['longitude'] ?? null,
-                'speed_kmh' => $speed,
-                'status' => $status,
-                'status_label' => $vehicle['status_label'] ?? ucfirst($status),
-                'status_color' => $vehicle['status_color'] ?? '#6b7280',
-                'is_online' => (bool) ($vehicle['is_online'] ?? false),
-                'is_moving' => (bool) ($vehicle['is_moving'] ?? false),
-                'gps_time' => $vehicle['gps_time'] ?? null,
-                'last_updated_ago' => $vehicle['last_updated_ago'] ?? null,
-                'driver_name' => $vehicle['driver']['name'] ?? null,
-                'driver_phone' => $vehicle['driver']['phone'] ?? null,
-                'bus_id' => $matchedBus?->id,
-                'bus_number' => $matchedBus?->bus_number,
-                'bus_registration' => $matchedBus?->registration_number,
-                'school_name' => $matchedBus?->school?->name,
-                'matched_driver_name' => $matchedBus?->drivers->first()?->full_name,
-            ];
+            $vehicles[] = $this->mapVehicle($vehicle, $matchedBus);
         }
 
-        usort($vehicles, function ($a, $b) {
-            $order = ['moving' => 0, 'stopped' => 1, 'idle' => 2, 'inactive' => 3, 'offline' => 4];
-            $aOrder = $order[strtolower($a['status'])] ?? 5;
-            $bOrder = $order[strtolower($b['status'])] ?? 5;
-
-            return $aOrder <=> $bOrder;
-        });
+        usort($vehicles, fn ($a, $b) => $this->statusSortValue($a['status']) <=> $this->statusSortValue($b['status']));
 
         return $vehicles;
+    }
+
+    private function matchBus(array $vehicle, $schoolBuses): ?Bus
+    {
+        $imei = $vehicle['imei'] ?? null;
+
+        return $imei ? $schoolBuses->get($imei) : null;
+    }
+
+    private function mapVehicle(array $vehicle, Bus $matchedBus): array
+    {
+        $status = $this->resolveVehicleStatus($vehicle);
+        $meta = self::STATUS_META[$status] ?? self::STATUS_META['inactive'];
+
+        return [
+            'asset_id' => $vehicle['asset_id'] ?? null,
+            'asset_name' => $vehicle['asset_name'] ?? 'Unknown',
+            'plate_number' => $vehicle['plate_number'] ?? null,
+            'imei' => $vehicle['imei'] ?? null,
+            'latitude' => $vehicle['latitude'] ?? null,
+            'longitude' => $vehicle['longitude'] ?? null,
+            'speed_kmh' => (float) ($vehicle['speed_kmh'] ?? 0),
+            'status' => $status,
+            'status_label' => $meta['label'],
+            'status_color' => $meta['color'],
+            'status_since_ago' => $vehicle['status_since_ago'] ?? null,
+            'is_online' => (bool) ($vehicle['is_online'] ?? false),
+            'is_moving' => $status === 'moving',
+            'ignition' => $vehicle['ignition'] ?? null,
+            'gps_time' => $vehicle['gps_time'] ?? null,
+            'last_updated_ago' => $vehicle['last_updated_ago'] ?? null,
+            'driver_name' => $vehicle['driver']['name'] ?? null,
+            'driver_phone' => $vehicle['driver']['phone'] ?? null,
+            'bus_id' => $matchedBus->id,
+            'bus_number' => $matchedBus->bus_number,
+            'bus_registration' => $matchedBus->registration_number,
+            'school_name' => $matchedBus->school?->name,
+            'matched_driver_name' => $matchedBus->drivers->first()?->full_name,
+        ];
+    }
+
+    private function resolveVehicleStatus(array $vehicle): string
+    {
+        if (! (bool) ($vehicle['is_online'] ?? false)) {
+            return 'offline';
+        }
+
+        $speed = (float) ($vehicle['speed_kmh'] ?? 0);
+
+        if (! empty($vehicle['moving_since']) || $speed > 0) {
+            return 'moving';
+        }
+
+        if (! empty($vehicle['idle_since'])) {
+            return 'idle';
+        }
+
+        if (! empty($vehicle['stopped_since'])) {
+            return 'stopped';
+        }
+
+        return 'inactive';
+    }
+
+    private function statusSortValue(string $status): int
+    {
+        return self::STATUS_SORT_ORDER[strtolower($status)] ?? 5;
     }
 
     private function resolveSchoolId($user): ?int
