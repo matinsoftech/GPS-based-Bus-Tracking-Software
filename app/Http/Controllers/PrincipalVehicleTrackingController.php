@@ -57,7 +57,9 @@ class PrincipalVehicleTrackingController extends Controller
                 continue;
             }
 
-            $status = $vehicle['status'] ?? 'inactive';
+           $speed = (float) ($vehicle['speed_kmh'] ?? 0);
+           $rawStatus = strtolower($vehicle['status'] ?? 'inactive');
+           $status = $speed > 0 ? 'moving' : $rawStatus;
 
             $vehicles[] = [
                 'asset_id' => $vehicle['asset_id'] ?? null,
@@ -66,7 +68,7 @@ class PrincipalVehicleTrackingController extends Controller
                 'imei' => $imei,
                 'latitude' => $vehicle['latitude'] ?? null,
                 'longitude' => $vehicle['longitude'] ?? null,
-                'speed_kmh' => (float) ($vehicle['speed_kmh'] ?? 0),
+                'speed_kmh' => $speed,
                 'status' => $status,
                 'status_label' => $vehicle['status_label'] ?? ucfirst($status),
                 'status_color' => $vehicle['status_color'] ?? '#6b7280',
