@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Route;
+use App\Models\Student;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Http\JsonResponse;
@@ -148,7 +150,7 @@ class NotificationController extends Controller
                 return $query->whereRaw('0 = 1');
             }
 
-            $routeIds = \App\Models\Route::where('school_id', $schoolId)->pluck('id');
+            $routeIds = Route::where('school_id', $schoolId)->pluck('id');
 
             if ($routeIds->isEmpty()) {
                 return $query->whereRaw('0 = 1');
@@ -162,7 +164,7 @@ class NotificationController extends Controller
         }
 
         if ($user->hasRole('Parent')) {
-            $studentRouteIds = \App\Models\Student::whereHas('parent', function ($q) use ($user) {
+            $studentRouteIds = Student::whereHas('parent', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })->pluck('route_id')->filter();
 
