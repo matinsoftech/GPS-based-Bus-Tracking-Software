@@ -135,8 +135,7 @@ class NazarTrackService
     }
 
     /**
-     * Build the normalized "latest GPS" payload for a single bus, consumed by
-     * the live map pages (parent view, principal bus view, etc).
+     * Get the raw NazarTrack API payload for a bus (original API response).
      */
     public function locationPayload(?Bus $bus): ?array
     {
@@ -150,26 +149,12 @@ class NazarTrackService
             return null;
         }
 
-        $status = strtolower((string) ($location['status'] ?? 'offline'));
-        $course = (float) ($location['course'] ?? $location['marker']['heading'] ?? 0);
+        // Ensure IMEI is present (fallback to bus's gps_device_id)
+        if (! isset($location['imei'])) {
+            $location['imei'] = $bus->gps_device_id;
+        }
 
-        return [
-            'latitude' => $location['latitude'] ?? null,
-            'longitude' => $location['longitude'] ?? null,
-            'speed_kmh' => (float) ($location['speed_kmh'] ?? $location['speed'] ?? 0),
-            'course' => $course,
-            'status' => $status,
-            'status_label' => $location['status_label'] ?? self::statusLabel($status),
-            'status_color' => $location['status_color'] ?? self::statusColor($status),
-            'is_moving' => (bool) ($location['is_moving'] ?? ($status === 'moving')),
-            'gps_time' => $location['gps_time'] ?? null,
-            'last_updated_at' => $location['last_updated_at'] ?? null,
-            'last_updated_ago' => $location['last_updated_ago'] ?? null,
-            'asset_name' => $location['asset_name'] ?? null,
-            'imei' => $location['imei'] ?? $bus->gps_device_id,
-            'animate' => (bool) ($location['animate'] ?? true),
-            'marker' => $location['marker'] ?? ['heading' => $course],
-        ];
+        return $location;
     }
 
     public static function statusLabel(string $status): string
