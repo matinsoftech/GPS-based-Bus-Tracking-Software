@@ -51,7 +51,7 @@
             </button>
             <!-- Application nav menu button -->
 
-            <div class="hidden lg:block">
+            {{-- <div class="hidden lg:block">
                 <form>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2">
@@ -72,7 +72,7 @@
                         </button>
                     </div>
                 </form>
-            </div>
+            </div> --}}
         </div>
 
         <div :class="menuToggle ? 'flex' : 'hidden'"
