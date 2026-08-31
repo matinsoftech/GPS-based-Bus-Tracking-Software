@@ -53,12 +53,16 @@ class VehicleTrackingController extends Controller
                     ? 'Moving'
                     : ($status === 'stopped'
                         ? 'Stopped'
-                        : ($vehicle['status_label'] ?? ucfirst($status))),
+                        : ($status === 'idle'
+                            ? 'Idle'
+                            : ($vehicle['status_label'] ?? ucfirst($status)))),
                 'status_color' => $status === 'moving'
                     ? '#22c55e'
                     : ($status === 'stopped'
                         ? '#f59e0b'
-                        : ($vehicle['status_color'] ?? '#6b7280')),
+                        : ($status === 'idle'
+                            ? '#eab308'
+                            : ($vehicle['status_color'] ?? '#6b7280'))),
                 'is_online' => (bool) ($vehicle['is_online'] ?? false),
                 'is_moving' => (bool) ($vehicle['is_moving'] ?? false),
                 'gps_time' => $vehicle['gps_time'] ?? null,
@@ -87,6 +91,7 @@ class VehicleTrackingController extends Controller
     {
         $speed = (float) ($vehicle['speed_kmh'] ?? 0);
         $movingSince = $vehicle['moving_since'] ?? null;
+        $idleSince = $vehicle['idle_since'] ?? null;
         $statusSinceLabel = strtolower((string) ($vehicle['status_since_label'] ?? ''));
 
         $isMoving = $speed > 0
@@ -99,6 +104,10 @@ class VehicleTrackingController extends Controller
 
         if (! (bool) ($vehicle['is_online'] ?? false)) {
             return $vehicle['status'] ?? 'inactive';
+        }
+
+        if ($idleSince !== null || str_contains($statusSinceLabel, 'idle')) {
+            return 'idle';
         }
 
         return 'stopped';
