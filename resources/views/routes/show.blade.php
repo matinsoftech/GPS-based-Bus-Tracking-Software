@@ -71,13 +71,16 @@
         @include('routes.partials.route-stops-card')
 
         <!-- Card 3: Live Route Journey Timeline & Summary -->
-        @include('routes.partials.live-journey-section')
+        {{-- @include('routes.partials.live-journey-section') --}}
 
         <!-- Card 4: Route Preview (Map) -->
-        @include('routes.partials.route-map-preview')
+        {{-- @include('routes.partials.route-map-preview') --}}
 
     </div>
 
     <!-- Add & Edit Stop Modal -->
     @include('routes.partials.stop-modal')
 </x-app-layout>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

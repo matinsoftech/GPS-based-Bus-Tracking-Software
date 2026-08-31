@@ -1,7 +1,7 @@
 <!-- Add / Edit Route Stop Modal -->
-<div id="stopModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/60 backdrop-blur-xs transition-opacity" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
-        <div class="relative w-full max-w-4xl max-h-[90vh] transform overflow-y-auto rounded-2xl bg-white p-6 text-left shadow-2xl transition-all dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
+<div id="stopModal" class="fixed inset-0 z-[100000] hidden overflow-y-auto scrollbar-none bg-gray-900/60 backdrop-blur-xs transition-opacity" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex min-h-screen items-center justify-center p-4 pt-16 text-center sm:p-0 sm:pt-16">
+        <div class="relative w-full max-w-4xl max-h-[90vh] transform overflow-y-auto scrollbar-none rounded-2xl bg-white p-6 text-left shadow-2xl transition-all dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
             <!-- Modal Header -->
             <div class="mb-5 flex items-center justify-between border-b border-gray-100 pb-4 dark:border-gray-800">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="modalTitle">
@@ -522,14 +522,20 @@
         if (stopPickerInitialized || typeof L === 'undefined') return;
 
         stopPickerMap = L.map('stopPickerMap', {
-            scrollWheelZoom: false,
-            preferCanvas: true
+            preferCanvas: true,
+            updateWhenIdle: true,
+            keepBuffer: 1,
+            zoomControl: false,
+            scrollWheelZoom: true,
         });
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            subdomains: 'abcd',
-            attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(stopPickerMap);
+
+        L.control.zoom({
+            position: 'bottomright'
         }).addTo(stopPickerMap);
 
         stopPickerMap.on('click', function (e) {
