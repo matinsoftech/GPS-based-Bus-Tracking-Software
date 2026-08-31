@@ -473,6 +473,7 @@
                 v.matched_driver_name ? { label: 'Driver', value: v.matched_driver_name } : null,
                 (!v.matched_driver_name && v.driver_name) ? { label: 'Driver (API)', value: v.driver_name } : null,
                 v.driver_phone ? { label: 'Driver Phone', value: v.driver_phone } : null,
+                v.imei ? { label: 'IMEI', value: v.imei } : null,
                 v.latitude && v.longitude ? { label: 'Coordinates', value: Number(v.latitude).toFixed(5) + ', ' + Number(v.longitude).toFixed(5) } : null,
                 v.gps_time ? { label: 'GPS Time', value: v.gps_time } : null,
                 v.last_updated_ago ? { label: 'Last Updated', value: v.last_updated_ago } : null,
