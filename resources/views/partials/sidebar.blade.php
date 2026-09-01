@@ -574,42 +574,55 @@
     class="sidebar fixed left-0 top-0 z-9999 flex h-screen w-[290px] flex-col overflow-y-hidden border-r border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-black lg:static lg:translate-x-0">
     <!-- SIDEBAR HEADER -->
     <div :class="sidebarToggle ? 'justify-center' : 'justify-between'"
-        class="sidebar-header flex items-center gap-2 pb-5 pt-3">
-        <a href="{{ $homeRoute }}">
+        class="sidebar-header flex items-center gap-2 pb-4 pt-3 px-2 sm:px-0">
+        <a href="{{ $homeRoute }}" class="min-w-0 w-full">
             @if ($headerSchool)
-                <span class="logo school-logo flex items-center gap-2" :class="sidebarToggle ? 'hidden' : ''">
+
+                {{-- Expanded Sidebar --}}
+                <span class="logo school-logo flex items-center gap-2 min-w-0"
+                    :class="sidebarToggle ? 'hidden' : 'flex'">
                     @if ($headerSchool->logo)
-                        <img class="h-13 w-13 rounded-lg object-cover"
+                        <img class="h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-cover"
                             src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}"
                             alt="{{ $headerSchool->name }} logo" />
-                    @else
-                        <img class="dark:hidden h-13 w-13 object-contain" src="/images/logo/schoollogo.png"
-                            alt="Logo" />
-                        <img class="hidden dark:block h-13 w-13 object-contain" src="/images/logo/schoollogo.png"
-                            alt="Logo" />
+                        {{-- @else
+                        <img class="h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-contain"
+                            src="/images/logo/schoollogo.png" alt="Logo" /> --}}
                     @endif
-                    <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ $headerSchool->name }}</span>
+
+                    <span
+                        class="min-w-0 truncate text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white"
+                        title="{{ $headerSchool->name }}">
+                        {{ $headerSchool->name }}
+                    </span>
                 </span>
+
+                {{-- Collapsed Sidebar --}}
                 @if ($headerSchool->logo)
-                    <img class="logo-icon h-13 w-13 rounded-lg object-cover"
-                        :class="sidebarToggle ? 'lg:block' : 'hidden'"
+                    <img class="logo-icon h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-cover"
+                        :class="sidebarToggle ? 'block' : 'hidden'"
                         src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}"
                         alt="{{ $headerSchool->name }} logo" />
                 @else
-                    <img class="logo-icon h-13 w-13 rounded-lg object-cover"
-                        :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/schoollogo.png"
-                        alt="Logo" />
+                    <img class="logo-icon h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-cover"
+                        :class="sidebarToggle ? 'block' : 'hidden'" src="/images/logo/schoollogo.png" alt="Logo" />
                 @endif
             @else
-                <span class="logo school-logo flex items-center gap-2" :class="sidebarToggle ? 'hidden' : ''">
-                    <img class="h-13 w-13 rounded-lg object-cover dark:hidden" src="/images/logo/schoollogo.png"
-                        alt="Logo" />
-                    <img class="h-13 w-13 rounded-lg object-cover hidden dark:block" src="/images/logo/schoollogo.png"
-                        alt="Logo" />
-                    <span class="text-lg font-semibold text-gray-900 dark:text-white">School Bus Tracker</span>
+                {{-- Default Logo --}}
+                <span class="logo school-logo items-center gap-2 min-w-0" :class="sidebarToggle ? 'hidden' : 'flex'">
+                    <img class="h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-cover"
+                        src="/images/logo/schoollogo.png" alt="Logo" />
+
+                    <span
+                        class="min-w-0 truncate text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white">
+                        School Bus Tracker
+                    </span>
                 </span>
-                <img class="logo-icon" :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/schoollogo.png"
-                    alt="Logo" />
+
+                {{-- Collapsed Logo --}}
+                <img class="logo-icon h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-cover"
+                    :class="sidebarToggle ? 'block' : 'hidden'" src="/images/logo/schoollogo.png" alt="Logo" />
+
             @endif
         </a>
     </div>
