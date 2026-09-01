@@ -6,12 +6,14 @@ use App\Models\User;
 use App\Models\Driver;
 use App\Models\ParentProfile;
 use App\Models\School;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
 
 class ApiPasswordControllerTest extends TestCase
 {
+    use RefreshDatabase;
 
     public function test_driver_can_request_password_reset_link(): void
     {
