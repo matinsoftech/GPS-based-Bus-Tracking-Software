@@ -3,10 +3,10 @@
         {{-- Page header with the Add User action --}}
         <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">User Management</h1>
-            <a href="{{ route('users.create') }}"
+            {{-- <a href="{{ route('users.create') }}"
                 class="inline-flex w-full items-center justify-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto">
                 Add User
-            </a>
+            </a> --}}
         </div>
 
         {{-- Flash messages after each operation --}}
