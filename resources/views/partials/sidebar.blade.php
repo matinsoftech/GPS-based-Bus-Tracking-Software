@@ -579,24 +579,36 @@
             @if ($headerSchool)
                 <span class="logo school-logo flex items-center gap-2" :class="sidebarToggle ? 'hidden' : ''">
                     @if ($headerSchool->logo)
-                        <img class="h-9 w-9 rounded-lg object-cover" src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}" alt="{{ $headerSchool->name }} logo" />
+                        <img class="h-9 w-9 rounded-lg object-cover"
+                            src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}"
+                            alt="{{ $headerSchool->name }} logo" />
                     @else
-                        <img class="dark:hidden h-9 w-9 object-contain" src="/images/logo/logo.svg" alt="Logo" />
-                        <img class="hidden dark:block h-9 w-9 object-contain" src="/images/logo/logo-dark.svg" alt="Logo" />
+                        <img class="dark:hidden h-9 w-9 object-contain" src="/images/logo/schoollogo.png" alt="Logo" />
+                        <img class="hidden dark:block h-9 w-9 object-contain" src="/images/logo/schoollogo.png"
+                            alt="Logo" />
                     @endif
                     <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $headerSchool->name }}</span>
                 </span>
                 @if ($headerSchool->logo)
-                    <img class="logo-icon h-9 w-9 rounded-lg object-cover" :class="sidebarToggle ? 'lg:block' : 'hidden'" src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}" alt="{{ $headerSchool->name }} logo" />
+                    <img class="logo-icon h-9 w-9 rounded-lg object-cover"
+                        :class="sidebarToggle ? 'lg:block' : 'hidden'"
+                        src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}"
+                        alt="{{ $headerSchool->name }} logo" />
                 @else
-                    <img class="logo-icon" :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/logo-icon.svg" alt="Logo" />
+                    <img class="logo-icon h-9 w-9 rounded-lg object-cover"
+                        :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/schoollogo.png"
+                        alt="Logo" />
                 @endif
             @else
-                <span class="logo" :class="sidebarToggle ? 'hidden' : ''">
-                    <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" />
-                    <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" />
+                <span class="logo school-logo flex items-center gap-2" :class="sidebarToggle ? 'hidden' : ''">
+                    <img class="h-9 w-9 rounded-lg object-cover dark:hidden" src="/images/logo/schoollogo.png"
+                        alt="Logo" />
+                    <img class="h-9 w-9 rounded-lg object-cover hidden dark:block" src="/images/logo/schoollogo.png"
+                        alt="Logo" />
+                    <span class="text-sm font-semibold text-gray-900 dark:text-white">School Bus Tracker</span>
                 </span>
-                <img class="logo-icon" :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/logo-icon.svg" alt="Logo" />
+                <img class="logo-icon" :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/schoollogo.png"
+                    alt="Logo" />
             @endif
         </a>
     </div>
@@ -628,7 +640,8 @@
                                     @if (!empty($item['dropdown'])) @click.prevent="selected = (selected === '{{ $item['key'] }}' ? '' : '{{ $item['key'] }}')"
                                     @else @click="selected = (selected === '{{ $item['key'] }}' ? '' : '{{ $item['key'] }}')" @endif
                                     class="menu-item group"
-                                    :class="(selected === '{{ $item['key'] }}') || {{ $isActive($item) ? 'true' : 'false' }} ?
+                                    :class="(selected === '{{ $item['key'] }}') || {{ $isActive($item) ? 'true' : 'false' }}
+                                        ?
                                         'menu-item-active' : 'menu-item-inactive'">
                                     <span
                                         :class="(selected === '{{ $item['key'] }}') ||
