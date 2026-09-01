@@ -78,7 +78,7 @@
                                 <td class="px-5 py-3 font-medium">{{ $driver->employee_id }}</td>
                                 <td class="px-5 py-3">
                                     <div>{{ $driver->full_name }}</div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $driver->gender }}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $driver->email }}</div>
                                 </td>
                                 <td class="px-5 py-3">{{ $driver->school->name ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ $driver->phone }}</td>
