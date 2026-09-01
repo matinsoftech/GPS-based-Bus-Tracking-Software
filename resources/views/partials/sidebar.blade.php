@@ -574,38 +574,39 @@
     class="sidebar fixed left-0 top-0 z-9999 flex h-screen w-[290px] flex-col overflow-y-hidden border-r border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-black lg:static lg:translate-x-0">
     <!-- SIDEBAR HEADER -->
     <div :class="sidebarToggle ? 'justify-center' : 'justify-between'"
-        class="sidebar-header flex items-center gap-2 pb-7 pt-8">
+        class="sidebar-header flex items-center gap-2 pb-5 pt-3">
         <a href="{{ $homeRoute }}">
             @if ($headerSchool)
                 <span class="logo school-logo flex items-center gap-2" :class="sidebarToggle ? 'hidden' : ''">
                     @if ($headerSchool->logo)
-                        <img class="h-9 w-9 rounded-lg object-cover"
+                        <img class="h-13 w-13 rounded-lg object-cover"
                             src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}"
                             alt="{{ $headerSchool->name }} logo" />
                     @else
-                        <img class="dark:hidden h-9 w-9 object-contain" src="/images/logo/schoollogo.png" alt="Logo" />
-                        <img class="hidden dark:block h-9 w-9 object-contain" src="/images/logo/schoollogo.png"
+                        <img class="dark:hidden h-13 w-13 object-contain" src="/images/logo/schoollogo.png"
+                            alt="Logo" />
+                        <img class="hidden dark:block h-13 w-13 object-contain" src="/images/logo/schoollogo.png"
                             alt="Logo" />
                     @endif
-                    <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $headerSchool->name }}</span>
+                    <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ $headerSchool->name }}</span>
                 </span>
                 @if ($headerSchool->logo)
-                    <img class="logo-icon h-9 w-9 rounded-lg object-cover"
+                    <img class="logo-icon h-13 w-13 rounded-lg object-cover"
                         :class="sidebarToggle ? 'lg:block' : 'hidden'"
                         src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}"
                         alt="{{ $headerSchool->name }} logo" />
                 @else
-                    <img class="logo-icon h-9 w-9 rounded-lg object-cover"
+                    <img class="logo-icon h-13 w-13 rounded-lg object-cover"
                         :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/schoollogo.png"
                         alt="Logo" />
                 @endif
             @else
                 <span class="logo school-logo flex items-center gap-2" :class="sidebarToggle ? 'hidden' : ''">
-                    <img class="h-9 w-9 rounded-lg object-cover dark:hidden" src="/images/logo/schoollogo.png"
+                    <img class="h-13 w-13 rounded-lg object-cover dark:hidden" src="/images/logo/schoollogo.png"
                         alt="Logo" />
-                    <img class="h-9 w-9 rounded-lg object-cover hidden dark:block" src="/images/logo/schoollogo.png"
+                    <img class="h-13 w-13 rounded-lg object-cover hidden dark:block" src="/images/logo/schoollogo.png"
                         alt="Logo" />
-                    <span class="text-sm font-semibold text-gray-900 dark:text-white">School Bus Tracker</span>
+                    <span class="text-lg font-semibold text-gray-900 dark:text-white">School Bus Tracker</span>
                 </span>
                 <img class="logo-icon" :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/schoollogo.png"
                     alt="Logo" />
