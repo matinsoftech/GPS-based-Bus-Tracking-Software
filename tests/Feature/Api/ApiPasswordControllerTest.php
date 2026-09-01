@@ -6,8 +6,10 @@ use App\Models\User;
 use App\Models\Driver;
 use App\Models\ParentProfile;
 use App\Models\School;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
 
@@ -17,9 +19,35 @@ class ApiPasswordControllerTest extends TestCase
 
     public function test_driver_can_request_password_reset_link(): void
     {
-        $school = School::factory()->create();
+        Notification::fake();
+
+        $school = School::create([
+            'name' => 'Test School',
+            'code' => 'TS001',
+            'email' => 'school@test.com',
+            'phone' => '1234567890',
+            'address' => 'Test Address',
+            'status' => 'active',
+        ]);
         $user = User::factory()->create(['email' => 'driver@test.com']);
-        $driver = Driver::factory()->create(['user_id' => $user->id, 'school_id' => $school->id]);
+        Driver::create([
+            'user_id' => $user->id,
+            'school_id' => $school->id,
+            'employee_id' => 'EMP001',
+            'first_name' => 'Test',
+            'last_name' => 'Driver',
+            'gender' => 'Male',
+            'phone' => '1234567890',
+            'email' => 'driver@test.com',
+            'address' => 'Test Address',
+            'license_number' => 'LIC123',
+            'license_type' => 'Heavy',
+            'license_issue_date' => now(),
+            'license_expiry_date' => now()->addYears(5),
+            'experience_years' => 5,
+            'joining_date' => now(),
+            'status' => 'active',
+        ]);
 
         $response = $this->postJson('/api/v1/auth/forgot-password', [
             'email' => 'driver@test.com',
@@ -27,13 +55,30 @@ class ApiPasswordControllerTest extends TestCase
 
         $response->assertOk()
             ->assertJson(['message' => 'We have emailed your password reset link.']);
+
+        Notification::assertSentTo($user, ResetPassword::class);
     }
 
     public function test_parent_can_request_password_reset_link(): void
     {
-        $school = School::factory()->create();
+        Notification::fake();
+
+        $school = School::create([
+            'name' => 'Test School',
+            'code' => 'TS001',
+            'email' => 'school@test.com',
+            'phone' => '1234567890',
+            'address' => 'Test Address',
+            'status' => 'active',
+        ]);
         $user = User::factory()->create(['email' => 'parent@test.com']);
-        $parent = ParentProfile::factory()->create(['user_id' => $user->id, 'school_id' => $school->id]);
+        ParentProfile::create([
+            'user_id' => $user->id,
+            'school_id' => $school->id,
+            'name' => 'Test Parent',
+            'phone' => '1234567890',
+            'address' => 'Test Address',
+        ]);
 
         $response = $this->postJson('/api/v1/auth/forgot-password', [
             'email' => 'parent@test.com',
@@ -41,6 +86,8 @@ class ApiPasswordControllerTest extends TestCase
 
         $response->assertOk()
             ->assertJson(['message' => 'We have emailed your password reset link.']);
+
+        Notification::assertSentTo($user, ResetPassword::class);
     }
 
     public function test_forgot_password_returns_error_for_invalid_email(): void
@@ -64,18 +111,30 @@ class ApiPasswordControllerTest extends TestCase
 
     public function test_user_can_reset_password_with_valid_token(): void
     {
-        $user = User::factory()->create(['email' => 'test@test.com']);
-        $token = app(\Illuminate\Auth\Passwords\TokenRepositoryInterface::class)->create($user);
+        Notification::fake();
 
-        $response = $this->postJson('/api/v1/auth/reset-password', [
-            'token' => $token,
+        $user = User::factory()->create(['email' => 'test@test.com']);
+
+        $this->postJson('/api/v1/auth/forgot-password', [
             'email' => 'test@test.com',
-            'password' => 'newpassword123',
-            'password_confirmation' => 'newpassword123',
         ]);
 
-        $response->assertOk()
-            ->assertJson(['message' => 'Your password has been reset.']);
+        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+            $response = $this->postJson('/api/v1/auth/reset-password', [
+                'token' => $notification->token,
+                'email' => $user->email,
+                'password' => 'newpassword123',
+                'password_confirmation' => 'newpassword123',
+            ]);
+
+            $response->assertOk()
+                ->assertJson(['message' => 'Your password has been reset.']);
+
+            $user->refresh();
+            $this->assertTrue(Hash::check('newpassword123', $user->password));
+
+            return true;
+        });
     }
 
     public function test_reset_password_fails_with_invalid_token(): void
