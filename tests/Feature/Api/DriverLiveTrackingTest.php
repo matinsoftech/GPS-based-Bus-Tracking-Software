@@ -116,16 +116,16 @@ class DriverLiveTrackingTest extends TestCase
         $this->getJson('/api/v1/driver/live-tracking')
             ->assertOk()
             ->assertJsonPath('message', 'Driver live tracking data.')
-            ->assertJsonPath('data.summary.total', 1)
             ->assertJsonCount(1, 'data.buses')
             ->assertJsonPath('data.buses.0.bus_number', 'LT-API-BUS-1')
-            ->assertJsonPath('data.buses.0.imei', $imei)
-            ->assertJsonPath('data.buses.0.latitude', 27.7172)
-            ->assertJsonPath('data.buses.0.longitude', 85.324)
-            ->assertJsonPath('data.buses.0.speed', 45)
-            ->assertJsonPath('data.buses.0.heading', 90)
-            ->assertJsonPath('data.buses.0.tracking_status', 'Moving')
-            ->assertJsonPath('data.buses.0.is_online', true)
+            ->assertJsonPath('data.buses.0.live_location.imei', $imei)
+            ->assertJsonPath('data.buses.0.live_location.latitude', 27.7172)
+            ->assertJsonPath('data.buses.0.live_location.longitude', 85.324)
+            ->assertJsonPath('data.buses.0.live_location.speed_kmh', 45)
+            ->assertJsonPath('data.buses.0.live_location.course', 90)
+            ->assertJsonPath('data.buses.0.live_location.status_label', 'Moving')
+            ->assertJsonPath('data.buses.0.live_location.status_color', '#22c55e')
+            ->assertJsonPath('data.buses.0.live_location.is_online', true)
             ->assertJsonStructure([
                 'message',
                 'data' => [
@@ -133,22 +133,16 @@ class DriverLiveTrackingTest extends TestCase
                         '*' => [
                             'id',
                             'bus_number',
-                            'latitude',
-                            'longitude',
-                            'speed',
-                            'tracking_status',
-                            'imei',
-                            'is_online',
+                            'registration_number',
+                            'capacity',
+                            'live_location',
                         ],
                     ],
-                    'routes',
-                    'summary' => ['total', 'active', 'maintenance', 'inactive', 'moving', 'stopped', 'routes_running'],
-                    'updated_at',
                 ],
             ]);
     }
 
-    public function test_bus_without_matching_imei_shows_offline(): void
+    public function test_bus_without_matching_imei_shows_null_live_location(): void
     {
         $this->makeBus('LT-API-BUS-2', '999999999999999');
 
@@ -168,13 +162,10 @@ class DriverLiveTrackingTest extends TestCase
         $this->getJson('/api/v1/driver/live-tracking')
             ->assertOk()
             ->assertJsonCount(1, 'data.buses')
-            ->assertJsonPath('data.buses.0.latitude', null)
-            ->assertJsonPath('data.buses.0.longitude', null)
-            ->assertJsonPath('data.buses.0.tracking_status', 'Offline')
-            ->assertJsonPath('data.buses.0.is_online', false);
+            ->assertJsonPath('data.buses.0.live_location', null);
     }
 
-    public function test_bus_without_gps_device_id_shows_offline(): void
+    public function test_bus_without_gps_device_id_shows_null_live_location(): void
     {
         $this->makeBus('LT-API-BUS-3');
 
@@ -192,8 +183,7 @@ class DriverLiveTrackingTest extends TestCase
         $this->getJson('/api/v1/driver/live-tracking')
             ->assertOk()
             ->assertJsonCount(1, 'data.buses')
-            ->assertJsonPath('data.buses.0.imei', null)
-            ->assertJsonPath('data.buses.0.tracking_status', 'Offline');
+            ->assertJsonPath('data.buses.0.live_location', null);
     }
 
     public function test_live_tracking_requires_driver_profile(): void
@@ -240,7 +230,8 @@ class DriverLiveTrackingTest extends TestCase
         $this->getJson('/api/v1/driver/live-tracking?bus_id='.$bus2->id)
             ->assertOk()
             ->assertJsonCount(1, 'data.buses')
-            ->assertJsonPath('data.buses.0.bus_number', 'LT-API-BUS-2');
+            ->assertJsonPath('data.buses.0.bus_number', 'LT-API-BUS-2')
+            ->assertJsonPath('data.buses.0.live_location.speed_kmh', 0);
     }
 
     public function test_live_tracking_rejects_another_drivers_bus(): void
@@ -312,6 +303,6 @@ class DriverLiveTrackingTest extends TestCase
         $this->getJson('/api/v1/driver/live-tracking')
             ->assertOk()
             ->assertJsonCount(1, 'data.buses')
-            ->assertJsonPath('data.buses.0.tracking_status', 'Offline');
+            ->assertJsonPath('data.buses.0.live_location', null);
     }
 }
