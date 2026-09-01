@@ -50,12 +50,12 @@
                                 Go to dashboard
                             </a>
                         @else
-                            <a href="{{ route('login') }}" class="rounded-full px-4 py-2.5 text-theme-sm font-semibold text-gray-700 transition hover:text-gray-900">Log in</a>
-                            @if (Route::has('register'))
+                            <a href="{{ route('login') }}" class="rounded-full bg-brand-500 px-5 py-2.5 text-theme-sm font-semibold text-white shadow-theme-md transition hover:bg-brand-600">Log in</a>
+                            {{-- @if (Route::has('register'))
                                 <a href="{{ route('register') }}" class="inline-flex items-center justify-center rounded-full bg-brand-500 px-5 py-2.5 text-theme-sm font-semibold text-white shadow-theme-md transition hover:bg-brand-600">
                                     Get started free
                                 </a>
-                            @endif
+                            @endif --}}
                         @endauth
                     @endif
                 </div>
