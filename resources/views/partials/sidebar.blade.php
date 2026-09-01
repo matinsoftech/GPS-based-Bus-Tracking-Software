@@ -595,13 +595,16 @@
                         src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}"
                         alt="{{ $headerSchool->name }} logo" />
                 @else
-                    <img class="logo-icon h-9 w-9 rounded-lg object-cover" :class="sidebarToggle ? 'lg:block' : 'hidden'"
-                        src="/images/logo/schoollogo.png" alt="Logo" />
+                    <img class="logo-icon h-9 w-9 rounded-lg object-cover"
+                        :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/schoollogo.png"
+                        alt="Logo" />
                 @endif
             @else
                 <span class="logo school-logo flex items-center gap-2" :class="sidebarToggle ? 'hidden' : ''">
-                    <img class="h-9 w-9 rounded-lg object-cover dark:hidden" src="/images/logo/schoollogo.png" alt="Logo" />
-                    <img class="h-9 w-9 rounded-lg object-cover hidden dark:block" src="/images/logo/schoollogo.png" alt="Logo" />
+                    <img class="h-9 w-9 rounded-lg object-cover dark:hidden" src="/images/logo/schoollogo.png"
+                        alt="Logo" />
+                    <img class="h-9 w-9 rounded-lg object-cover hidden dark:block" src="/images/logo/schoollogo.png"
+                        alt="Logo" />
                     <span class="text-sm font-semibold text-gray-900 dark:text-white">School Bus Tracker</span>
                 </span>
                 <img class="logo-icon" :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/schoollogo.png"
