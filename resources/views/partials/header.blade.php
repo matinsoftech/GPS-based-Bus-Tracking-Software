@@ -38,13 +38,14 @@
                     @if ($headerSchool->logo)
                         <img class="h-9 w-9 rounded-lg object-cover" src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}" alt="{{ $headerSchool->name }} logo" />
                     @else
-                        <img class="dark:hidden h-9 w-9 object-contain" src="/images/logo/logo.svg" alt="Logo" />
-                        <img class="hidden dark:block h-9 w-9 object-contain" src="/images/logo/logo-dark.svg" alt="Logo" />
+                        <img class="dark:hidden h-9 w-9 object-contain" src="/images/logo/schoollogo.png" alt="Logo" />
+                        <img class="hidden dark:block h-9 w-9 object-contain" src="/images/logo/schoollogo.png" alt="Logo" />
                     @endif
                     <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $headerSchool->name }}</span>
                 @else
-                    <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" />
-                    <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" />
+                    <img class="dark:hidden  h-9 w-9 object-contain" src="/images/logo/schoollogo.png" alt="Logo" />
+                    <img class="hidden dark:block  h-9 w-9 object-contain" src="/images/logo/schoollogo.png" alt="Logo" />
+                    <span class="text-sm font-semibold text-gray-900 dark:text-white">School Bus Tracker</span>
                 @endif
             </a>
 
