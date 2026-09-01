@@ -576,12 +576,28 @@
     <div :class="sidebarToggle ? 'justify-center' : 'justify-between'"
         class="sidebar-header flex items-center gap-2 pb-7 pt-8">
         <a href="{{ $homeRoute }}">
-            <span class="logo" :class="sidebarToggle ? 'hidden' : ''">
-                <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" />
-                <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" />
-            </span>
-            <img class="logo-icon" :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/logo-icon.svg"
-                alt="Logo" />
+            @if ($headerSchool)
+                <span class="logo school-logo flex items-center gap-2" :class="sidebarToggle ? 'hidden' : ''">
+                    @if ($headerSchool->logo)
+                        <img class="h-9 w-9 rounded-lg object-cover" src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}" alt="{{ $headerSchool->name }} logo" />
+                    @else
+                        <img class="dark:hidden h-9 w-9 object-contain" src="/images/logo/logo.svg" alt="Logo" />
+                        <img class="hidden dark:block h-9 w-9 object-contain" src="/images/logo/logo-dark.svg" alt="Logo" />
+                    @endif
+                    <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $headerSchool->name }}</span>
+                </span>
+                @if ($headerSchool->logo)
+                    <img class="logo-icon h-9 w-9 rounded-lg object-cover" :class="sidebarToggle ? 'lg:block' : 'hidden'" src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}" alt="{{ $headerSchool->name }} logo" />
+                @else
+                    <img class="logo-icon" :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/logo-icon.svg" alt="Logo" />
+                @endif
+            @else
+                <span class="logo" :class="sidebarToggle ? 'hidden' : ''">
+                    <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" />
+                    <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" />
+                </span>
+                <img class="logo-icon" :class="sidebarToggle ? 'lg:block' : 'hidden'" src="/images/logo/logo-icon.svg" alt="Logo" />
+            @endif
         </a>
     </div>
     <!-- SIDEBAR HEADER -->
