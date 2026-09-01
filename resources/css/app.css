@@ -299,6 +299,9 @@ layer(base);
 .sidebar:hover .logo {
   display: block;
 }
+.sidebar:hover .logo.school-logo {
+  display: flex;
+}
 .sidebar:hover .logo-icon {
   display: none;
 }

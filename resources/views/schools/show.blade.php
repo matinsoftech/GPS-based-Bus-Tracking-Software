@@ -18,6 +18,66 @@
             </div>
         </div>
 
+        <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+            @php
+                $statTiles = [
+                    [
+                        'label' => 'Students',
+                        'value' => $totalStudents,
+                        'sub' => "{$activeStudents} active",
+                        'icon' => 'academic-cap',
+                    ],
+                    [
+                        'label' => 'Drivers',
+                        'value' => $totalDrivers,
+                        'sub' => "{$activeDrivers} active",
+                        'icon' => 'user-circle',
+                    ],
+                    [
+                        'label' => 'Buses',
+                        'value' => $totalBuses,
+                        'sub' => "{$activeBuses} active · {$maintenanceBuses} maintenance · {$inactiveBuses} inactive",
+                        'icon' => 'truck',
+                    ],
+                    [
+                        'label' => 'Routes',
+                        'value' => $totalRoutes,
+                        'sub' => "{$activeRoutes} active",
+                        'icon' => 'map',
+                    ],
+                    [
+                        'label' => 'Route Stops',
+                        'value' => $totalStops,
+                        'sub' => 'across all routes',
+                        'icon' => 'map-pin',
+                    ],
+                    [
+                        'label' => 'Parents',
+                        'value' => $totalParents,
+                        'sub' => 'registered parents',
+                        'icon' => 'users',
+                    ],
+                    [
+                        'label' => 'School Admins',
+                        'value' => $totalSchoolAdmins,
+                        'sub' => 'administrators',
+                        'icon' => 'shield-check',
+                    ],
+                ];
+            @endphp
+
+            @foreach ($statTiles as $tile)
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+                    <div class="flex items-start justify-between">
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ $tile['label'] }}</p>
+                        <x-heroicon-o-{{ $tile['icon'] }} class="h-5 w-5 text-brand-500" />
+                    </div>
+                    <p class="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">{{ $tile['value'] }}</p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $tile['sub'] }}</p>
+                </div>
+            @endforeach
+        </div>
+
         <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
             <dl class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>

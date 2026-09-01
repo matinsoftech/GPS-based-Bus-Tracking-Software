@@ -31,7 +31,8 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Provide real notification data (badge count + dropdown list) to the
-        // header bell on every authenticated page.
-        View::composer('partials.header', HeaderComposer::class);
+        // header bell on every authenticated page, and the school branding
+        // (logo + name) to the header and sidebar.
+        View::composer(['partials.header', 'partials.sidebar'], HeaderComposer::class);
     }
 }

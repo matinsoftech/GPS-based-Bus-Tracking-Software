@@ -4,7 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSchoolRequest;
 use App\Http\Requests\UpdateSchoolRequest;
+use App\Models\Bus;
+use App\Models\Driver;
+use App\Models\ParentProfile;
+use App\Models\Route;
 use App\Models\School;
+use App\Models\SchoolAdmin;
 use Illuminate\Http\Request;
 
 class SchoolController extends Controller
@@ -63,7 +68,44 @@ class SchoolController extends Controller
      */
     public function show(School $school)
     {
-        return view('schools.show', compact('school'));
+        $totalStudents = $school->students()->count();
+        $activeStudents = $school->students()->where('is_active', true)->count();
+
+        $totalDrivers = Driver::where('school_id', $school->id)->count();
+        $activeDrivers = Driver::where('school_id', $school->id)->where('status', 'Active')->count();
+
+        $totalBuses = Bus::where('school_id', $school->id)->count();
+        $activeBuses = Bus::where('school_id', $school->id)->where('status', 'Active')->count();
+        $maintenanceBuses = Bus::where('school_id', $school->id)->where('status', 'Maintenance')->count();
+        $inactiveBuses = Bus::where('school_id', $school->id)->where('status', 'Inactive')->count();
+
+        $totalRoutes = Route::where('school_id', $school->id)->count();
+        $activeRoutes = Route::where('school_id', $school->id)->where('is_active', true)->count();
+
+        $totalStops = Route::where('school_id', $school->id)
+            ->withCount('stops')
+            ->get()
+            ->sum('stops_count');
+
+        $totalParents = ParentProfile::where('school_id', $school->id)->count();
+        $totalSchoolAdmins = SchoolAdmin::where('school_id', $school->id)->count();
+
+        return view('schools.show', compact(
+            'school',
+            'totalStudents',
+            'activeStudents',
+            'totalDrivers',
+            'activeDrivers',
+            'totalBuses',
+            'activeBuses',
+            'maintenanceBuses',
+            'inactiveBuses',
+            'totalRoutes',
+            'activeRoutes',
+            'totalStops',
+            'totalParents',
+            'totalSchoolAdmins',
+        ));
     }
 
     /**
