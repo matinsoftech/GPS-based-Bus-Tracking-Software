@@ -39,7 +39,8 @@
                             @php
                                 $lat = $bus['latitude'] ?? null;
                                 $lng = $bus['longitude'] ?? null;
-                                $status = $bus['tracking_status'] ?? 'Offline';
+                                $status = $bus['tracking_status'] ?? 'offline';
+                                $statusLabel = $bus['status_label'] ?? ucfirst($status);
                                 $statusColor = $bus['status_color'] ?? '#9ca3af';
                             @endphp
                             <tr
@@ -75,7 +76,7 @@
                                     <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
                                         style="background-color: {{ $statusColor }}1a; color: {{ $statusColor }};">
                                         <span class="h-1.5 w-1.5 rounded-full" style="background-color: {{ $statusColor }};"></span>
-                                        {{ $status }}
+                                        {{ $statusLabel }}
                                     </span>
                                 </td>
                             </tr>

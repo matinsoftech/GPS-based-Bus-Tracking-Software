@@ -97,8 +97,10 @@ class FleetMapService
                 'active' => $busArray && $busArray['status'] === 'Active' ? 1 : 0,
                 'maintenance' => $busArray && $busArray['status'] === 'Maintenance' ? 1 : 0,
                 'inactive' => $busArray && $busArray['status'] === 'Inactive' ? 1 : 0,
-                'moving' => $busArray && $busArray['tracking_status'] === 'Moving' ? 1 : 0,
-                'stopped' => $busArray && in_array($busArray['tracking_status'], ['Stopped', 'Arrived'], true) ? 1 : 0,
+                'moving' => $busArray && $busArray['tracking_status'] === 'moving' ? 1 : 0,
+                'stopped' => $busArray && in_array($busArray['tracking_status'], ['stopped', 'idle'], true) ? 1 : 0,
+                'idle' => $busArray && $busArray['tracking_status'] === 'idle' ? 1 : 0,
+                'offline' => $busArray && in_array($busArray['tracking_status'], ['offline', 'inactive'], true) ? 1 : 0,
                 'routes_running' => ($route->is_active && $busArray) ? 1 : 0,
             ],
             'school' => $route->school ? $route->school->only(['name', 'latitude', 'longitude']) : null,
@@ -158,8 +160,10 @@ class FleetMapService
                 'active' => $buses->where('status', 'Active')->count(),
                 'maintenance' => $buses->where('status', 'Maintenance')->count(),
                 'inactive' => $buses->where('status', 'Inactive')->count(),
-                'moving' => $busArrays->where('tracking_status', 'Moving')->count(),
-                'stopped' => $busArrays->whereIn('tracking_status', ['Stopped', 'Arrived'])->count(),
+                'moving' => $busArrays->where('tracking_status', 'moving')->count(),
+                'stopped' => $busArrays->whereIn('tracking_status', ['stopped', 'idle'])->count(),
+                'idle' => $busArrays->where('tracking_status', 'idle')->count(),
+                'offline' => $busArrays->whereIn('tracking_status', ['offline', 'inactive'])->count(),
                 'routes_running' => $routes->where('is_active', true)->count(),
             ],
             'school' => $schoolId
@@ -209,7 +213,21 @@ class FleetMapService
             : $routeOrTrips->firstWhere('bus_id', $bus->id)?->route;
 
         $nearestStop = $location && $route ? $this->nearestStop($route, $location) : null;
-        $status = $this->trackingStatus($bus, $location, $nearestStop);
+        $status = $this->trackingStatus($location);
+
+        $statusLabel = match ($status) {
+            'moving' => 'Moving',
+            'stopped' => 'Stopped',
+            'idle' => 'Idle',
+            default => $location['status_label'] ?? ucfirst($status),
+        };
+
+        $statusColor = match ($status) {
+            'moving' => '#22c55e',
+            'stopped' => '#f59e0b',
+            'idle' => '#eab308',
+            default => $location['status_color'] ?? '#6b7280',
+        };
 
         return [
             'id' => $bus->id,
@@ -230,33 +248,48 @@ class FleetMapService
             'eta_minutes' => $this->etaMinutes($status, $location, $nearestStop),
             'imei' => $location['imei'] ?? $bus->gps_device_id ?? null,
             'last_updated_ago' => $location['last_updated_ago'] ?? null,
-            'status_label' => $location['status_label'] ?? null,
-            'status_color' => $location['status_color'] ?? null,
+            'status_label' => $statusLabel,
+            'status_color' => $statusColor,
             'is_online' => (bool) ($location['is_online'] ?? false),
         ];
     }
 
     /**
-     * Resolve the per-bus tracking status.
+     * Resolve the per-bus tracking status, mirroring VehicleTrackingController::deriveStatus.
      *
-     * - Offline: bus is not online on the GPS provider / no fresh location.
-     * - Arrived: stopped within ARRIVED_RADIUS_KM of a configured stop.
-     * - Moving:  online with speed above the stopped threshold.
-     * - Stopped: online, but effectively stationary.
+     * - Moving:  speed > 0 or moving_since present (takes priority, even if offline flag is set).
+     * - inactive/offline: not live on the GPS provider / has no position.
+     * - Idle:    online, stopped, and idle_since present.
+     * - Stopped: online, stationary, not idle.
      */
-    private function trackingStatus(Bus $bus, ?array $location, ?array $nearestStop): string
+    private function trackingStatus(?array $location): string
     {
-        if (! $this->isLive($location)) {
-            return 'Offline';
+        if (! $location) {
+            return 'inactive';
         }
 
-        $stopped = (float) ($location['speed_kmh'] ?? $location['speed'] ?? 0) <= self::STOPPED_SPEED_KPH;
+        $speed = (float) ($location['speed_kmh'] ?? $location['speed'] ?? 0);
+        $movingSince = $location['moving_since'] ?? null;
+        $idleSince = $location['idle_since'] ?? null;
+        $statusSinceLabel = strtolower((string) ($location['status_since_label'] ?? ''));
 
-        if ($stopped && $nearestStop && $nearestStop['distance_km'] <= self::ARRIVED_RADIUS_KM) {
-            return 'Arrived';
+        $isMoving = $speed > 0
+            || $movingSince !== null
+            || str_contains($statusSinceLabel, 'moving');
+
+        if ($isMoving) {
+            return 'moving';
         }
 
-        return $stopped ? 'Stopped' : 'Moving';
+        if (! (bool) ($location['is_online'] ?? false)) {
+            return $location['status'] ?? 'inactive';
+        }
+
+        if ($idleSince !== null || str_contains($statusSinceLabel, 'idle')) {
+            return 'idle';
+        }
+
+        return 'stopped';
     }
 
     /**
@@ -313,7 +346,7 @@ class FleetMapService
     {
         $speed = (float) ($location['speed_kmh'] ?? $location['speed'] ?? 0);
 
-        if ($status !== 'Moving' || ! $nearestStop || ! $location || $speed <= 0) {
+        if ($status !== 'moving' || ! $nearestStop || ! $location || $speed <= 0) {
             return null;
         }
 

@@ -17,13 +17,15 @@
         'inactive' => ['label' => 'Inactive Buses', 'value' => $fleetSummary['inactive'] ?? 0, 'classes' => 'text-gray-500 dark:text-gray-400'],
         'moving' => ['label' => 'Moving Now', 'value' => $fleetSummary['moving'] ?? 0, 'classes' => 'text-emerald-600 dark:text-emerald-500'],
         'stopped' => ['label' => 'Stopped Now', 'value' => $fleetSummary['stopped'] ?? 0, 'classes' => 'text-amber-600 dark:text-amber-500'],
+        'idle' => ['label' => 'Idle Now', 'value' => $fleetSummary['idle'] ?? 0, 'classes' => 'text-yellow-600 dark:text-yellow-500'],
+        'offline' => ['label' => 'Offline', 'value' => $fleetSummary['offline'] ?? 0, 'classes' => 'text-gray-500 dark:text-gray-400'],
         'routes_running' => ['label' => 'Routes Running', 'value' => $fleetSummary['routes_running'] ?? 0, 'classes' => 'text-brand-600 dark:text-brand-400'],
     ];
 @endphp
 
 <!-- Fleet Overview Summary Cards -->
 @if ($fleetMapShowCards)
-<div class="mt-6 grid grid-cols-2 gap-4 {{ $fleetMapCompact ? 'sm:grid-cols-3' : 'md:grid-cols-3 xl:grid-cols-6' }}">
+<div class="mt-6 grid grid-cols-2 gap-4 {{ $fleetMapCompact ? 'sm:grid-cols-3' : 'md:grid-cols-4 xl:grid-cols-8' }}">
     @foreach ($fleetCards as $key => $card)
         <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
             <span class="text-sm text-gray-500 dark:text-gray-400">{{ $card['label'] }}</span>
@@ -132,7 +134,7 @@
                 <span class="inline-block h-3 w-3 rounded-full bg-amber-500"></span> Stopped
             </span>
             <span class="flex items-center gap-1.5 font-medium text-gray-700 dark:text-gray-300">
-                <span class="inline-block h-3 w-3 rounded-full bg-brand-500"></span> Arrived
+                <span class="inline-block h-3 w-3 rounded-full bg-yellow-400"></span> Idle
             </span>
             <span class="flex items-center gap-1.5 font-medium text-gray-700 dark:text-gray-300">
                 <span class="inline-block h-3 w-3 rounded-full bg-gray-400"></span> Offline
@@ -216,10 +218,11 @@
         const REFRESH_INTERVAL_MS = 30000;
 
         const STATUS_COLORS = {
-            Moving: '#10B981',
-            Stopped: '#F59E0B',
-            Arrived: '#6366F1',
-            Offline: '#9CA3AF',
+            moving: '#059669',
+            stopped: '#d97706',
+            idle: '#ca8a04',
+            inactive: '#6b7280',
+            offline: '#6b7280',
         };
 
         const ROUTE_PALETTE = ['#4F46E5', '#0EA5E9', '#D946EF', '#F97316', '#10B981', '#EF4444'];
@@ -476,7 +479,8 @@
         }
 
         function busPopupHtml(bus) {
-            const statusColor = STATUS_COLORS[bus.tracking_status] || '#9CA3AF';
+            const statusColor = bus.status_color || STATUS_COLORS[bus.tracking_status] || '#9CA3AF';
+            const statusLabel = bus.status_label || bus.tracking_status;
             const speed = Number(bus.speed || 0).toFixed(0);
             const eta = bus.eta_minutes != null ? `${bus.eta_minutes} min` : '—';
             const lastUpdate = bus.recorded_at ? new Date(bus.recorded_at).toLocaleString() : '—';
@@ -488,7 +492,7 @@
                 <div style="font-family:inherit;min-width:220px;padding:2px;">
                     <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:#111827;">
                         <span>🚍 Bus #${bus.bus_number}</span>
-                        <span style="margin-left:auto;font-size:10px;font-weight:600;color:#fff;background:${statusColor};padding:2px 8px;border-radius:999px;">${bus.tracking_status}</span>
+                        <span style="margin-left:auto;font-size:10px;font-weight:600;color:#fff;background:${statusColor};padding:2px 8px;border-radius:999px;">${statusLabel}</span>
                     </div>
                     <div style="font-size:12px;color:#4B5563;margin-top:6px;">Route: <strong>${bus.route_name || 'Not assigned'}</strong></div>
                     <div style="font-size:12px;color:#4B5563;">Driver: <strong>${bus.driver_name || '—'}</strong></div>
@@ -614,7 +618,7 @@
         function upsertBusMarker(bus) {
             if (!bus.latitude || !bus.longitude) return;
 
-            const color = STATUS_COLORS[bus.tracking_status] || '#9CA3AF';
+            const color = bus.status_color || STATUS_COLORS[bus.tracking_status] || '#9CA3AF';
             const latlng = [Number(bus.latitude), Number(bus.longitude)];
             let marker = busMarkers.get(bus.id);
 
@@ -663,7 +667,7 @@
             strip.classList.remove('hidden');
             buses.forEach(bus => {
                 if (!bus.latitude || !bus.longitude) return;
-                const color = STATUS_COLORS[bus.tracking_status] || '#9CA3AF';
+                const color = bus.status_color || STATUS_COLORS[bus.tracking_status] || '#9CA3AF';
                 const speed = Number(bus.speed || 0).toFixed(0);
                 const chip = document.createElement('button');
                 chip.type = 'button';
@@ -716,6 +720,8 @@
                 inactive: 'fleetSummary_inactive',
                 moving: 'fleetSummary_moving',
                 stopped: 'fleetSummary_stopped',
+                idle: 'fleetSummary_idle',
+                offline: 'fleetSummary_offline',
                 routes_running: 'fleetSummary_routes_running',
             };
 

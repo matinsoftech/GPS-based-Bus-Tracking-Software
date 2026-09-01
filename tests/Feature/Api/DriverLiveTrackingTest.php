@@ -124,7 +124,7 @@ class DriverLiveTrackingTest extends TestCase
             ->assertJsonPath('data.buses.0.longitude', 85.324)
             ->assertJsonPath('data.buses.0.speed', 45)
             ->assertJsonPath('data.buses.0.heading', 90)
-            ->assertJsonPath('data.buses.0.tracking_status', 'Moving')
+            ->assertJsonPath('data.buses.0.tracking_status', 'moving')
             ->assertJsonPath('data.buses.0.is_online', true)
             ->assertJsonStructure([
                 'message',
@@ -170,7 +170,7 @@ class DriverLiveTrackingTest extends TestCase
             ->assertJsonCount(1, 'data.buses')
             ->assertJsonPath('data.buses.0.latitude', null)
             ->assertJsonPath('data.buses.0.longitude', null)
-            ->assertJsonPath('data.buses.0.tracking_status', 'Offline')
+            ->assertJsonPath('data.buses.0.tracking_status', 'inactive')
             ->assertJsonPath('data.buses.0.is_online', false);
     }
 
@@ -193,7 +193,7 @@ class DriverLiveTrackingTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data.buses')
             ->assertJsonPath('data.buses.0.imei', null)
-            ->assertJsonPath('data.buses.0.tracking_status', 'Offline');
+            ->assertJsonPath('data.buses.0.tracking_status', 'inactive');
     }
 
     public function test_live_tracking_requires_driver_profile(): void
@@ -312,6 +312,6 @@ class DriverLiveTrackingTest extends TestCase
         $this->getJson('/api/v1/driver/live-tracking')
             ->assertOk()
             ->assertJsonCount(1, 'data.buses')
-            ->assertJsonPath('data.buses.0.tracking_status', 'Offline');
+            ->assertJsonPath('data.buses.0.tracking_status', 'inactive');
     }
 }
