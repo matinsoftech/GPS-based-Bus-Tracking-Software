@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Bus;
 use App\Models\Driver;
 use App\Models\Route;
-use App\Models\Student;
 use App\Models\SchoolAdmin;
+use App\Models\Student;
 use App\Models\Trip;
-use App\Models\User;
 use App\Notifications\TripEndedNotification;
 use App\Notifications\TripStartedNotification;
 use App\Services\BusTrackingService;
@@ -50,17 +48,20 @@ class DriverTripWebController extends Controller
 
         $buses = $driver->buses()
             ->where('status', 'Active')
+            ->with('activeTrip')
             ->orderBy('bus_number')
             ->get();
 
         $routes = $driver->routes()
             ->where('is_active', true)
+            ->with('activeTrip')
             ->orderBy('name')
             ->get();
 
         $prefillGps = null;
-        if ($buses->isNotEmpty()) {
-            $prefillGps = $this->gps->getLastKnownLocation($buses->first()->id);
+        $prefillBus = $buses->first(static fn (Bus $bus) => ! $bus->activeTrip) ?? $buses->first();
+        if ($prefillBus) {
+            $prefillGps = $this->gps->getLastKnownLocation($prefillBus->id);
         }
 
         return view('driver.trips.create', compact('buses', 'routes', 'prefillGps'));
@@ -71,20 +72,20 @@ class DriverTripWebController extends Controller
         $driver = Auth::user()->driver;
 
         $validated = $request->validate([
-            'bus_id'    => ['required', 'integer', 'exists:buses,id'],
-            'route_id'  => ['required', 'integer', 'exists:routes,id'],
-            'trip_id'   => ['nullable', 'integer', 'exists:trips,id'],
+            'bus_id' => ['required', 'integer', 'exists:buses,id'],
+            'route_id' => ['required', 'integer', 'exists:routes,id'],
+            'trip_id' => ['nullable', 'integer', 'exists:trips,id'],
             'trip_type' => ['nullable', 'string', 'in:home_to_school,school_to_home'],
-            'latitude'  => ['nullable', 'numeric', 'between:-90,90'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'notes'     => ['nullable', 'string', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ], [
-            'bus_id.required'   => 'Please select a bus.',
-            'bus_id.exists'     => 'Selected bus not found.',
+            'bus_id.required' => 'Please select a bus.',
+            'bus_id.exists' => 'Selected bus not found.',
             'route_id.required' => 'Please select a route.',
-            'route_id.exists'   => 'Selected route not found.',
-            'trip_type.in'      => 'Invalid trip type.',
-            'latitude.numeric'  => 'Invalid latitude.',
+            'route_id.exists' => 'Selected route not found.',
+            'trip_type.in' => 'Invalid trip type.',
+            'latitude.numeric' => 'Invalid latitude.',
             'longitude.numeric' => 'Invalid longitude.',
         ]);
 
@@ -130,11 +131,12 @@ class DriverTripWebController extends Controller
         if ($isEnding) {
             $trip = DB::transaction(function () use ($trip, $validated) {
                 $trip->update([
-                    'status'        => Trip::STATUS_COMPLETED,
-                    'ended_at'      => now(),
-                    'end_latitude'  => $validated['latitude'] ?? null,
+                    'status' => Trip::STATUS_COMPLETED,
+                    'ended_at' => now(),
+                    'end_latitude' => $validated['latitude'] ?? null,
                     'end_longitude' => $validated['longitude'] ?? null,
                 ]);
+
                 return $trip->fresh(['bus', 'route', 'school']);
             });
 
@@ -148,16 +150,16 @@ class DriverTripWebController extends Controller
             $tripType = $validated['trip_type'] ?? Trip::TYPE_HOME_TO_SCHOOL;
 
             return Trip::create([
-                'bus_id'          => $bus->id,
-                'driver_id'       => $driver->id,
-                'route_id'        => $route->id,
-                'school_id'       => $bus->school_id,
-                'trip_type'       => $tripType,
-                'status'          => Trip::STATUS_IN_PROGRESS,
-                'started_at'      => now(),
-                'start_latitude'  => $validated['latitude'] ?? null,
+                'bus_id' => $bus->id,
+                'driver_id' => $driver->id,
+                'route_id' => $route->id,
+                'school_id' => $bus->school_id,
+                'trip_type' => $tripType,
+                'status' => Trip::STATUS_IN_PROGRESS,
+                'started_at' => now(),
+                'start_latitude' => $validated['latitude'] ?? null,
                 'start_longitude' => $validated['longitude'] ?? null,
-                'notes'           => $validated['notes'] ?? null,
+                'notes' => $validated['notes'] ?? null,
             ]);
         });
 
@@ -175,9 +177,9 @@ class DriverTripWebController extends Controller
      */
     private function notifyParentsAndPrincipal(Trip $trip, Notification $notification): void
     {
-       $students = Student::where('route_id', $trip->route_id)
-         ->with('parent.user')
-         ->get();
+        $students = Student::where('route_id', $trip->route_id)
+            ->with('parent.user')
+            ->get();
 
         foreach ($students as $student) {
             if ($parent = $student->parent?->user) {
