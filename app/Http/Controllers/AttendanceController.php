@@ -9,6 +9,7 @@ use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\AttendanceNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -48,7 +49,7 @@ class AttendanceController extends Controller
                 ]);
             }
 
-            $query->whereHas('drivers', fn($q) => $q->where('drivers.id', $driverId));
+            $query->whereHas('drivers', fn ($q) => $q->where('drivers.id', $driverId));
         }
 
         $routes = $query->orderBy('name')->get();
@@ -170,13 +171,21 @@ class AttendanceController extends Controller
         }
 
         if ($validated['action'] === 'check_in') {
-            Attendance::updateOrCreate(
+            $record = Attendance::updateOrCreate(
                 ['student_id' => $student->id, 'date' => $date, 'trip' => $validated['trip']],
                 [
                     'route_id' => $route->id,
                     'check_in_at' => now(),
                     'marked_by' => Auth::id(),
                 ]
+            );
+
+            $actionKey = $this->actionKeyFor($validated['action'], $validated['trip']);
+
+            app(AttendanceNotificationService::class)->notifyParent(
+                $student,
+                $actionKey,
+                $record->check_in_at?->toIso8601String(),
             );
 
             $message = "{$student->full_name} - {$expected['label']} marked successfully.";
@@ -191,6 +200,14 @@ class AttendanceController extends Controller
                 'check_out_at' => now(),
                 'marked_by' => Auth::id(),
             ]);
+
+            $actionKey = $this->actionKeyFor($validated['action'], $validated['trip']);
+
+            app(AttendanceNotificationService::class)->notifyParent(
+                $student,
+                $actionKey,
+                $record->check_out_at?->toIso8601String(),
+            );
 
             $message = "{$student->full_name} - {$expected['label']} marked successfully.";
         }
@@ -251,7 +268,7 @@ class AttendanceController extends Controller
      * -> Picked Up from School -> Dropped at Home -> Completed.
      *
      * @return array{
-     *     stages: array<int, array{key: string, label: string, done: bool, at: \Illuminate\Support\Carbon|null}>,
+     *     stages: array<int, array{key: string, label: string, done: bool, at: Carbon|null}>,
      *     next_action: array{action: string, trip: string, label: string}|null,
      *     completed: bool,
      * }
@@ -294,14 +311,14 @@ class AttendanceController extends Controller
      * every button at once: the current stage is active, previous stages are
      * done, and future stages stay locked until their turn arrives.
      *
-     * @param  array<int, array{key: string, label: string, done: bool, at: \Illuminate\Support\Carbon|null}>  $stages
+     * @param  array<int, array{key: string, label: string, done: bool, at: Carbon|null}>  $stages
      * @param  array{action: string, trip: string, label: string}|null  $nextAction
      * @return array<int, array{
      *     key: string,
      *     label: string,
      *     button_label: string,
      *     done: bool,
-     *     at: \Illuminate\Support\Carbon|null,
+     *     at: Carbon|null,
      *     enabled: bool,
      *     action: string,
      *     trip: string,
@@ -334,6 +351,22 @@ class AttendanceController extends Controller
                 'trip' => $stageMeta['trip'],
             ];
         })->values()->all();
+    }
+
+    /**
+     * Resolve the attendance stage key from a check_in/check_out action and trip.
+     */
+    private function actionKeyFor(string $action, string $trip): string
+    {
+        $key = $action === 'check_in' ? 'picked_up' : 'dropped_at';
+
+        return match (true) {
+            $key === 'picked_up' && $trip === Attendance::TRIP_HOME_TO_SCHOOL => 'picked_up_home',
+            $key === 'dropped_at' && $trip === Attendance::TRIP_HOME_TO_SCHOOL => 'dropped_at_school',
+            $key === 'picked_up' && $trip === Attendance::TRIP_SCHOOL_TO_HOME => 'picked_up_school',
+            $key === 'dropped_at' && $trip === Attendance::TRIP_SCHOOL_TO_HOME => 'dropped_at_home',
+            default => 'picked_up_home',
+        };
     }
 
     /**
