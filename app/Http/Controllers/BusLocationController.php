@@ -10,6 +10,7 @@ use App\Models\SchoolAdmin;
 use App\Notifications\BusStartedNotification;
 use App\Services\FleetMapService;
 use App\Services\NazarTrackService;
+use App\Services\StopArrivalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,6 +19,7 @@ class BusLocationController extends Controller
     public function __construct(
         private readonly FleetMapService $fleetMap,
         private readonly NazarTrackService $gpsService,
+        private readonly StopArrivalService $stopArrivals,
     ) {}
 
     /**
@@ -114,7 +116,9 @@ class BusLocationController extends Controller
                 $selectedChild = $children->firstWhere('id', $selectedChildId);
                 $bus = $selectedChild?->route?->activeTrip?->bus;
 
-                return response()->json($this->latestLocationForBus($bus));
+                $payload = $this->latestLocationForBus($bus);
+
+                return response()->json($this->stopArrivals->withStopContext($bus, $payload));
             }
 
             // Otherwise return the shared fleet map payload, scoped to the buses
@@ -136,7 +140,9 @@ class BusLocationController extends Controller
                 abort(403, 'You are not authorized to view this bus.');
             }
 
-            return response()->json($this->latestLocationForBus($bus));
+            $payload = $this->latestLocationForBus($bus);
+
+            return response()->json($this->stopArrivals->withStopContext($bus, $payload));
         }
 
         $allowedBusIds = null;

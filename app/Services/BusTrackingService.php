@@ -53,6 +53,13 @@ class BusTrackingService
                 'altitude' => $data['altitude'] ?? null,
                 'recorded_at' => now(),
             ]);
+
+            app(StopArrivalService::class)->detectForBus(
+                $bus,
+                (float) $latitude,
+                (float) $longitude,
+                (float) ($data['speed_kmh'] ?? 0),
+            );
         }
     }
 
