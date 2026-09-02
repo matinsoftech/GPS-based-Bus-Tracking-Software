@@ -111,38 +111,38 @@
                     Start Trip
                 </button>
             </div>
-        </form>
 
-        <x-modal name="route-in-trip" maxWidth="md" focusable>
-            <div class="p-6">
-                <div class="flex items-start gap-4">
-                    <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-                        <svg class="size-6 text-amber-600 dark:text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z"/>
-                        </svg>
+            <x-modal name="route-in-trip" maxWidth="md" focusable>
+                <div class="p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                            <svg class="size-6 text-amber-600 dark:text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Route already has an active trip</h3>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                                A trip has already been started for this route by another driver.
+                                Do you want to start it again?
+                            </p>
+                        </div>
                     </div>
-                    <div class="min-w-0">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Route already has an active trip</h3>
-                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                            A trip has already been started for this route by another driver.
-                            Do you want to start it again?
-                        </p>
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button type="button"
+                            class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                            @click="cancelRouteInTrip()">
+                            No
+                        </button>
+                        <button type="button"
+                            class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+                            @click="confirmRouteInTrip()">
+                            Yes, start trip again
+                        </button>
                     </div>
                 </div>
-                <div class="mt-6 flex justify-end gap-3">
-                    <button type="button"
-                        class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-                        @click="cancelRouteInTrip()">
-                        No
-                    </button>
-                    <button type="button"
-                        class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
-                        @click="confirmRouteInTrip()">
-                        Yes, start trip again
-                    </button>
-                </div>
-            </div>
-        </x-modal>
+            </x-modal>
+        </form>
     </div>
 
 @push('scripts')
