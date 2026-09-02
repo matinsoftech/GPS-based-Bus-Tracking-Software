@@ -33,20 +33,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     $user = auth()->user();
 
-    if ($user?->hasRole('Super Admin')) {
-        return redirect()->route('dashboard');
-    }
+    $dashboard = $user?->dashboardRoute();
 
-    if ($user?->hasRole('School Admin')) {
-        return redirect()->route('principal.dashboard');
-    }
-
-    if ($user?->hasRole('Driver')) {
-        return redirect()->route('driver.dashboard');
-    }
-
-    if ($user?->hasRole('Parent')) {
-        return redirect()->route('parent.dashboard');
+    if ($dashboard) {
+        return redirect($dashboard);
     }
 
     return view('welcome');
@@ -588,8 +578,7 @@ Route::middleware('auth')->group(function () {
         ->middleware(['role:Super Admin', 'permission:role.delete'])
         ->name('roles.destroy');
 
-
-        // Notification Routes
+    // Notification Routes
 
     Route::get('/notifications', [NotificationController::class, 'index'])
         ->name('notifications.index');
@@ -663,7 +652,6 @@ use App\Services\NazarTrackService;
 Route::get('/gps-test', function (NazarTrackService $gps) {
 
     return $gps->findDeviceByImei('868720060002890');
-
 });
 
 require __DIR__.'/auth.php';

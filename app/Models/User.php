@@ -55,4 +55,28 @@ class User extends Authenticatable
     {
         return $this->hasOne(ParentProfile::class);
     }
+
+    /**
+     * Get the dashboard route for this user's role.
+     */
+    public function dashboardRoute(): ?string
+    {
+        if ($this->hasRole('Super Admin')) {
+            return route('dashboard', absolute: false);
+        }
+
+        if ($this->hasRole('School Admin')) {
+            return route('principal.dashboard', absolute: false);
+        }
+
+        if ($this->hasRole('Driver')) {
+            return route('driver.dashboard', absolute: false);
+        }
+
+        if ($this->hasRole('Parent')) {
+            return route('parent.dashboard', absolute: false);
+        }
+
+        return null;
+    }
 }
