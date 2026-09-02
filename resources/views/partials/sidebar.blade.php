@@ -158,6 +158,15 @@
                     'permission' => null,
                     'dropdown' => null,
                 ],
+                [
+                    'key' => 'settings',
+                    'label' => 'Settings',
+                    'route' => 'settings.edit',
+                    'active' => 'settings',
+                    'icon' => 'heroicon-o-cog-6-tooth',
+                    'permission' => null,
+                    'dropdown' => null,
+                ],
             ],
         ],
     ];
@@ -574,56 +583,93 @@
     class="sidebar fixed left-0 top-0 z-9999 flex h-screen w-[290px] flex-col overflow-y-hidden border-r border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-black lg:static lg:translate-x-0">
     <!-- SIDEBAR HEADER -->
     <div :class="sidebarToggle ? 'justify-center' : 'justify-between'"
-        class="sidebar-header flex items-center gap-2 pb-4 pt-3 px-2 sm:px-0">
-        <a href="{{ $homeRoute }}" class="min-w-0 w-full">
+        class="sidebar-header flex items-center gap-2 px-2 pt-3 pb-4 sm:px-0">
+        <a href="{{ $homeRoute }}" class="w-full min-w-0">
+
             @if ($headerSchool)
 
                 {{-- Expanded Sidebar --}}
-                <span class="logo school-logo flex items-center gap-2 min-w-0"
+                <span class="logo school-logo flex min-w-0 items-center gap-2"
                     :class="sidebarToggle ? 'hidden' : 'flex'">
+
                     @if ($headerSchool->logo)
-                        <img class="h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-cover"
-                            src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}"
-                            alt="{{ $headerSchool->name }} logo" />
-                        {{-- @else
-                        <img class="h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-contain"
-                            src="/images/logo/schoollogo.png" alt="Logo" /> --}}
+
+                        <img class="h-10 w-10 shrink-0 rounded-lg object-cover sm:h-12 sm:w-12 lg:h-13 lg:w-13"
+                            src="{{ Storage::url($headerSchool->logo) }}" alt="{{ $headerSchool->name }} logo">
+                    @else
+                        {{-- If school has no logo, use global setting logo --}}
+                        @if ($settings?->logo)
+                            <img class="h-10 w-10 shrink-0 rounded-lg object-contain sm:h-12 sm:w-12 lg:h-13 lg:w-13"
+                                src="{{ Storage::url($settings->logo) }}"
+                                alt="{{ $settings->platform_name ?? 'Platform Logo' }}">
+                        @else
+                            <img class="h-10 w-10 shrink-0 rounded-lg object-contain sm:h-12 sm:w-12 lg:h-13 lg:w-13"
+                                src="{{ asset('images/logo/schoollogo.png') }}" alt="Default Logo">
+                        @endif
+
                     @endif
 
+
                     <span
-                        class="min-w-0 truncate text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white"
+                        class="min-w-0 truncate text-sm font-semibold text-gray-900 sm:text-base lg:text-lg dark:text-white"
                         title="{{ $headerSchool->name }}">
                         {{ $headerSchool->name }}
                     </span>
+
                 </span>
+
 
                 {{-- Collapsed Sidebar --}}
                 @if ($headerSchool->logo)
-                    <img class="logo-icon h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-cover"
-                        :class="sidebarToggle ? 'block' : 'hidden'"
-                        src="{{ \Illuminate\Support\Facades\Storage::url($headerSchool->logo) }}"
-                        alt="{{ $headerSchool->name }} logo" />
+                    <img class="logo-icon h-10 w-10 shrink-0 rounded-lg object-cover sm:h-12 sm:w-12 lg:h-13 lg:w-13"
+                        :class="sidebarToggle ? 'block' : 'hidden'" src="{{ Storage::url($headerSchool->logo) }}"
+                        alt="{{ $headerSchool->name }} logo">
+                @elseif ($settings?->logo)
+                    <img class="logo-icon h-10 w-10 shrink-0 rounded-lg object-contain sm:h-12 sm:w-12 lg:h-13 lg:w-13"
+                        :class="sidebarToggle ? 'block' : 'hidden'" src="{{ Storage::url($settings->logo) }}"
+                        alt="{{ $settings->platform_name ?? 'Platform Logo' }}">
                 @else
-                    <img class="logo-icon h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-cover"
-                        :class="sidebarToggle ? 'block' : 'hidden'" src="/images/logo/schoollogo.png" alt="Logo" />
+                    <img class="logo-icon h-10 w-10 shrink-0 rounded-lg object-contain sm:h-12 sm:w-12 lg:h-13 lg:w-13"
+                        :class="sidebarToggle ? 'block' : 'hidden'" src="{{ asset('images/logo/schoollogo.png') }}"
+                        alt="Default Logo">
                 @endif
             @else
-                {{-- Default Logo --}}
-                <span class="logo school-logo items-center gap-2 min-w-0" :class="sidebarToggle ? 'hidden' : 'flex'">
-                    <img class="h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-cover"
-                        src="/images/logo/schoollogo.png" alt="Logo" />
+                {{-- Expanded Sidebar --}}
+                <span class="logo school-logo flex min-w-0 items-center gap-2"
+                    :class="sidebarToggle ? 'hidden' : 'flex'">
+
+                    @if ($settings?->logo)
+                        <img class="h-10 w-10 shrink-0 rounded-lg object-contain sm:h-12 sm:w-12 lg:h-13 lg:w-13"
+                            src="{{ Storage::url($settings->logo) }}"
+                            alt="{{ $settings->platform_name ?? 'Platform Logo' }}">
+                    @else
+                        <img class="h-10 w-10 shrink-0 rounded-lg object-contain sm:h-12 sm:w-12 lg:h-13 lg:w-13"
+                            src="{{ asset('images/logo/schoollogo.png') }}" alt="Default Logo">
+                    @endif
+
 
                     <span
-                        class="min-w-0 truncate text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white">
-                        School Bus Tracker
+                        class="min-w-0 truncate text-sm font-semibold text-gray-900 sm:text-base lg:text-lg dark:text-white"
+                        title="{{ $settings?->platform_name ?? 'School Bus Tracker' }}">
+                        {{ $settings?->platform_name ?? 'School Bus Tracker' }}
                     </span>
+
                 </span>
 
+
                 {{-- Collapsed Logo --}}
-                <img class="logo-icon h-10 w-10 sm:h-12 sm:w-12 lg:h-13 lg:w-13 shrink-0 rounded-lg object-cover"
-                    :class="sidebarToggle ? 'block' : 'hidden'" src="/images/logo/schoollogo.png" alt="Logo" />
+                @if ($settings?->logo)
+                    <img class="logo-icon h-10 w-10 shrink-0 rounded-lg object-contain sm:h-12 sm:w-12 lg:h-13 lg:w-13"
+                        :class="sidebarToggle ? 'block' : 'hidden'" src="{{ Storage::url($settings->logo) }}"
+                        alt="{{ $settings->platform_name ?? 'Platform Logo' }}">
+                @else
+                    <img class="logo-icon h-10 w-10 shrink-0 rounded-lg object-contain sm:h-12 sm:w-12 lg:h-13 lg:w-13"
+                        :class="sidebarToggle ? 'block' : 'hidden'" src="{{ asset('images/logo/schoollogo.png') }}"
+                        alt="Default Logo">
+                @endif
 
             @endif
+
         </a>
     </div>
     <!-- SIDEBAR HEADER -->
