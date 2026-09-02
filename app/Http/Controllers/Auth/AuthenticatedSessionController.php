@@ -39,24 +39,10 @@ class AuthenticatedSessionController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        // Super Admin
-        if ($user->hasRole('Super Admin')) {
-            return redirect()->route('dashboard');
-        }
+        $dashboard = $user->dashboardRoute();
 
-        // Principal / School Admin
-        if ($user->hasRole('School Admin')) {
-            return redirect()->route('principal.dashboard');
-        }
-
-        // Driver
-        if ($user->hasRole('Driver')) {
-            return redirect()->route('driver.dashboard');
-        }
-
-        // Parent
-        if ($user->hasRole('Parent')) {
-            return redirect()->route('parent.dashboard');
+        if ($dashboard !== null) {
+            return redirect($dashboard);
         }
 
         /*

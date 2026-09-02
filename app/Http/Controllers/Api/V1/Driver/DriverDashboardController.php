@@ -14,15 +14,19 @@ class DriverDashboardController extends Controller
 
         $driver = $user->driver;
 
-        if (!$driver) {
+        if (! $driver) {
             return response()->json([
-                'message' => 'Driver profile not found.'
+                'message' => 'Driver profile not found.',
             ], 404);
         }
 
         $buses = $driver->buses()
-            ->with('school')
+            ->with(['school', 'activeTrip'])
             ->get();
+
+        $buses->each(function ($bus) {
+            $bus->setAttribute('is_in_trip', $bus->activeTrip !== null);
+        });
 
         return response()->json([
             'data' => [
@@ -34,7 +38,7 @@ class DriverDashboardController extends Controller
                 'school' => [
                     'id' => $driver->school->id,
                     'name' => $driver->school->name,
-                    'address' => $driver->school->address
+                    'address' => $driver->school->address,
                 ],
                 'buses' => $buses,
             ],
