@@ -144,7 +144,6 @@
             </div>
         </x-modal>
     </div>
-</x-app-layout>
 
 @push('scripts')
 <script>
@@ -198,3 +197,4 @@ document.addEventListener('alpine:init', () => {
 });
 </script>
 @endpush
+</x-app-layout>
