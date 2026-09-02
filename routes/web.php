@@ -21,6 +21,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SuperAdminDashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleTrackingController;
+use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -601,6 +602,28 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
         ->name('notifications.read-all');
+
+
+
+    Route::get(
+        '/settings',
+        [SettingController::class, 'index']
+    )->name('settings.edit');
+
+    Route::put(
+        '/settings',
+        [SettingController::class, 'update']
+    )->name('settings.update');
+
+    Route::delete(
+        '/settings/logo',
+        [SettingController::class, 'deleteLogo']
+    )->name('settings.logo.delete');
+
+    Route::delete(
+        '/settings/favicon',
+        [SettingController::class, 'deleteFavicon']
+    )->name('settings.favicon.delete');
 
     // Route::get('/test-notification', function () {
     //     $user = auth()->user();
