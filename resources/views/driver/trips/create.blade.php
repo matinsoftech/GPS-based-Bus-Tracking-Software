@@ -15,7 +15,8 @@
             </div>
         @endif
 
-        <form action="{{ route('driver.trips.toggle') }}" method="POST" class="space-y-5" x-data="tripForm()">
+        <form action="{{ route('driver.trips.toggle') }}" method="POST" class="space-y-5" x-data="tripForm()"
+            @submit="if (selectedRouteId && routeIdsInTrip.includes(Number(selectedRouteId)) && !routeConfirmed) { $event.preventDefault(); $dispatch('open-modal', 'route-in-trip'); }">
             @csrf
 
             <!-- Bus Selection -->
@@ -26,9 +27,13 @@
                     <option value="">Select a bus</option>
                     @foreach ($buses as $bus)
                         <option value="{{ $bus->id }}"
+                            @disabled($bus->activeTrip)
                             :data-lat="{{ $bus->gpsDevice?->latitude ?? '' }}"
                             :data-lng="{{ $bus->gpsDevice?->longitude ?? '' }}">
                             {{ $bus->bus_number }} ({{ $bus->registration_number }})
+                            @if ($bus->activeTrip)
+                                (Already in trip)
+                            @endif
                         </option>
                     @endforeach
                 </select>
@@ -40,7 +45,7 @@
             <!-- Route Selection -->
             <div>
                 <label for="route_id" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route <span class="text-red-500">*</span></label>
-                <select name="route_id" id="route_id" required x-model="selectedRouteId"
+                <select name="route_id" id="route_id" required x-model="selectedRouteId" @change="onRouteChange($event.target.value)"
                     class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                     <option value="">Select a route</option>
                     @foreach ($routes as $route)
@@ -107,6 +112,37 @@
                 </button>
             </div>
         </form>
+
+        <x-modal name="route-in-trip" maxWidth="md" focusable>
+            <div class="p-6">
+                <div class="flex items-start gap-4">
+                    <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                        <svg class="size-6 text-amber-600 dark:text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z"/>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Route already has an active trip</h3>
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                            A trip has already been started for this route by another driver.
+                            Do you want to start it again?
+                        </p>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button"
+                        class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                        @click="cancelRouteInTrip()">
+                        No
+                    </button>
+                    <button type="button"
+                        class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+                        @click="confirmRouteInTrip()">
+                        Yes, start trip again
+                    </button>
+                </div>
+            </div>
+        </x-modal>
     </div>
 </x-app-layout>
 
@@ -122,6 +158,8 @@ document.addEventListener('alpine:init', () => {
             'lat' => $b->gpsDevice?->latitude ?? null,
             'lng' => $b->gpsDevice?->longitude ?? null,
         ]])->toArray()),
+        routeIdsInTrip: @json($routes->filter(fn($r) => $r->activeTrip)->pluck('id')->map(fn($id) => (int) $id)->values()),
+        routeConfirmed: false,
 
         init() {
             this.$watch('selectedBusId', (id) => {
@@ -137,6 +175,24 @@ document.addEventListener('alpine:init', () => {
                 this.prefillLat = this.busGpsData[busId].lat ?? '';
                 this.prefillLng = this.busGpsData[busId].lng ?? '';
             }
+        },
+
+        onRouteChange(routeId) {
+            this.routeConfirmed = false;
+            if (routeId && this.routeIdsInTrip.includes(Number(routeId))) {
+                this.$dispatch('open-modal', 'route-in-trip');
+            }
+        },
+
+        confirmRouteInTrip() {
+            this.routeConfirmed = true;
+            this.$dispatch('close-modal', 'route-in-trip');
+        },
+
+        cancelRouteInTrip() {
+            this.routeConfirmed = false;
+            this.selectedRouteId = '';
+            this.$dispatch('close-modal', 'route-in-trip');
         }
     }));
 });
