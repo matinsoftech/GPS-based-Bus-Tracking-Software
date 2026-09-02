@@ -26,9 +26,11 @@ class AppServiceProvider extends ServiceProvider
             HeaderComposer::class
         );
 
-        View::share(
-            'settings',
-            $settingService->get()
-        );
+        if (!$this->app->runningInConsole()) {
+            View::share(
+                'settings',
+                $settingService->get()
+            );
+        }
     }
 }
