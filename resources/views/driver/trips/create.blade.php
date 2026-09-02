@@ -15,8 +15,8 @@
             </div>
         @endif
 
-        <form action="{{ route('driver.trips.toggle') }}" method="POST" class="space-y-5" x-data="tripForm()"
-            @submit="if (selectedRouteId && routeIdsInTrip.includes(Number(selectedRouteId)) && !routeConfirmed) { $event.preventDefault(); $dispatch('open-modal', 'route-in-trip'); }">
+        <form action="{{ route('driver.trips.toggle') }}" method="POST" class="space-y-5" x-data="tripForm()">
+            {{-- @submit="if (selectedRouteId && routeIdsInTrip.includes(Number(selectedRouteId)) && !routeConfirmed) { $event.preventDefault(); $dispatch('open-modal', 'route-in-trip'); }" --}}
             @csrf
 
             <!-- Bus Selection -->
@@ -45,11 +45,17 @@
             <!-- Route Selection -->
             <div>
                 <label for="route_id" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route <span class="text-red-500">*</span></label>
-                <select name="route_id" id="route_id" required x-model="selectedRouteId" @change="onRouteChange($event.target.value)"
+                <select name="route_id" id="route_id" required x-model="selectedRouteId" {{-- @change="onRouteChange($event.target.value)" --}}
                     class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                     <option value="">Select a route</option>
                     @foreach ($routes as $route)
-                        <option value="{{ $route->id }}">{{ $route->name }} ({{ $route->route_code }})</option>
+                        <option value="{{ $route->id }}"
+                            @disabled($route->activeTrip)>
+                            {{ $route->name }} ({{ $route->route_code }})
+                            @if ($route->activeTrip)
+                                (Already in trip)
+                            @endif
+                        </option>
                     @endforeach
                 </select>
                 @error('route_id')
@@ -112,6 +118,8 @@
                 </button>
             </div>
 
+            {{-- Route already in trip confirmation modal (kept for reference) --}}
+            {{--
             <x-modal name="route-in-trip" maxWidth="md" focusable>
                 <div class="p-6">
                     <div class="flex items-start gap-4">
@@ -142,6 +150,7 @@
                     </div>
                 </div>
             </x-modal>
+            --}}
         </form>
     </div>
 
@@ -157,8 +166,8 @@ document.addEventListener('alpine:init', () => {
             'lat' => $b->gpsDevice?->latitude ?? null,
             'lng' => $b->gpsDevice?->longitude ?? null,
         ]])->toArray()),
-        routeIdsInTrip: @json($routes->filter(fn($r) => $r->activeTrip)->pluck('id')->map(fn($id) => (int) $id)->values()),
-        routeConfirmed: false,
+        // routeIdsInTrip: @json($routes->filter(fn($r) => $r->activeTrip)->pluck('id')->map(fn($id) => (int) $id)->values()),
+        // routeConfirmed: false,
 
         init() {
             this.$watch('selectedBusId', (id) => {
@@ -176,23 +185,24 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        onRouteChange(routeId) {
-            this.routeConfirmed = false;
-            if (routeId && this.routeIdsInTrip.includes(Number(routeId))) {
-                this.$dispatch('open-modal', 'route-in-trip');
-            }
-        },
+        // Route already in trip confirmation (kept for reference) --
+        // onRouteChange(routeId) {
+        //     this.routeConfirmed = false;
+        //     if (routeId && this.routeIdsInTrip.includes(Number(routeId))) {
+        //         this.$dispatch('open-modal', 'route-in-trip');
+        //     }
+        // },
 
-        confirmRouteInTrip() {
-            this.routeConfirmed = true;
-            this.$dispatch('close-modal', 'route-in-trip');
-        },
+        // confirmRouteInTrip() {
+        //     this.routeConfirmed = true;
+        //     this.$dispatch('close-modal', 'route-in-trip');
+        // },
 
-        cancelRouteInTrip() {
-            this.routeConfirmed = false;
-            this.selectedRouteId = '';
-            this.$dispatch('close-modal', 'route-in-trip');
-        }
+        // cancelRouteInTrip() {
+        //     this.routeConfirmed = false;
+        //     this.selectedRouteId = '';
+        //     this.$dispatch('close-modal', 'route-in-trip');
+        // }
     }));
 });
 </script>

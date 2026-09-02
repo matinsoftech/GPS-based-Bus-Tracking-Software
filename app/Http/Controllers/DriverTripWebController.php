@@ -144,6 +144,15 @@ class DriverTripWebController extends Controller
                 ->with('warning', 'You already have an active trip. End it first.');
         }
 
+        $routeActive = Trip::where('route_id', $route->id)
+            ->where('status', Trip::STATUS_IN_PROGRESS)
+            ->exists();
+
+        if ($routeActive) {
+            return redirect()->route('driver.trips.index')
+                ->with('warning', 'This route already has an active trip started by another driver.');
+        }
+
         $trip = DB::transaction(function () use ($bus, $driver, $route, $validated) {
             $tripType = $validated['trip_type'] ?? Trip::TYPE_HOME_TO_SCHOOL;
 
