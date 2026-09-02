@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1\Driver;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
-use App\Models\Route;
 use App\Models\Student;
+use App\Services\AttendanceNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -309,18 +309,41 @@ class DriverAttendanceController extends Controller
             ], 422);
         }
 
+        app(AttendanceNotificationService::class)->notifyParent(
+            $student,
+            $action['key'],
+            $attendance->isCheckedIn() && $attendance->isCheckedOut()
+                ? $attendance->check_out_at?->toIso8601String()
+                : $attendance->check_in_at?->toIso8601String(),
+        );
+
         return response()->json([
             'message' => $action['message'],
             'data' => [
                 'id' => $attendance->id,
                 'student_id' => $attendance->student_id,
+                'student_full_name' => $student->full_name,
                 'route_id' => $attendance->route_id,
+                'route_name' => $route->name,
                 'trip' => $attendance->trip,
+                'action' => $action['key'],
+                'action_label' => $this->actionLabel($action['key']),
                 'date' => $attendance->date?->toDateString(),
                 'check_in_at' => $attendance->check_in_at?->toIso8601String(),
                 'check_out_at' => $attendance->check_out_at?->toIso8601String(),
                 'marked_by' => $attendance->marked_by,
             ],
         ]);
+    }
+
+    private function actionLabel(string $actionKey): string
+    {
+        return match ($actionKey) {
+            'picked_up_home' => 'Pick Up',
+            'dropped_at_school' => 'Drop at School',
+            'picked_up_school' => 'Pick Up from School',
+            'dropped_at_home' => 'Drop at Home',
+            default => $actionKey,
+        };
     }
 }
