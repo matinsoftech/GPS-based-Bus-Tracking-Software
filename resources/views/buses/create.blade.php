@@ -142,7 +142,8 @@
                             Date</label>
                         <input type="date" id="insurance_expiry_date" name="insurance_expiry_date"
                             value="{{ old('insurance_expiry_date') }}"
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                            onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
+                            class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white [&::-webkit-calendar-picker-indicator]:cursor-pointer dark:[&::-webkit-calendar-picker-indicator]:invert">
                         @error('insurance_expiry_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -153,8 +154,9 @@
                             class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Last Service
                             Date</label>
                         <input type="date" id="last_service_date" name="last_service_date"
-                            value="{{ old('last_service_date') }}"
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                            value="{{ old('last_service_date') }}" max="{{ date('Y-m-d') }}"
+                            onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
+                            class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white [&::-webkit-calendar-picker-indicator]:cursor-pointer dark:[&::-webkit-calendar-picker-indicator]:invert">
                         @error('last_service_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -233,7 +235,8 @@
                                     @checked(in_array($driver->id, old('driver_ids', [])))
                                     class="rounded border-gray-300 text-brand-500 focus:ring-brand-500">
                                 <span class="text-sm text-gray-700 dark:text-gray-300">{{ $driver->full_name }}
-                                    ({{ $driver->employee_id }})</span>
+                                    ({{ $driver->employee_id }})
+                                </span>
                             </label>
                         @empty
                             <p class="text-sm text-gray-500 dark:text-gray-400">No drivers available.</p>
