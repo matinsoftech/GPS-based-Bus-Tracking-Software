@@ -471,7 +471,10 @@
                 last_updated_at: data.last_updated_at,
                 last_updated_ago: data.last_updated_ago,
                 asset_name: data.asset_name,
-                imei: data.imei
+                imei: data.imei,
+                arrived_stop: data.arrived_stop || null,
+                next_stop: data.next_stop || null,
+                is_at_final_stop: !!data.is_at_final_stop
             };
 
             updateTelemetryCards(liveBusGps);
@@ -728,9 +731,23 @@
                         'stop-card-box flex-1 rounded-xl p-3 border bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-800/40 shadow-sm ring-1 ring-emerald-500/20';
                     if (titleText) titleText.className = 'text-xs font-bold text-emerald-700 dark:text-emerald-300';
                     if (badge) {
+                        const punct = gps.arrived_stop ? gps.arrived_stop.punctuality : null;
+                        let badgeLabel = 'Arrived';
+                        let badgeColor = 'bg-emerald-600';
+                        if (punct === 'late') {
+                            badgeLabel = 'Arrived · Late ' + (gps.arrived_stop.lateness_minutes || 0) + 'm';
+                            badgeColor = 'bg-rose-600';
+                        } else if (punct === 'early') {
+                            badgeLabel = 'Arrived · Early ' + Math.abs(gps.arrived_stop.lateness_minutes || 0) + 'm';
+                            badgeColor = 'bg-amber-600';
+                        } else if (punct === 'on_time') {
+                            badgeLabel = 'Arrived · On Time';
+                            badgeColor = 'bg-emerald-600';
+                        }
                         badge.className =
-                            'inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white';
-                        badge.innerHTML = '<span>Arrived</span>';
+                            'inline-flex items-center gap-1 rounded-full ' + badgeColor +
+                            ' px-2 py-0.5 text-[10px] font-semibold text-white';
+                        badge.innerHTML = '<span>' + badgeLabel + '</span>';
                     }
                     if (etaText) {
                         etaText.className = 'text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400';
@@ -818,7 +835,14 @@
             const offRoute = nearestDist > ON_ROUTE_THRESHOLD_KM;
             const atNearestStop = nearestDist <= ARRIVED_RADIUS_KM;
 
-            if (journeyReachedIdx === null) {
+            // The server records a canonical "arrived at stop" from its own
+            // geofence detection. When present it is authoritative: advance
+            // the timeline to it and never regress below it.
+            const serverReachedIdx = gps.arrived_stop ? gps.arrived_stop.stop_order : null;
+
+            if (serverReachedIdx != null) {
+                journeyReachedIdx = Math.max(journeyReachedIdx ?? -1, serverReachedIdx);
+            } else if (journeyReachedIdx === null) {
                 if (!isOnline || offRoute) {
                     journeyReachedIdx = -1;
                 } else if (atNearestStop && isStopped) {
@@ -833,7 +857,7 @@
             }
 
             const targetIdx = journeyReachedIdx + 1;
-            if (targetIdx < totalStops && !offRoute) {
+            if (serverReachedIdx == null && targetIdx < totalStops && !offRoute) {
                 const target = liveJourneyStops[targetIdx];
                 if (target && target.latitude && target.longitude) {
                     const distToTarget = liveGpsDistanceKm(gps.latitude, gps.longitude, parseFloat(target.latitude),
@@ -842,6 +866,11 @@
                         journeyReachedIdx = targetIdx;
                     }
                 }
+            }
+
+            // When the server has recorded a final arrival, mark the journey done.
+            if (gps.is_at_final_stop && journeyReachedIdx < totalStops - 1) {
+                journeyReachedIdx = totalStops - 1;
             }
 
             if (journeyReachedIdx >= totalStops - 1) {
