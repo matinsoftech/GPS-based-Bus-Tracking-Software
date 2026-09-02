@@ -99,13 +99,14 @@
                     <div class="mt-5 flex-1">
                         @if ($activeTrip)
                             <span class="text-sm text-gray-500 dark:text-gray-400">Active Trip</span>
-                            <h4 class="mt-2 text-3xl font-bold text-gray-800 dark:text-white/90">{{ $activeTrip->route->name }}</h4>
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $activeTrip->trip_type_label }} &bull; Bus {{ $activeTrip->bus->bus_number }}</p>
+                            <h4 class="mt-2 text-3xl font-bold text-gray-800 dark:text-white/90">{{ $activeTrip->route?->name ?? '—' }}</h4>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $activeTrip->trip_type_label }} &bull; Bus {{ $activeTrip->bus?->bus_number ?? '—' }}</p>
                             <div class="mt-4">
                                 <form action="{{ route('driver.trips.toggle') }}" method="POST" class="inline">
                                     @csrf
                                     <input type="hidden" name="bus_id" value="{{ $activeTrip->bus_id }}">
                                     <input type="hidden" name="route_id" value="{{ $activeTrip->route_id }}">
+                                    <input type="hidden" name="trip_id" value="{{ $activeTrip->id }}">
                                     <button type="submit"
                                         class="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600">
                                         End Trip
