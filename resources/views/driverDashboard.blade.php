@@ -106,6 +106,7 @@
                                     @csrf
                                     <input type="hidden" name="bus_id" value="{{ $activeTrip->bus_id }}">
                                     <input type="hidden" name="route_id" value="{{ $activeTrip->route_id }}">
+                                    <input type="hidden" name="trip_id" value="{{ $activeTrip->id }}">
                                     <button type="submit"
                                         class="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600">
                                         End Trip

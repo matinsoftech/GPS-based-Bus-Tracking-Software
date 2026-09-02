@@ -73,7 +73,7 @@ class DriverTripWebController extends Controller
 
         $validated = $request->validate([
             'bus_id' => ['required', 'integer', 'exists:buses,id'],
-            'route_id' => ['required', 'integer', 'exists:routes,id'],
+            'route_id' => ['nullable', 'integer', 'exists:routes,id'],
             'trip_id' => ['nullable', 'integer', 'exists:trips,id'],
             'trip_type' => ['nullable', 'string', 'in:home_to_school,school_to_home'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
@@ -82,12 +82,40 @@ class DriverTripWebController extends Controller
         ], [
             'bus_id.required' => 'Please select a bus.',
             'bus_id.exists' => 'Selected bus not found.',
-            'route_id.required' => 'Please select a route.',
             'route_id.exists' => 'Selected route not found.',
             'trip_type.in' => 'Invalid trip type.',
             'latitude.numeric' => 'Invalid latitude.',
             'longitude.numeric' => 'Invalid longitude.',
         ]);
+
+        $isEnding = filled($validated['trip_id'] ?? null);
+
+        if ($isEnding) {
+            $trip = $driver->trips()
+                ->with(['bus', 'route', 'school'])
+                ->find($validated['trip_id']);
+
+            if (! $trip || ! $trip->isInProgress()) {
+                return redirect()->route('driver.trips.index')
+                    ->with('warning', 'That trip is no longer active.');
+            }
+
+            $trip = DB::transaction(function () use ($trip, $validated) {
+                $trip->update([
+                    'status' => Trip::STATUS_COMPLETED,
+                    'ended_at' => now(),
+                    'end_latitude' => $validated['latitude'] ?? null,
+                    'end_longitude' => $validated['longitude'] ?? null,
+                ]);
+
+                return $trip->fresh(['bus', 'route', 'school']);
+            });
+
+            $this->notifyParentsAndPrincipal($trip, new TripEndedNotification($trip));
+
+            return redirect()->route('driver.trips.index')
+                ->with('success', "Trip ended ({$trip->trip_type_label}). Parents have been notified.");
+        }
 
         $bus = $driver->buses()->find($validated['bus_id']);
         if (! $bus) {
@@ -111,39 +139,9 @@ class DriverTripWebController extends Controller
             ->latest('started_at')
             ->first();
 
-        $isEnding = ($validated['trip_id'] ?? null) !== null;
-        $trip = null;
-
-        if ($isEnding) {
-            $trip = $activeTrip && $activeTrip->id === (int) $validated['trip_id']
-                ? $activeTrip
-                : $bus->trips()->find($validated['trip_id']);
-
-            if (! $trip || ! $trip->isInProgress()) {
-                return redirect()->route('driver.trips.index')
-                    ->with('warning', 'That trip is no longer active.');
-            }
-        } elseif ($activeTrip) {
+        if ($activeTrip) {
             return redirect()->route('driver.trips.index')
                 ->with('warning', 'You already have an active trip. End it first.');
-        }
-
-        if ($isEnding) {
-            $trip = DB::transaction(function () use ($trip, $validated) {
-                $trip->update([
-                    'status' => Trip::STATUS_COMPLETED,
-                    'ended_at' => now(),
-                    'end_latitude' => $validated['latitude'] ?? null,
-                    'end_longitude' => $validated['longitude'] ?? null,
-                ]);
-
-                return $trip->fresh(['bus', 'route', 'school']);
-            });
-
-            $this->notifyParentsAndPrincipal($trip, new TripEndedNotification($trip));
-
-            return redirect()->route('driver.trips.index')
-                ->with('success', "Trip ended ({$trip->trip_type_label}). Parents have been notified.");
         }
 
         $trip = DB::transaction(function () use ($bus, $driver, $route, $validated) {
