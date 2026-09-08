@@ -18,8 +18,36 @@
             </div>
         @endif
 
+        @php
+            $selectedRouteInit = old('route_id', '');
+
+            $selectedStopInit = array_map('intval', old('stops', []));
+
+            $stopsByRoute = $routes
+                ->filter(fn ($route) => $route->stops->isNotEmpty())
+                ->mapWithKeys(fn ($route) => [
+                    (string) $route->id => $route->stops->map(fn ($stop) => [
+                        'id' => (int) $stop->id,
+                        'name' => $stop->name,
+                        'stop_order' => (int) $stop->stop_order,
+                        'pickup_time' => $stop->pickup_time,
+                    ]),
+                ]);
+        @endphp
+
         <form action="{{ route('students.store') }}" method="POST" enctype="multipart/form-data"
-            class="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            class="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
+            x-data="{
+                availableRoutes: @js($stopsByRoute),
+                selectedRoute: @js($selectedRouteInit),
+                selected: @js($selectedStopInit),
+                get visibleStops() { return this.availableRoutes[this.selectedRoute] || []; },
+                toggleStop(id) {
+                    this.selected.includes(id)
+                        ? (this.selected = this.selected.filter(x => x !== id))
+                        : (this.selected.push(id));
+                },
+            }">
             @csrf
 
             <div>
@@ -192,7 +220,7 @@
                                 to this student.
                             </p>
                         @else
-                            <select id="route_id" name="route_id"
+                            <select id="route_id" name="route_id" x-model="selectedRoute"
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                                 <option value="">No route</option>
                                 @foreach ($routes as $route)
@@ -223,82 +251,42 @@
             <div>
                 <h2
                     class="mb-4 border-b border-gray-200 pb-3 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
-                    Pickup & Drop Locations
+                    Assigned Stops
                 </h2>
 
-                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div>
-                        <label for="pickup_location"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Pickup
-                            Location</label>
-                        <input type="text" id="pickup_location" name="pickup_location"
-                            value="{{ old('pickup_location') }}" required
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-                        @error('pickup_location')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                    Select one or more stops from the assigned route. The stops shown below update automatically
+                    based on the selected route.
+                </p>
 
-                    <div>
-                        <label for="drop_location"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Drop
-                            Location</label>
-                        <input type="text" id="drop_location" name="drop_location"
-                            value="{{ old('drop_location') }}" required
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-                        @error('drop_location')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                <template x-if="visibleStops.length > 0">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                        <template x-for="stop in visibleStops" :key="stop.id">
+                            <label
+                                class="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-white/[0.03]">
+                                <input type="checkbox" name="stops[]" :value="stop.id"
+                                    :checked="selected.includes(stop.id)" @change="toggleStop(stop.id)"
+                                    class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">
+                                    <span x-text="stop.name"></span>
+                                    <span class="text-gray-400" x-show="stop.pickup_time"
+                                        x-text="'(' + stop.pickup_time + ')'"></span>
+                                </span>
+                            </label>
+                        </template>
                     </div>
+                </template>
 
-                    <div>
-                        <label for="pickup_latitude"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Pickup
-                            Latitude</label>
-                        <input type="text" id="pickup_latitude" name="pickup_latitude"
-                            value="{{ old('pickup_latitude') }}" step="any"
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-                        @error('pickup_latitude')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                <template x-if="visibleStops.length === 0">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <span x-show="!selectedRoute">Select a route above to see its stops.</span>
+                        <span x-show="selectedRoute">This route has no stops configured yet.</span>
+                    </p>
+                </template>
 
-                    <div>
-                        <label for="pickup_longitude"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Pickup
-                            Longitude</label>
-                        <input type="text" id="pickup_longitude" name="pickup_longitude"
-                            value="{{ old('pickup_longitude') }}" step="any"
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-                        @error('pickup_longitude')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="drop_latitude"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Drop
-                            Latitude</label>
-                        <input type="text" id="drop_latitude" name="drop_latitude"
-                            value="{{ old('drop_latitude') }}" step="any"
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-                        @error('drop_latitude')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="drop_longitude"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Drop
-                            Longitude</label>
-                        <input type="text" id="drop_longitude" name="drop_longitude"
-                            value="{{ old('drop_longitude') }}" step="any"
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-                        @error('drop_longitude')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
+                @error('stops')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="flex items-center justify-end gap-3 border-t border-gray-200 pt-6 dark:border-gray-800">

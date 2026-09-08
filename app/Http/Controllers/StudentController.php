@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ParentProfile;
 use App\Models\Route;
+use App\Models\RouteStop;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
@@ -76,7 +77,7 @@ class StudentController extends Controller
 
         $parents = $this->availableParents($parentsSchoolId);
 
-        $routes = Route::query()
+        $routes = Route::with('stops')
             ->when($school, fn ($query) => $query->where('school_id', $school->id))
             ->orderBy('name')
             ->get();
@@ -103,12 +104,8 @@ class StudentController extends Controller
             'grade' => 'required|string|max:50',
             'section' => 'nullable|string|max:10',
             'roll_no' => 'nullable|string|max:20',
-            'pickup_location' => 'required|string|max:255',
-            'drop_location' => 'required|string|max:255',
-            'pickup_latitude' => 'nullable|numeric|between:-90,90',
-            'pickup_longitude' => 'nullable|numeric|between:-180,180',
-            'drop_latitude' => 'nullable|numeric|between:-90,90',
-            'drop_longitude' => 'nullable|numeric|between:-180,180',
+            'stops' => ['nullable', 'array'],
+            'stops.*' => ['integer', 'exists:route_stops,id'],
             'route_id' => 'nullable|exists:routes,id',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active' => 'nullable|boolean',
@@ -155,6 +152,12 @@ class StudentController extends Controller
             }
         }
 
+        if (! $this->stopsBelongToRoute($validated['stops'] ?? [], $validated['route_id'] ?? null, (int) $validated['school_id'])) {
+            return back()
+                ->withInput()
+                ->withErrors(['stops' => 'One or more selected stops do not belong to the selected route.']);
+        }
+
         if ($request->hasFile('photo')) {
             $validated['photo'] = $request
                 ->file('photo')
@@ -163,7 +166,11 @@ class StudentController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active');
 
-        Student::create($validated);
+        $stops = $validated['stops'] ?? [];
+        unset($validated['stops']);
+
+        $student = Student::create($validated);
+        $student->stops()->sync($stops);
 
         return redirect()
             ->route('students.index')
@@ -177,7 +184,7 @@ class StudentController extends Controller
     {
         $this->authorizeStudent($student);
 
-        $student->load(['school', 'parent.user', 'route']);
+        $student->load(['school', 'parent.user', 'route', 'stops']);
 
         return view('students.show', compact('student'));
     }
@@ -205,12 +212,12 @@ class StudentController extends Controller
 
         $parents = $this->availableParents($parentsSchoolId);
 
-        $routes = Route::query()
+        $routes = Route::with('stops')
             ->when($school, fn ($query) => $query->where('school_id', $school->id))
             ->orderBy('name')
             ->get();
 
-        $student->load(['school', 'parent.user', 'route']);
+        $student->load(['school', 'parent.user', 'route', 'stops']);
 
         return view('students.edit', compact('student', 'school', 'schools', 'parents', 'routes'));
     }
@@ -236,12 +243,8 @@ class StudentController extends Controller
             'grade' => 'required|string|max:50',
             'section' => 'nullable|string|max:10',
             'roll_no' => 'nullable|string|max:20',
-            'pickup_location' => 'required|string|max:255',
-            'drop_location' => 'required|string|max:255',
-            'pickup_latitude' => 'nullable|numeric|between:-90,90',
-            'pickup_longitude' => 'nullable|numeric|between:-180,180',
-            'drop_latitude' => 'nullable|numeric|between:-90,90',
-            'drop_longitude' => 'nullable|numeric|between:-180,180',
+            'stops' => ['nullable', 'array'],
+            'stops.*' => ['integer', 'exists:route_stops,id'],
             'route_id' => 'nullable|exists:routes,id',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active' => 'nullable|boolean',
@@ -288,6 +291,12 @@ class StudentController extends Controller
             }
         }
 
+        if (! $this->stopsBelongToRoute($validated['stops'] ?? [], $validated['route_id'] ?? null, (int) $validated['school_id'])) {
+            return back()
+                ->withInput()
+                ->withErrors(['stops' => 'One or more selected stops do not belong to the selected route.']);
+        }
+
         if ($request->hasFile('photo')) {
             if ($student->photo && Storage::disk('public')->exists($student->photo)) {
                 Storage::disk('public')->delete($student->photo);
@@ -300,7 +309,11 @@ class StudentController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active');
 
+        $stops = $validated['stops'] ?? [];
+        unset($validated['stops']);
+
         $student->update($validated);
+        $student->stops()->sync($stops);
 
         return redirect()
             ->route('students.index')
@@ -339,6 +352,26 @@ class StudentController extends Controller
                 abort(403, 'You are not authorized to access this student.');
             }
         }
+    }
+
+    /**
+     * Verify every selected stop belongs to the given route.
+     */
+    private function stopsBelongToRoute(array $stopIds, ?int $routeId, int $schoolId): bool
+    {
+        if (empty($stopIds)) {
+            return true;
+        }
+
+        if (! $routeId) {
+            return false;
+        }
+
+        $matching = RouteStop::whereIn('id', $stopIds)
+            ->whereHas('route', fn ($query) => $query->where('id', $routeId)->where('school_id', $schoolId))
+            ->count();
+
+        return $matching === count($stopIds);
     }
 
     private function isSchoolLevelAdmin(?User $user): bool
