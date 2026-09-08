@@ -11,6 +11,7 @@ use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\ParentProfileController;
 use App\Http\Controllers\PrincipalDashboardController;
 use App\Http\Controllers\PrincipalVehicleTrackingController;
+use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RouteController;
@@ -577,6 +578,40 @@ Route::middleware('auth')->group(function () {
     Route::delete('/roles/{role}', [RoleController::class, 'destroy'])
         ->middleware(['role:Super Admin', 'permission:role.delete'])
         ->name('roles.destroy');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Plans (Super Admin only)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/plans', [PlanController::class, 'index'])
+        ->middleware(['role:Super Admin', 'permission:plan.view'])
+        ->name('plans.index');
+
+    Route::get('/plans/create', [PlanController::class, 'create'])
+        ->middleware(['role:Super Admin', 'permission:plan.create'])
+        ->name('plans.create');
+
+    Route::post('/plans', [PlanController::class, 'store'])
+        ->middleware(['role:Super Admin', 'permission:plan.create'])
+        ->name('plans.store');
+
+    Route::get('/plans/{plan}', [PlanController::class, 'show'])
+        ->middleware(['role:Super Admin', 'permission:plan.view'])
+        ->name('plans.show');
+
+    Route::get('/plans/{plan}/edit', [PlanController::class, 'edit'])
+        ->middleware(['role:Super Admin', 'permission:plan.update'])
+        ->name('plans.edit');
+
+    Route::put('/plans/{plan}', [PlanController::class, 'update'])
+        ->middleware(['role:Super Admin', 'permission:plan.update'])
+        ->name('plans.update');
+
+    Route::delete('/plans/{plan}', [PlanController::class, 'destroy'])
+        ->middleware(['role:Super Admin', 'permission:plan.delete'])
+        ->name('plans.destroy');
 
     // Notification Routes
 

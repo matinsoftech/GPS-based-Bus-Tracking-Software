@@ -132,6 +132,9 @@ class PermissionSeeder extends Seeder
             'view',
             'update',
         ],
+
+        // Plans
+        'plan' => self::CRUD,
     ];
 
     /**
