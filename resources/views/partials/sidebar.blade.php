@@ -167,6 +167,15 @@
                     'permission' => null,
                     'dropdown' => null,
                 ],
+                [
+                    'key' => 'plans',
+                    'label' => 'Plans',
+                    'route' => 'plans.index',
+                    'active' => 'plans',
+                    'icon' => 'heroicon-o-currency-dollar',
+                    'permission' => 'plan.view',
+                    'dropdown' => null,
+                ],
             ],
         ],
     ];

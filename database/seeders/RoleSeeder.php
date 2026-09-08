@@ -16,6 +16,7 @@ class RoleSeeder extends Seeder
         'school-admin',
         'role',
         'permission',
+        'plan',
     ];
 
     /**
