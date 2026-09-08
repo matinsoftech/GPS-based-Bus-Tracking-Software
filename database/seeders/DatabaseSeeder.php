@@ -67,6 +67,7 @@ class DatabaseSeeder extends Seeder
             BusLocationSeeder::class,
             RouteSeeder::class,
             StudentSeeder::class,
+            PlanSeeder::class,
         ]);
     }
 }
