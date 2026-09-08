@@ -78,6 +78,59 @@
             @endforeach
         </div>
 
+        {{-- Subscription --}}
+        <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Subscription</h2>
+                <a href="{{ route('subscriptions.index') }}"
+                    class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                    Manage Subscriptions
+                </a>
+            </div>
+
+            @if ($activeSubscription)
+                @php
+                    $sub = $activeSubscription;
+                    $statusColors = [
+                        'trialing' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',
+                        'active' => 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400',
+                    ];
+                @endphp
+                <div class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Plan</dt>
+                        <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $sub->plan->name }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Billing</dt>
+                        <dd class="mt-1 text-sm capitalize text-gray-900 dark:text-white">{{ $sub->billing_cycle }} · ₹{{ number_format($sub->amount, 2) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt>
+                        <dd class="mt-1">
+                            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $statusColors[$sub->status] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400' }}">
+                                {{ ucfirst(str_replace('_', ' ', $sub->status)) }}
+                            </span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Expires</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $sub->ends_at ? $sub->ends_at->format('M d, Y') : '—' }}</dd>
+                    </div>
+                </div>
+            @else
+                <div class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        This school does not have an active subscription yet.
+                    </p>
+                    <a href="{{ route('subscriptions.create', ['school' => $school->id]) }}"
+                        class="inline-flex items-center justify-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                        Assign Plan
+                    </a>
+                </div>
+            @endif
+        </div>
+
         <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
             <dl class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>

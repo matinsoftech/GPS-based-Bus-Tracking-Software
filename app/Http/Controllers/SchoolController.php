@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateSchoolRequest;
 use App\Models\Bus;
 use App\Models\Driver;
 use App\Models\ParentProfile;
+use App\Models\Plan;
 use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
@@ -90,6 +91,9 @@ class SchoolController extends Controller
         $totalParents = ParentProfile::where('school_id', $school->id)->count();
         $totalSchoolAdmins = SchoolAdmin::where('school_id', $school->id)->count();
 
+        $activeSubscription = $school->activeSubscription;
+        $activePlans = Plan::where('is_active', true)->orderBy('name')->get();
+
         return view('schools.show', compact(
             'school',
             'totalStudents',
@@ -105,6 +109,8 @@ class SchoolController extends Controller
             'totalStops',
             'totalParents',
             'totalSchoolAdmins',
+            'activeSubscription',
+            'activePlans',
         ));
     }
 

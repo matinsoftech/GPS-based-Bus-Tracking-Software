@@ -31,4 +31,15 @@ class School extends Model
     {
         return $this->hasMany(Student::class);
     }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function activeSubscription()
+    {
+        return $this->hasOne(Subscription::class)
+            ->whereIn('status', ['trialing', 'active']);
+    }
 }

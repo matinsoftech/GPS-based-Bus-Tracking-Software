@@ -19,6 +19,7 @@ use App\Http\Controllers\RouteStopController;
 use App\Http\Controllers\SchoolAdminController;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\SubscriptionsController;
 use App\Http\Controllers\SuperAdminDashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleTrackingController;
@@ -612,6 +613,36 @@ Route::middleware('auth')->group(function () {
     Route::delete('/plans/{plan}', [PlanController::class, 'destroy'])
         ->middleware(['role:Super Admin', 'permission:plan.delete'])
         ->name('plans.destroy');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Subscriptions (Super Admin only)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/subscriptions', [SubscriptionsController::class, 'index'])
+        ->middleware(['role:Super Admin', 'permission:subscription.view'])
+        ->name('subscriptions.index');
+
+    Route::get('/subscriptions/create', [SubscriptionsController::class, 'create'])
+        ->middleware(['role:Super Admin', 'permission:subscription.create'])
+        ->name('subscriptions.create');
+
+    Route::post('/subscriptions', [SubscriptionsController::class, 'store'])
+        ->middleware(['role:Super Admin', 'permission:subscription.create'])
+        ->name('subscriptions.store');
+
+    Route::get('/subscriptions/{subscription}/edit', [SubscriptionsController::class, 'edit'])
+        ->middleware(['role:Super Admin', 'permission:subscription.update'])
+        ->name('subscriptions.edit');
+
+    Route::put('/subscriptions/{subscription}', [SubscriptionsController::class, 'update'])
+        ->middleware(['role:Super Admin', 'permission:subscription.update'])
+        ->name('subscriptions.update');
+
+    Route::delete('/subscriptions/{subscription}', [SubscriptionsController::class, 'destroy'])
+        ->middleware(['role:Super Admin', 'permission:subscription.delete'])
+        ->name('subscriptions.destroy');
 
     // Notification Routes
 

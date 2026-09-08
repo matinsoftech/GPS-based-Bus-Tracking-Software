@@ -135,6 +135,9 @@ class PermissionSeeder extends Seeder
 
         // Plans
         'plan' => self::CRUD,
+
+        // Subscriptions
+        'subscription' => self::CRUD,
     ];
 
     /**
