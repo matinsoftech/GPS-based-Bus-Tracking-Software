@@ -59,6 +59,15 @@
                     'dropdown' => null,
                 ],
                 [
+                    'key' => 'subscriptions',
+                    'label' => 'Subscriptions',
+                    'route' => 'subscriptions.index',
+                    'active' => 'subscriptions',
+                    'icon' => 'heroicon-o-receipt-percent',
+                    'permission' => 'subscription.view',
+                    'dropdown' => null,
+                ],
+                [
                     'key' => 'school-admin-management',
                     'label' => 'School Admin',
                     'route' => 'school-admins.index',

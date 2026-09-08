@@ -40,4 +40,9 @@ class Plan extends Model
             'is_active' => 'boolean',
         ];
     }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
 }

@@ -17,6 +17,7 @@ class RoleSeeder extends Seeder
         'role',
         'permission',
         'plan',
+        'subscription',
     ];
 
     /**
