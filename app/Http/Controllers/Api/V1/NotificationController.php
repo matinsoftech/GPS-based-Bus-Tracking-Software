@@ -166,7 +166,7 @@ class NotificationController extends Controller
         if ($user->hasRole('Parent')) {
             $studentRouteIds = Student::whereHas('parent', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
-            })->pluck('route_id')->filter();
+            })->with('routes')->get()->flatMap(fn ($student) => $student->routes->pluck('id'))->unique()->filter();
 
             if ($studentRouteIds->isEmpty()) {
                 return $query->whereRaw('0 = 1');

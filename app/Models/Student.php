@@ -12,7 +12,6 @@ class Student extends Model
     protected $fillable = [
         'school_id',
         'parent_id',
-        'route_id',
         'admission_no',
         'first_name',
         'last_name',
@@ -51,9 +50,9 @@ class Student extends Model
         return trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
     }
 
-    public function route()
+    public function routes()
     {
-        return $this->belongsTo(Route::class);
+        return $this->belongsToMany(Route::class, 'route_student');
     }
 
     public function stops()

@@ -24,7 +24,7 @@ class StudentController extends Controller
     {
         $user = Auth::user();
 
-        $query = Student::with(['school', 'parent.user', 'route']);
+        $query = Student::with(['school', 'parent.user', 'routes']);
 
         if ($this->isSchoolLevelAdmin($user)) {
             $schoolId = $this->getUserSchoolId($user);
@@ -106,7 +106,8 @@ class StudentController extends Controller
             'roll_no' => 'nullable|string|max:20',
             'stops' => ['nullable', 'array'],
             'stops.*' => ['integer', 'exists:route_stops,id'],
-            'route_id' => 'nullable|exists:routes,id',
+            'route_ids' => ['nullable', 'array'],
+            'route_ids.*' => ['integer', 'exists:routes,id'],
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active' => 'nullable|boolean',
         ];
@@ -142,20 +143,24 @@ class StudentController extends Controller
                 ->withErrors(['parent_id' => 'The selected parent does not belong to the selected school.']);
         }
 
-        if (! empty($validated['route_id'])) {
-            $route = Route::find($validated['route_id']);
+        $routeIds = $validated['route_ids'] ?? [];
 
-            if (! $route || (int) $route->school_id !== (int) $validated['school_id']) {
+        if (! empty($routeIds)) {
+            $invalidRoutes = Route::whereIn('id', $routeIds)
+                ->where('school_id', '!=', $validated['school_id'])
+                ->pluck('id');
+
+            if ($invalidRoutes->isNotEmpty()) {
                 return back()
                     ->withInput()
-                    ->withErrors(['route_id' => 'The selected route does not belong to the selected school.']);
+                    ->withErrors(['route_ids' => 'One or more selected routes do not belong to the selected school.']);
             }
         }
 
-        if (! $this->stopsBelongToRoute($validated['stops'] ?? [], $validated['route_id'] ?? null, (int) $validated['school_id'])) {
+        if (! $this->stopsBelongToRoutes($validated['stops'] ?? [], $routeIds, (int) $validated['school_id'])) {
             return back()
                 ->withInput()
-                ->withErrors(['stops' => 'One or more selected stops do not belong to the selected route.']);
+                ->withErrors(['stops' => 'One or more selected stops do not belong to the selected routes.']);
         }
 
         if ($request->hasFile('photo')) {
@@ -167,9 +172,10 @@ class StudentController extends Controller
         $validated['is_active'] = $request->boolean('is_active');
 
         $stops = $validated['stops'] ?? [];
-        unset($validated['stops']);
+        unset($validated['stops'], $validated['route_ids']);
 
         $student = Student::create($validated);
+        $student->routes()->sync($routeIds);
         $student->stops()->sync($stops);
 
         return redirect()
@@ -184,7 +190,7 @@ class StudentController extends Controller
     {
         $this->authorizeStudent($student);
 
-        $student->load(['school', 'parent.user', 'route', 'stops']);
+        $student->load(['school', 'parent.user', 'routes', 'stops']);
 
         return view('students.show', compact('student'));
     }
@@ -217,7 +223,7 @@ class StudentController extends Controller
             ->orderBy('name')
             ->get();
 
-        $student->load(['school', 'parent.user', 'route', 'stops']);
+        $student->load(['school', 'parent.user', 'routes', 'stops']);
 
         return view('students.edit', compact('student', 'school', 'schools', 'parents', 'routes'));
     }
@@ -245,7 +251,8 @@ class StudentController extends Controller
             'roll_no' => 'nullable|string|max:20',
             'stops' => ['nullable', 'array'],
             'stops.*' => ['integer', 'exists:route_stops,id'],
-            'route_id' => 'nullable|exists:routes,id',
+            'route_ids' => ['nullable', 'array'],
+            'route_ids.*' => ['integer', 'exists:routes,id'],
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active' => 'nullable|boolean',
         ];
@@ -281,20 +288,24 @@ class StudentController extends Controller
                 ->withErrors(['parent_id' => 'The selected parent does not belong to the selected school.']);
         }
 
-        if (! empty($validated['route_id'])) {
-            $route = Route::find($validated['route_id']);
+        $routeIds = $validated['route_ids'] ?? [];
 
-            if (! $route || (int) $route->school_id !== (int) $validated['school_id']) {
+        if (! empty($routeIds)) {
+            $invalidRoutes = Route::whereIn('id', $routeIds)
+                ->where('school_id', '!=', $validated['school_id'])
+                ->pluck('id');
+
+            if ($invalidRoutes->isNotEmpty()) {
                 return back()
                     ->withInput()
-                    ->withErrors(['route_id' => 'The selected route does not belong to the selected school.']);
+                    ->withErrors(['route_ids' => 'One or more selected routes do not belong to the selected school.']);
             }
         }
 
-        if (! $this->stopsBelongToRoute($validated['stops'] ?? [], $validated['route_id'] ?? null, (int) $validated['school_id'])) {
+        if (! $this->stopsBelongToRoutes($validated['stops'] ?? [], $routeIds, (int) $validated['school_id'])) {
             return back()
                 ->withInput()
-                ->withErrors(['stops' => 'One or more selected stops do not belong to the selected route.']);
+                ->withErrors(['stops' => 'One or more selected stops do not belong to the selected routes.']);
         }
 
         if ($request->hasFile('photo')) {
@@ -310,9 +321,10 @@ class StudentController extends Controller
         $validated['is_active'] = $request->boolean('is_active');
 
         $stops = $validated['stops'] ?? [];
-        unset($validated['stops']);
+        unset($validated['stops'], $validated['route_ids']);
 
         $student->update($validated);
+        $student->routes()->sync($routeIds);
         $student->stops()->sync($stops);
 
         return redirect()
@@ -355,20 +367,20 @@ class StudentController extends Controller
     }
 
     /**
-     * Verify every selected stop belongs to the given route.
+     * Verify every selected stop belongs to one of the given routes.
      */
-    private function stopsBelongToRoute(array $stopIds, ?int $routeId, int $schoolId): bool
+    private function stopsBelongToRoutes(array $stopIds, array $routeIds, int $schoolId): bool
     {
         if (empty($stopIds)) {
             return true;
         }
 
-        if (! $routeId) {
+        if (empty($routeIds)) {
             return false;
         }
 
         $matching = RouteStop::whereIn('id', $stopIds)
-            ->whereHas('route', fn ($query) => $query->where('id', $routeId)->where('school_id', $schoolId))
+            ->whereHas('route', fn ($query) => $query->whereIn('id', $routeIds)->where('school_id', $schoolId))
             ->count();
 
         return $matching === count($stopIds);

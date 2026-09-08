@@ -184,7 +184,7 @@ class DriverTripWebController extends Controller
      */
     private function notifyParentsAndPrincipal(Trip $trip, Notification $notification): void
     {
-        $students = Student::where('route_id', $trip->route_id)
+        $students = Student::whereHas('routes', fn ($query) => $query->where('route_id', $trip->route_id))
             ->with('parent.user')
             ->get();
 

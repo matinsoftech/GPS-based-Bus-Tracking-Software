@@ -121,10 +121,9 @@ class StopArrivalTest extends TestCase
             'started_at' => now(),
         ]);
 
-        Student::create([
+        $student = Student::create([
             'school_id' => $this->school->id,
             'parent_id' => $this->parent->id,
-            'route_id' => $this->route->id,
             'admission_no' => 'ADM-ARR-1',
             'first_name' => 'Kid',
             'last_name' => 'One',
@@ -136,6 +135,7 @@ class StopArrivalTest extends TestCase
             'is_active' => true,
             'created_by' => $driverUser->id,
         ]);
+        $student->routes()->sync([$this->route->id]);
     }
 
     private Driver $driver;

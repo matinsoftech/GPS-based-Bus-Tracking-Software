@@ -29,19 +29,23 @@ class StudentAttendanceNotification extends Notification
             ? 'Child Picked Up'
             : 'Child Dropped Off';
 
+        $firstRoute = $this->student->routes->first();
+        $routeId = $firstRoute?->id;
+        $routeName = $firstRoute?->name;
+
         return [
             'type' => 'attendance',
             'title' => $title,
             'message' => 'Your child '.$this->student->full_name.' was '.$label.'.',
             'student_id' => $this->student->id,
             'student_name' => $this->student->full_name,
-            'route_id' => $this->student->route_id,
-            'route_name' => $this->student->route?->name,
+            'route_id' => $routeId,
+            'route_name' => $routeName,
             'action' => $this->actionKey,
             'action_label' => ucfirst($this->stageLabel($this->actionKey)),
             'trip' => $this->tripForAction($this->actionKey),
             'marked_at' => $this->markedAt,
-            'url' => $this->student->route_id
+            'url' => $routeId
                 ? route('parent.student.attendance', $this->student)
                 : null,
         ];

@@ -79,10 +79,12 @@ class DriverAttendanceTest extends TestCase
             'address' => 'Kathmandu',
         ]);
 
-        return Student::create(array_merge([
+        $routes = array_key_exists('route_ids', $overrides) ? $overrides['route_ids'] : [$this->route->id];
+        unset($overrides['route_ids']);
+
+        $student = Student::create(array_merge([
             'school_id' => $this->school->id,
             'parent_id' => $parent->id,
-            'route_id' => $this->route->id,
             'admission_no' => 'ADM-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Sharma',
@@ -95,6 +97,10 @@ class DriverAttendanceTest extends TestCase
             'drop_location' => 'School',
             'is_active' => true,
         ], $overrides));
+
+        $student->routes()->sync($routes ?: []);
+
+        return $student;
     }
 
     public function test_driver_can_list_students_of_assigned_bus(): void
@@ -326,7 +332,7 @@ class DriverAttendanceTest extends TestCase
         ]);
         $otherRoute->drivers()->attach($otherDriver->id);
 
-        $student = $this->makeStudent(['route_id' => $otherRoute->id]);
+        $student = $this->makeStudent(['route_ids' => [$otherRoute->id]]);
 
         Sanctum::actingAs($this->driverUser);
 

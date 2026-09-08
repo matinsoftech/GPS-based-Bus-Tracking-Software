@@ -33,14 +33,14 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['route.school', 'route.activeTrip.bus.gpsDevice', 'route.activeTrip.driver'])
+            ->with(['routes.school', 'routes.activeTrip.bus.gpsDevice', 'routes.activeTrip.driver'])
             ->get();
 
         $school = $parent->school;
 
         // Resolve active trip for each child and attach as attribute
         $children->each(function ($child) {
-            $child->setAttribute('activeTrip', $child->route?->activeTrip);
+            $child->setAttribute('activeTrip', $child->routes->first()?->activeTrip);
         });
 
         // Build locations keyed by bus_id from active trips
@@ -86,7 +86,7 @@ class ParentDashboardController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['route', 'route.activeTrip.driver'])
+            ->with(['routes', 'routes.activeTrip.driver'])
             ->get();
 
         return view('parents.children', compact('user', 'children'));
@@ -107,7 +107,7 @@ class ParentDashboardController extends Controller
             abort(403, 'You are not authorized to view this student\'s attendance.');
         }
 
-        $student->load(['school', 'route']);
+        $student->load(['school', 'routes']);
 
         $records = Attendance::query()
             ->with(['route', 'markedBy'])

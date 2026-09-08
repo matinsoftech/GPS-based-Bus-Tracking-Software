@@ -76,10 +76,9 @@ class AttendanceControllerTest extends TestCase
     {
         $parent ??= $this->createParent($school);
 
-        return Student::create([
+        $student = Student::create([
             'school_id' => $school->id,
             'parent_id' => $parent->id,
-            'route_id' => $route->id,
             'admission_no' => $admissionNo,
             'first_name' => 'Aarav',
             'last_name' => 'Shrestha',
@@ -92,6 +91,10 @@ class AttendanceControllerTest extends TestCase
             'drop_location' => 'School',
             'is_active' => true,
         ]);
+
+        $student->routes()->sync([$route->id]);
+
+        return $student;
     }
 
     private function createParent(School $school): ParentProfile

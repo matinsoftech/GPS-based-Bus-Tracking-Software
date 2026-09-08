@@ -33,17 +33,22 @@ class BusLocationController extends Controller
             $parent = ParentProfile::where('user_id', $user->id)->first();
 
             $children = $parent
-                ? $parent->children()->with(['route.stops', 'route.school', 'route.activeTrip.bus.gpsDevice', 'route.activeTrip.driver'])->get()
+                ? $parent->children()->with(['routes.stops', 'routes.school', 'routes.activeTrip.bus.gpsDevice', 'routes.activeTrip.driver'])->get()
                 : collect();
 
             $selectedChildId = $request->query('child_id');
             $selectedChild = $children->firstWhere('id', $selectedChildId)
-                ?? $children->firstWhere('route_id', '!=', null)
+                ?? $children->firstWhere('routes', fn ($routes) => $routes->isNotEmpty())
                 ?? $children->first();
 
-            $route = $selectedChild?->route;
+            $assignedRoutes = $selectedChild?->routes ?? collect();
+            $routes = $assignedRoutes;
+
+            $route = $assignedRoutes
+                ->first(fn ($r) => $r->activeTrip)
+                ?? $assignedRoutes->first();
+
             $bus = $route?->activeTrip?->bus;
-            $routes = $route ? collect([$route]) : collect();
 
             if ($route) {
                 $route->load(['stops', 'school', 'activeTrip.bus', 'activeTrip.driver']);
@@ -105,7 +110,7 @@ class BusLocationController extends Controller
             $parent = ParentProfile::where('user_id', $user->id)->first();
 
             $children = $parent
-                ? $parent->children()->with('route.activeTrip.bus')->get()
+                ? $parent->children()->with('routes.activeTrip.bus')->get()
                 : collect();
 
             $selectedChildId = $request->query('child_id');
@@ -114,7 +119,8 @@ class BusLocationController extends Controller
             // consumed by the parent telemetry cards / stop timeline.
             if ($selectedChildId) {
                 $selectedChild = $children->firstWhere('id', $selectedChildId);
-                $bus = $selectedChild?->route?->activeTrip?->bus;
+                $bus = $selectedChild?->routes
+                    ?->first(fn ($r) => $r->activeTrip)?->activeTrip?->bus;
 
                 $payload = $this->latestLocationForBus($bus);
 
@@ -123,7 +129,11 @@ class BusLocationController extends Controller
 
             // Otherwise return the shared fleet map payload, scoped to the buses
             // of the parent's children so the shared map renders the same data.
-            $fleetBusIds = $children->pluck('route.activeTrip.bus')->flatten()->pluck('id')->filter()->unique();
+            $fleetBusIds = $children
+                ->flatMap(fn ($child) => $child->routes->pluck('activeTrip.bus'))
+                ->filter()
+                ->pluck('id')
+                ->unique();
 
             return response()->json($this->fleetMap->forSchool(null, $fleetBusIds));
         }

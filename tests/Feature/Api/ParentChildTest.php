@@ -89,10 +89,12 @@ class ParentChildTest extends TestCase
 
     private function makeStudent(array $overrides = []): Student
     {
-        return Student::create(array_merge([
+        $routes = array_key_exists('route_ids', $overrides) ? $overrides['route_ids'] : [$this->route->id];
+        unset($overrides['route_ids']);
+
+        $student = Student::create(array_merge([
             'school_id' => $this->school->id,
             'parent_id' => $this->parent->id,
-            'route_id' => $this->route->id,
             'admission_no' => 'ADM-CHILD-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Bahadur',
@@ -105,6 +107,10 @@ class ParentChildTest extends TestCase
             'drop_location' => 'School',
             'is_active' => true,
         ], $overrides));
+
+        $student->routes()->sync($routes ?: []);
+
+        return $student;
     }
 
     public function test_parent_can_list_children_with_bus_and_today_attendance(): void
@@ -121,7 +127,7 @@ class ParentChildTest extends TestCase
             ->assertJsonPath('data.children_count', 2)
             ->assertJsonCount(2, 'data.children')
             ->assertJsonPath('data.children.0.full_name', 'Sita Bahadur')
-            ->assertJsonPath('data.children.0.route.name', 'Route 1')
+            ->assertJsonPath('data.children.0.routes.0.name', 'Route 1')
             ->assertJsonPath('data.children.0.today_attendance.next_action.key', 'picked_up_home')
             ->assertJsonStructure([
                 'message',
@@ -142,11 +148,8 @@ class ParentChildTest extends TestCase
                             'pickup_location',
                             'drop_location',
                             'is_active',
-                            'route' => [
-                                'id',
-                                'name',
-                                'route_code',
-                                'is_active',
+                            'routes' => [
+                                ['id', 'name', 'route_code', 'is_active'],
                             ],
                             'today_attendance' => [
                                 'home_to_school' => ['check_in_at', 'check_out_at', 'status'],
@@ -191,7 +194,7 @@ class ParentChildTest extends TestCase
             ->assertJsonPath('message', 'Parent child data.')
             ->assertJsonPath('data.student.full_name', 'Sita Bahadur')
             ->assertJsonPath('data.student.school.name', 'Bright Future School')
-            ->assertJsonPath('data.route.name', 'Route 1')
+            ->assertJsonPath('data.routes.0.name', 'Route 1')
             ->assertJsonPath('data.today_attendance.home_to_school.status', 'completed')
             ->assertJsonPath('data.today_attendance.next_action.key', 'picked_up_school')
             ->assertJsonStructure([
@@ -218,11 +221,8 @@ class ParentChildTest extends TestCase
                         'is_active',
                         'school' => ['id', 'name', 'address'],
                     ],
-                    'route' => [
-                        'id',
-                        'name',
-                        'route_code',
-                        'is_active',
+                    'routes' => [
+                        ['id', 'name', 'route_code', 'start_location', 'end_location', 'is_active'],
                     ],
                     'today_attendance' => [
                         'home_to_school' => ['check_in_at', 'check_out_at', 'status'],
@@ -236,13 +236,13 @@ class ParentChildTest extends TestCase
 
     public function test_child_detail_returns_null_bus_when_unassigned(): void
     {
-        $student = $this->makeStudent(['route_id' => null]);
+        $student = $this->makeStudent(['route_ids' => []]);
 
         Sanctum::actingAs($this->parentUser);
 
         $this->getJson('/api/v1/parent/children/'.$student->id)
             ->assertOk()
-            ->assertJsonPath('data.route', null);
+            ->assertJsonPath('data.routes', []);
     }
 
     public function test_parent_can_view_child_attendance_history(): void
@@ -371,7 +371,6 @@ class ParentChildTest extends TestCase
         $otherStudent = Student::create([
             'school_id' => $this->school->id,
             'parent_id' => $otherParent->id,
-            'route_id' => $this->route->id,
             'admission_no' => 'ADM-CHILD-OTHER-'.uniqid(),
             'first_name' => 'Gita',
             'last_name' => 'Sharma',
@@ -382,6 +381,7 @@ class ParentChildTest extends TestCase
             'drop_location' => 'School',
             'is_active' => true,
         ]);
+        $otherStudent->routes()->sync([$this->route->id]);
 
         Sanctum::actingAs($this->parentUser);
 

@@ -104,10 +104,9 @@ class StudentCrudTest extends TestCase
 
     private function makeStudent(School $school, ParentProfile $parent, ?Route $route = null, array $overrides = []): Student
     {
-        return Student::create(array_merge([
+        $student = Student::create(array_merge([
             'school_id' => $school->id,
             'parent_id' => $parent->id,
-            'route_id' => $route?->id,
             'admission_no' => 'ADM-STU-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Sharma',
@@ -120,6 +119,12 @@ class StudentCrudTest extends TestCase
             'drop_location' => 'School',
             'is_active' => true,
         ], $overrides));
+
+        if ($route) {
+            $student->routes()->sync([$route->id]);
+        }
+
+        return $student;
     }
 
     private function validPayload(array $overrides = []): array
@@ -136,7 +141,7 @@ class StudentCrudTest extends TestCase
             'pickup_location' => 'Baneshwor',
             'drop_location' => 'School',
             'parent_id' => $this->parent->id,
-            'route_id' => $this->route->id,
+            'route_ids' => [$this->route->id],
             'is_active' => true,
         ], $overrides);
     }
@@ -166,7 +171,7 @@ class StudentCrudTest extends TestCase
                             'section',
                             'is_active',
                             'parent' => ['id', 'name', 'phone'],
-                            'route' => ['id', 'name', 'is_active'],
+                            'routes' => [['id', 'name', 'is_active']],
                             'school' => ['id', 'name'],
                         ],
                     ],
@@ -203,7 +208,7 @@ class StudentCrudTest extends TestCase
             ->assertJsonPath('data.student.admission_no', 'ADM-NEW-1')
             ->assertJsonPath('data.student.school.id', $this->school->id)
             ->assertJsonPath('data.student.parent.id', $this->parent->id)
-            ->assertJsonPath('data.student.route.id', $this->route->id);
+            ->assertJsonPath('data.student.routes.0.id', $this->route->id);
 
         $this->assertDatabaseHas('students', [
             'admission_no' => 'ADM-NEW-1',
@@ -251,9 +256,9 @@ class StudentCrudTest extends TestCase
 
         Sanctum::actingAs($this->principal);
 
-        $this->postJson('/api/v1/students', $this->validPayload(['route_id' => $otherRoute->id]))
+        $this->postJson('/api/v1/students', $this->validPayload(['route_ids' => [$otherRoute->id]]))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['route_id']);
+            ->assertJsonValidationErrors(['route_ids.0']);
     }
 
     public function test_show_returns_student_details(): void
@@ -267,7 +272,7 @@ class StudentCrudTest extends TestCase
             ->assertJsonPath('message', 'Student details.')
             ->assertJsonPath('data.student.id', $student->id)
             ->assertJsonPath('data.student.full_name', 'Sita Sharma')
-            ->assertJsonPath('data.student.route.name', 'STU-ROUTE-1')
+            ->assertJsonPath('data.student.routes.0.name', 'STU-ROUTE-1')
             ->assertJsonPath('data.student.school.id', $this->school->id);
     }
 

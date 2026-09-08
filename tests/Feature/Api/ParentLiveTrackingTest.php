@@ -112,10 +112,12 @@ class ParentLiveTrackingTest extends TestCase
 
     private function makeStudent(array $overrides = []): Student
     {
-        return Student::create(array_merge([
+        $routes = array_key_exists('route_ids', $overrides) ? $overrides['route_ids'] : [$this->route->id];
+        unset($overrides['route_ids']);
+
+        $student = Student::create(array_merge([
             'school_id' => $this->school->id,
             'parent_id' => $this->parent->id,
-            'route_id' => $this->route->id,
             'admission_no' => 'ADM-LIVE-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Bahadur',
@@ -128,6 +130,10 @@ class ParentLiveTrackingTest extends TestCase
             'drop_location' => 'School',
             'is_active' => true,
         ], $overrides));
+
+        $student->routes()->sync($routes ?: []);
+
+        return $student;
     }
 
     private function makeBus(string $busNumber, ?string $imei = null, ?Route $route = null, ?Driver $driver = null): Bus
@@ -197,7 +203,7 @@ class ParentLiveTrackingTest extends TestCase
         $route2 = $this->makeRoute('Route 2');
 
         $this->makeStudent();
-        $this->makeStudent(['route_id' => $route2->id, 'first_name' => 'Rita', 'roll_no' => '2']);
+        $this->makeStudent(['route_ids' => [$route2->id], 'first_name' => 'Rita', 'roll_no' => '2']);
 
         $this->makeBus('BUS-1', '123456789012345', $this->route, $this->driver);
         $this->makeBus('BUS-2', '222222222222222', $route2, $driver2);
@@ -243,14 +249,14 @@ class ParentLiveTrackingTest extends TestCase
             ->assertJsonPath('data.children_count', 2)
             ->assertJsonCount(2, 'data.children')
             ->assertJsonPath('data.children.0.full_name', 'Sita Bahadur')
-            ->assertJsonPath('data.children.0.route.name', 'Route 1')
+            ->assertJsonPath('data.children.0.routes.0.name', 'Route 1')
             ->assertJsonPath('data.children.0.live_location.imei', '123456789012345')
             ->assertJsonPath('data.children.0.live_location.latitude', 27.7172)
             ->assertJsonPath('data.children.0.live_location.longitude', 85.324)
             ->assertJsonPath('data.children.0.live_location.speed_kmh', 45)
             ->assertJsonPath('data.children.0.live_location.status_label', 'Moving')
             ->assertJsonPath('data.children.0.live_location.is_moving', true)
-            ->assertJsonPath('data.children.1.route.name', 'Route 2')
+            ->assertJsonPath('data.children.1.routes.0.name', 'Route 2')
             ->assertJsonPath('data.children.1.live_location.imei', '222222222222222')
             ->assertJsonPath('data.children.1.live_location.status_label', 'Stopped')
             ->assertJsonStructure([
@@ -264,7 +270,7 @@ class ParentLiveTrackingTest extends TestCase
                             'grade',
                             'section',
                             'photo',
-                            'route' => ['id', 'name', 'route_code'],
+                            'routes' => [['id', 'name', 'route_code']],
                             'live_location',
                         ],
                     ],
@@ -274,7 +280,7 @@ class ParentLiveTrackingTest extends TestCase
 
     public function test_child_without_bus_has_null_live_location(): void
     {
-        $this->makeStudent(['route_id' => null]);
+        $this->makeStudent(['route_ids' => []]);
 
         $this->fakeLiveTracking([]);
 
@@ -282,7 +288,7 @@ class ParentLiveTrackingTest extends TestCase
 
         $this->getJson('/api/v1/parent/live-tracking')
             ->assertOk()
-            ->assertJsonPath('data.children.0.route', null)
+            ->assertJsonPath('data.children.0.routes', [])
             ->assertJsonPath('data.children.0.live_location', null);
     }
 
@@ -378,7 +384,7 @@ class ParentLiveTrackingTest extends TestCase
             ->assertOk()
             ->assertJsonPath('message', 'Parent child live tracking data.')
             ->assertJsonPath('data.student.full_name', 'Sita Bahadur')
-            ->assertJsonPath('data.route.name', 'Route 1')
+            ->assertJsonPath('data.routes.0.name', 'Route 1')
             ->assertJsonPath('data.live_location.imei', '123456789012345')
             ->assertJsonPath('data.live_location.speed_kmh', 45)
             ->assertJsonPath('data.live_location.status_label', 'Moving')
@@ -386,7 +392,7 @@ class ParentLiveTrackingTest extends TestCase
                 'message',
                 'data' => [
                     'student' => ['id', 'full_name', 'grade', 'section', 'photo'],
-                    'route' => ['id', 'name', 'route_code'],
+                    'routes' => [['id', 'name', 'route_code']],
                     'live_location',
                 ],
             ]);

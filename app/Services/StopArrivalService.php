@@ -147,7 +147,7 @@ class StopArrivalService
      */
     protected function notifyParents(Trip $trip, RouteStop $stop, TripStopArrival $arrival): void
     {
-        $students = Student::where('route_id', $trip->route_id)
+        $students = Student::whereHas('routes', fn ($query) => $query->where('route_id', $trip->route_id))
             ->with('parent.user')
             ->get();
 

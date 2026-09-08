@@ -19,19 +19,25 @@
         @endif
 
         @php
-            $selectedRouteInit = old('route_id', '');
+            $selectedRoutesInit = old('route_ids', []);
+            if (!is_array($selectedRoutesInit)) {
+                $selectedRoutesInit = [];
+            }
 
             $selectedStopInit = array_map('intval', old('stops', []));
 
             $stopsByRoute = $routes
                 ->filter(fn ($route) => $route->stops->isNotEmpty())
                 ->mapWithKeys(fn ($route) => [
-                    (string) $route->id => $route->stops->map(fn ($stop) => [
-                        'id' => (int) $stop->id,
-                        'name' => $stop->name,
-                        'stop_order' => (int) $stop->stop_order,
-                        'pickup_time' => $stop->pickup_time,
-                    ]),
+                    (string) $route->id => [
+                        'name' => $route->name . ($route->route_code ? " ({$route->route_code})" : ''),
+                        'stops' => $route->stops->map(fn ($stop) => [
+                            'id' => (int) $stop->id,
+                            'name' => $stop->name,
+                            'stop_order' => (int) $stop->stop_order,
+                            'pickup_time' => $stop->pickup_time,
+                        ]),
+                    ],
                 ]);
         @endphp
 
@@ -39,9 +45,34 @@
             class="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
             x-data="{
                 availableRoutes: @js($stopsByRoute),
-                selectedRoute: @js($selectedRouteInit),
+                selectedRoutes: @js($selectedRoutesInit),
                 selected: @js($selectedStopInit),
-                get visibleStops() { return this.availableRoutes[this.selectedRoute] || []; },
+                get routeIds() {
+                    return Object.keys(this.availableRoutes);
+                },
+                isRouteSelected(id) {
+                    return this.selectedRoutes.includes(String(id));
+                },
+                toggleRoute(id) {
+                    const idStr = String(id);
+                    if (this.selectedRoutes.includes(idStr)) {
+                        this.selectedRoutes = this.selectedRoutes.filter(x => x !== idStr);
+                        this.availableRoutes[idStr]?.stops?.forEach(stop => {
+                            this.selected = this.selected.filter(x => x !== stop.id);
+                        });
+                    } else {
+                        this.selectedRoutes.push(idStr);
+                    }
+                },
+                get groupedStops() {
+                    return this.selectedRoutes
+                        .filter(id => this.availableRoutes[id] && this.availableRoutes[id].stops.length > 0)
+                        .map(id => ({
+                            routeId: id,
+                            routeName: this.availableRoutes[id].name,
+                            stops: this.availableRoutes[id].stops,
+                        }));
+                },
                 toggleStop(id) {
                     this.selected.includes(id)
                         ? (this.selected = this.selected.filter(x => x !== id))
@@ -209,10 +240,10 @@
                         @enderror
                     </div>
 
-                    <div>
-                        <label for="route_id"
+                    <div class="md:col-span-2">
+                        <label
                             class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Assigned
-                            Route</label>
+                            Routes</label>
                         @if ($routes->isEmpty())
                             <p class="text-sm text-gray-500 dark:text-gray-400">
                                 No routes available. <a href="{{ route('routes.create') }}"
@@ -220,18 +251,24 @@
                                 to this student.
                             </p>
                         @else
-                            <select id="route_id" name="route_id" x-model="selectedRoute"
-                                class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-                                <option value="">No route</option>
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                                 @foreach ($routes as $route)
-                                    <option value="{{ $route->id }}" @selected(old('route_id') == $route->id)>
-                                        {{ $route->name }}@if ($route->route_code)
-                                            ({{ $route->route_code }})
-                                        @endif
-                                    </option>
+                                    <label
+                                        class="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-white/[0.03]">
+                                        <input type="checkbox" name="route_ids[]"
+                                            value="{{ $route->id }}"
+                                            :checked="isRouteSelected({{ $route->id }})"
+                                            @change="toggleRoute({{ $route->id }})"
+                                            class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500">
+                                        <span class="text-sm text-gray-700 dark:text-gray-300">
+                                            {{ $route->name }}@if ($route->route_code)
+                                                ({{ $route->route_code }})
+                                            @endif
+                                        </span>
+                                    </label>
                                 @endforeach
-                            </select>
-                            @error('route_id')
+                            </div>
+                            @error('route_ids')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         @endif
@@ -255,32 +292,43 @@
                 </h2>
 
                 <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                    Select one or more stops from the assigned route. The stops shown below update automatically
-                    based on the selected route.
+                    Select one or more stops from the assigned routes. The stops shown below update automatically
+                    based on the selected routes, grouped by route.
                 </p>
 
-                <template x-if="visibleStops.length > 0">
-                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-                        <template x-for="stop in visibleStops" :key="stop.id">
-                            <label
-                                class="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-white/[0.03]">
-                                <input type="checkbox" name="stops[]" :value="stop.id"
-                                    :checked="selected.includes(stop.id)" @change="toggleStop(stop.id)"
-                                    class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500">
-                                <span class="text-sm text-gray-700 dark:text-gray-300">
-                                    <span x-text="stop.name"></span>
-                                    <span class="text-gray-400" x-show="stop.pickup_time"
-                                        x-text="'(' + stop.pickup_time + ')'"></span>
-                                </span>
-                            </label>
+                <template x-if="groupedStops.length > 0">
+                    <div class="space-y-5">
+                        <template x-for="group in groupedStops" :key="group.routeId">
+                            <div
+                                class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-white/[0.03]">
+                                <h3
+                                    class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                    <span x-text="group.routeName"></span>
+                                </h3>
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                                    <template x-for="stop in group.stops" :key="stop.id">
+                                        <label
+                                            class="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-gray-600 dark:bg-gray-800">
+                                            <input type="checkbox" name="stops[]" :value="stop.id"
+                                                :checked="selected.includes(stop.id)" @change="toggleStop(stop.id)"
+                                                class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500">
+                                            <span class="text-sm text-gray-700 dark:text-gray-300">
+                                                <span x-text="stop.name"></span>
+                                                <span class="text-gray-400" x-show="stop.pickup_time"
+                                                    x-text="'(' + stop.pickup_time + ')'"></span>
+                                            </span>
+                                        </label>
+                                    </template>
+                                </div>
+                            </div>
                         </template>
                     </div>
                 </template>
 
-                <template x-if="visibleStops.length === 0">
+                <template x-if="groupedStops.length === 0">
                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                        <span x-show="!selectedRoute">Select a route above to see its stops.</span>
-                        <span x-show="selectedRoute">This route has no stops configured yet.</span>
+                        <span x-show="selectedRoutes.length === 0">Select one or more routes above to see their stops.</span>
+                        <span x-show="selectedRoutes.length > 0">The selected routes have no stops configured yet.</span>
                     </p>
                 </template>
 

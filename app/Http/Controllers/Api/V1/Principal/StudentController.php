@@ -23,7 +23,7 @@ class StudentController extends Controller
         }
 
         $students = Student::query()
-            ->with(['school', 'parent.user', 'route'])
+            ->with(['school', 'parent.user', 'routes'])
             ->where('school_id', $schoolId)
             ->when($request->filled('q'), fn ($q) => $q
                 ->where(fn ($query) => $query
@@ -67,13 +67,17 @@ class StudentController extends Controller
         $validated['school_id'] = $schoolId;
         $validated['is_active'] = $request->boolean('is_active', true);
 
+        $routeIds = $validated['route_ids'] ?? [];
+        unset($validated['route_ids']);
+
         if ($request->hasFile('photo')) {
             $validated['photo'] = $request->file('photo')->store('students', 'public');
         }
 
         $student = Student::create($validated);
+        $student->routes()->sync($routeIds);
 
-        $student->load(['school', 'parent.user', 'route']);
+        $student->load(['school', 'parent.user', 'routes']);
 
         return response()->json([
             'message' => 'Student created successfully.',
@@ -91,7 +95,7 @@ class StudentController extends Controller
             ], 403);
         }
 
-        $student->load(['school', 'parent.user', 'route']);
+        $student->load(['school', 'parent.user', 'routes']);
 
         return response()->json([
             'message' => 'Student details.',
@@ -115,6 +119,9 @@ class StudentController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active', true);
 
+        $routeIds = $validated['route_ids'] ?? [];
+        unset($validated['route_ids']);
+
         if ($request->hasFile('photo')) {
             if ($student->photo && Storage::disk('public')->exists($student->photo)) {
                 Storage::disk('public')->delete($student->photo);
@@ -124,8 +131,9 @@ class StudentController extends Controller
         }
 
         $student->update($validated);
+        $student->routes()->sync($routeIds);
 
-        $student->load(['school', 'parent.user', 'route']);
+        $student->load(['school', 'parent.user', 'routes']);
 
         return response()->json([
             'message' => 'Student updated successfully.',
@@ -176,7 +184,7 @@ class StudentController extends Controller
             ->store('students', 'public');
         $student->save();
 
-        $student->load(['school', 'parent.user', 'route']);
+        $student->load(['school', 'parent.user', 'routes']);
 
         return response()->json([
             'message' => 'Student photo updated.',
@@ -210,11 +218,12 @@ class StudentController extends Controller
             'drop_latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'drop_longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'parent_id' => ['required', Rule::exists('parent_profiles', 'id')->where('school_id', $schoolId)],
-            'route_id' => ['nullable', Rule::exists('routes', 'id')->where('school_id', $schoolId)],
+            'route_ids' => ['nullable', 'array'],
+            'route_ids.*' => [Rule::exists('routes', 'id')->where('school_id', $schoolId)],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ], [
             'parent_id.exists' => 'The selected parent does not belong to your school.',
-            'route_id.exists' => 'The selected route does not belong to your school.',
+            'route_ids.*.exists' => 'One or more selected routes do not belong to your school.',
         ]);
     }
 
@@ -249,12 +258,12 @@ class StudentController extends Controller
                 'name' => $student->parent->user?->name,
                 'phone' => $student->parent->phone,
             ] : null,
-            'route' => $student->route ? [
-                'id' => $student->route->id,
-                'name' => $student->route->name,
-                'route_code' => $student->route->route_code,
-                'is_active' => $student->route->is_active,
-            ] : null,
+            'routes' => $student->routes->map(fn ($route) => [
+                'id' => $route->id,
+                'name' => $route->name,
+                'route_code' => $route->route_code,
+                'is_active' => $route->is_active,
+            ])->values(),
             'school' => $student->school ? [
                 'id' => $student->school->id,
                 'name' => $student->school->name,
