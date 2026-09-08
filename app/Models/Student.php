@@ -55,4 +55,9 @@ class Student extends Model
     {
         return $this->belongsTo(Route::class);
     }
+
+    public function stops()
+    {
+        return $this->belongsToMany(RouteStop::class, 'route_stop_student', 'student_id', 'route_stop_id');
+    }
 }

@@ -104,34 +104,25 @@
             </dl>
 
             <h2 class="mb-4 mt-6 border-b border-gray-200 pb-3 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
-                Pickup & Drop Locations
+                Assigned Stops
             </h2>
 
-            <dl class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Pickup Location</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $student->pickup_location }}</dd>
-                </div>
+            @if ($student->stops->isNotEmpty())
+                <ol class="list-inside list-decimal space-y-1 text-sm text-gray-900 dark:text-white">
+                    @foreach ($student->stops->sortBy('stop_order') as $stop)
+                        <li>
+                            {{ $stop->name }}
+                            @if ($stop->pickup_time)
+                                <span class="text-gray-500 dark:text-gray-400">({{ $stop->pickup_time }})</span>
+                            @endif
+                        </li>
+                    @endforeach
+                </ol>
+            @else
+                <p class="text-sm text-gray-500 dark:text-gray-400">No stops assigned to this student.</p>
+            @endif
 
-                <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Drop Location</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $student->drop_location }}</dd>
-                </div>
-
-                @if ($student->pickup_latitude && $student->pickup_longitude)
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Pickup Coordinates</dt>
-                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $student->pickup_latitude }}, {{ $student->pickup_longitude }}</dd>
-                    </div>
-                @endif
-
-                @if ($student->drop_latitude && $student->drop_longitude)
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Drop Coordinates</dt>
-                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $student->drop_latitude }}, {{ $student->drop_longitude }}</dd>
-                    </div>
-                @endif
-
+            <dl class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Created</dt>
                     <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $student->created_at->format('M d, Y H:i') }}</dd>
