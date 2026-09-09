@@ -12,7 +12,12 @@
 <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
     <div class="mb-3 flex items-start justify-between gap-3">
         <div>
-            <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $route->name }}</p>
+            <div class="flex flex-wrap items-center gap-2">
+                <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $route->name }}</p>
+                @if ($route->route_type)
+                    <span class="rounded-full px-2 py-0.5 text-xs font-semibold {{ $route->route_type_color_classes }}">{{ $route->route_type_label }}</span>
+                @endif
+            </div>
             @if ($route->route_code)
                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ $route->route_code }}</p>
             @endif

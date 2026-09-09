@@ -33,6 +33,7 @@ class RouteController extends Controller
 
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('route_type', 'like', "%{$search}%")
                     ->orWhere('route_code', 'like', "%{$search}%")
                     ->orWhere('start_location', 'like', "%{$search}%")
                     ->orWhere('end_location', 'like', "%{$search}%");
@@ -77,6 +78,7 @@ class RouteController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'route_code' => 'required|string|max:50|unique:routes,route_code',
+            'route_type' => 'required|in:home_to_school,school_to_home',
             'start_location' => 'required|string|max:255',
             'end_location' => 'required|string|max:255',
             'estimated_distance' => 'nullable|numeric|min:0',
@@ -149,6 +151,7 @@ class RouteController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'route_code' => 'required|string|max:50|unique:routes,route_code,'.$route->id,
+            'route_type' => 'required|in:home_to_school,school_to_home',
             'start_location' => 'required|string|max:255',
             'end_location' => 'required|string|max:255',
             'estimated_distance' => 'nullable|numeric|min:0',

@@ -4,7 +4,11 @@
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Attendance History</h1>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {{ $route->name }}@if ($route->route_code) ({{ $route->route_code }})@endif ·
+                    {{ $route->name }}
+                    @if ($route->route_type)
+                        <span class="ml-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold {{ $route->route_type_color_classes }}">{{ $route->route_type_label }}</span>
+                    @endif
+                    @if ($route->route_code) ({{ $route->route_code }})@endif ·
                     {{ $route->school->name ?? '—' }}
                 </p>
             </div>

@@ -46,10 +46,17 @@ class AttendanceController extends Controller
                     'checkedIn' => collect(),
                     'today' => $today,
                     'groupedBySchool' => false,
+                    'routeType' => null,
                 ]);
             }
 
             $query->whereHas('drivers', fn ($q) => $q->where('drivers.id', $driverId));
+        }
+
+        $routeType = $request->query('route_type');
+
+        if (in_array($routeType, ['home_to_school', 'school_to_home'])) {
+            $query->where('route_type', $routeType);
         }
 
         $routes = $query->orderBy('name')->get();
@@ -70,7 +77,7 @@ class AttendanceController extends Controller
 
         $groupedBySchool = $user->hasRole('Super Admin');
 
-        return view('attendance.index', compact('routes', 'checkedIn', 'today', 'groupedBySchool'));
+        return view('attendance.index', compact('routes', 'checkedIn', 'today', 'groupedBySchool', 'routeType'));
     }
 
     /**

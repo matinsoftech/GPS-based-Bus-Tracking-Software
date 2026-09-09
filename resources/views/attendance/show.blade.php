@@ -2,7 +2,12 @@
     <div class="mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
         <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $route->name }}</h1>
+                <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">
+                    {{ $route->name }}
+                    @if ($route->route_type)
+                        <span class="ml-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold align-middle {{ $route->route_type_color_classes }}">{{ $route->route_type_label }}</span>
+                    @endif
+                </h1>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     {{ $route->school->name ?? '—' }}@if ($route->route_code) · {{ $route->route_code }}@endif
                 </p>

@@ -10,6 +10,7 @@ class Route extends Model
         'school_id',
         'name',
         'route_code',
+        'route_type',
         'start_location',
         'end_location',
         'estimated_distance',
@@ -20,6 +21,18 @@ class Route extends Model
     public function school()
     {
         return $this->belongsTo(School::class);
+    }
+
+    public function getRouteTypeLabelAttribute(): string
+    {
+        return $this->route_type === 'school_to_home' ? 'School to Home' : 'Home to School';
+    }
+
+    public function getRouteTypeColorClassesAttribute(): string
+    {
+        return $this->route_type === 'school_to_home'
+            ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400'
+            : 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
     }
 
     public function drivers()

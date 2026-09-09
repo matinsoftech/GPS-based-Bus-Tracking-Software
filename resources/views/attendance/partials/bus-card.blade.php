@@ -29,7 +29,17 @@
         </div>
         <div class="flex justify-between gap-3">
             <dt class="text-gray-500 dark:text-gray-400">Route</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->activeTrip?->route?->name ?: '—' }}</dd>
+            <dd class="font-medium text-gray-900 dark:text-white">
+                @php $route = $bus->activeTrip?->route; @endphp
+                @if ($route)
+                    {{ $route->name }}
+                    @if ($route->route_type)
+                        <span class="ml-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold {{ $route->route_type_color_classes }}">{{ $route->route_type_label }}</span>
+                    @endif
+                @else
+                    —
+                @endif
+            </dd>
         </div>
         <div class="flex justify-between gap-3">
             <dt class="text-gray-500 dark:text-gray-400">Capacity</dt>
