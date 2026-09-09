@@ -7,6 +7,19 @@
             </div>
         </div>
 
+        @if (session('success'))
+            <div
+                class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if (session('warning'))
+            <div
+                class="mb-4 rounded-lg bg-yellow-50 px-4 py-3 text-sm text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
+                {{ session('warning') }}
+            </div>
+        @endif
+
         {{-- Desktop / tablet: table view --}}
         <div
             class="hidden overflow-hidden rounded-2xl border border-gray-200 bg-white md:block dark:border-gray-800 dark:bg-white/[0.03]">
@@ -59,7 +72,19 @@
                                 </td>
                                 <td class="px-5 py-3">{{ $trip->durationInMinutes() ?? '—' }} min</td>
                                 <td class="px-5 py-3">{{ $trip->started_at->format('H:i:s') }}</td>
-                                <td class="px-5 py-3">{{ $trip->ended_at ? $trip->ended_at->format('H:i:s') : '—' }}
+                                <td class="px-5 py-3">
+                                    @if ($trip->status === 'in_progress')
+                                        <form action="{{ route('principal.trips.end', $trip) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit"
+                                                class="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600"
+                                                onclick="return confirm('End this trip?')">
+                                                End Trip
+                                            </button>
+                                        </form>
+                                    @else
+                                        {{ $trip->ended_at ? $trip->ended_at->format('H:i:s') : '—' }}
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -137,6 +162,18 @@
                                 {{ $trip->ended_at ? $trip->ended_at->format('H:i:s') : '—' }}</dd>
                         </div>
                     </dl>
+
+                    @if ($trip->status === 'in_progress')
+                        <form action="{{ route('principal.trips.end', $trip) }}" method="POST"
+                            class="mt-4 border-t border-gray-100 pt-3 dark:border-gray-800">
+                            @csrf
+                            <button type="submit"
+                                class="w-full rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600"
+                                onclick="return confirm('End this trip?')">
+                                End Trip
+                            </button>
+                        </form>
+                    @endif
                 </div>
             @empty
                 <div
