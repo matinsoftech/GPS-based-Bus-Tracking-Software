@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Driver;
 
 use App\Http\Controllers\Controller;
+use App\Models\Route;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
 use App\Models\Trip;
@@ -115,7 +116,6 @@ class DriverTripController extends Controller
         $validated = $request->validate([
             'bus_id' => ['required', 'integer', 'exists:buses,id'],
             'route_id' => ['required', 'integer', 'exists:routes,id'],
-            'trip_type' => ['nullable', 'string', 'in:home_to_school,school_to_home'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -179,7 +179,9 @@ class DriverTripController extends Controller
             ], 422);
         }
 
-        $tripType = $validated['trip_type'] ?? Trip::tripTypeByTime();
+        $tripType = $route->route_type === Route::ROUTE_TYPE_SCHOOL_TO_HOME
+            ? Trip::TYPE_SCHOOL_TO_HOME
+            : Trip::TYPE_HOME_TO_SCHOOL;
 
         $trip = DB::transaction(function () use ($bus, $driver, $validated, $tripType) {
             return Trip::create([
