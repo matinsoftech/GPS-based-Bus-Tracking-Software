@@ -136,7 +136,7 @@ class AttendanceController extends Controller
             'date' => ['nullable', 'date'],
         ]);
 
-        if ((int) $student->route_id !== (int) $route->id) {
+        if (! $student->routes()->where('route_id', $route->id)->exists()) {
             abort(403, 'This student is not assigned to this route.');
         }
 

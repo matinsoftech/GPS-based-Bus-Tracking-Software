@@ -22,7 +22,7 @@ class AttendanceNotificationService
         }
 
         try {
-            $student->loadMissing('parent.user', 'route');
+            $student->loadMissing('parent.user', 'routes');
 
             $parent = $student->parent?->user;
 

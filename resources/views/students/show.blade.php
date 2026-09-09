@@ -92,10 +92,15 @@
                 </div>
 
                 <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Assigned Route</dt>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Assigned Routes</dt>
                     <dd class="mt-1 text-sm text-gray-900 dark:text-white">
-                        @if ($student->route)
-                            {{ $student->route->name }}@if ($student->route->route_code) ({{ $student->route->route_code }})@endif
+                        @if ($student->routes->isNotEmpty())
+                            @foreach ($student->routes as $route)
+                                <span
+                                    class="mr-1 inline-block rounded-full border border-gray-300 px-2 py-0.5 text-xs text-gray-700 dark:border-gray-600 dark:text-gray-300">{{ $route->name }}@if ($route->route_code)
+                                        ({{ $route->route_code }})
+                                    @endif</span>
+                            @endforeach
                         @else
                             —
                         @endif

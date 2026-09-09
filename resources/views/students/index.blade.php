@@ -81,7 +81,16 @@
                                 <td class="px-5 py-3">{{ $student->full_name }}</td>
                                 <td class="px-5 py-3">
                                     {{ $student->grade }}{{ $student->section ? ' - ' . $student->section : '' }}</td>
-                                <td class="px-5 py-3">{{ $student->route->name ?? '—' }}</td>
+                                <td class="px-5 py-3">
+                                    @if ($student->routes->isNotEmpty())
+                                        @foreach ($student->routes as $route)
+                                            <span
+                                                class="mr-1 inline-block rounded-full border border-gray-300 px-2 py-0.5 text-xs text-gray-700 dark:border-gray-600 dark:text-gray-300">{{ $route->name }}</span>
+                                        @endforeach
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3">{{ $student->school->name ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ $student->parent->user->name ?? '—' }}</td>
                                 <td class="px-5 py-3">
@@ -168,7 +177,15 @@
                                 </div>
                                 <div>
                                     <dt class="text-gray-400 dark:text-gray-500">Route</dt>
-                                    <dd class="text-gray-700 dark:text-gray-200">{{ $student->route->name ?? '—' }}
+                                    <dd class="text-gray-700 dark:text-gray-200">
+                                        @if ($student->routes->isNotEmpty())
+                                            @foreach ($student->routes as $route)
+                                                <span
+                                                    class="mr-1 inline-block rounded-full border border-gray-300 px-2 py-0.5 text-xs text-gray-700 dark:border-gray-600 dark:text-gray-300">{{ $route->name }}</span>
+                                            @endforeach
+                                        @else
+                                            —
+                                        @endif
                                     </dd>
                                 </div>
                                 <div>

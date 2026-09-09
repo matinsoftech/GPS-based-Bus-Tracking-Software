@@ -117,7 +117,7 @@
                         <div class="mt-5 min-h-0 flex-1 space-y-4 overflow-y-auto custom-scrollbar pr-1">
                             @forelse ($children as $child)
                                 @php
-                                    $route = $child->route;
+                                    $route = $child->routes->first();
                                     $activeTrip = $child->getAttribute('activeTrip');
                                     $bus = $activeTrip?->bus;
                                     $location = $bus ? $locationsByBus->get($bus->id) : null;
@@ -241,7 +241,7 @@
                                     <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 p-3 dark:border-gray-800">
                                         <div>
                                             <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $child->full_name }}</p>
-                                            <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ $child->route?->name ?? 'No route' }}</p>
+                                            <p class="text-theme-xs text-gray-500 dark:text-gray-400">{{ $child->routes->pluck('name')->join(', ') ?: 'No route' }}</p>
                                         </div>
                                         <div class="text-right">
                                             @if ($pickup?->check_in_at && $drop?->check_out_at)

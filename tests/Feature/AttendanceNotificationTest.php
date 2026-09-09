@@ -98,10 +98,9 @@ class AttendanceNotificationTest extends TestCase
 
     private function createStudent(string $admissionNo, ParentProfile $parent, Route $route): Student
     {
-        return Student::create([
+        $student = Student::create([
             'school_id' => $this->school->id,
             'parent_id' => $parent->id,
-            'route_id' => $route->id,
             'admission_no' => $admissionNo,
             'first_name' => 'Kid',
             'last_name' => 'One',
@@ -113,6 +112,10 @@ class AttendanceNotificationTest extends TestCase
             'is_active' => true,
             'created_by' => $this->driverUser->id,
         ]);
+
+        $student->routes()->sync([$route->id]);
+
+        return $student;
     }
 
     private function markViaApi(): TestResponse

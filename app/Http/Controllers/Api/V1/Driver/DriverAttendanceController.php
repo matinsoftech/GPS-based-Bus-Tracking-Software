@@ -235,7 +235,7 @@ class DriverAttendanceController extends Controller
         }
 
         $student = Student::where('id', $validated['student_id'])
-            ->where('route_id', $route->id)
+            ->whereHas('routes', fn ($query) => $query->where('route_id', $route->id))
             ->first();
 
         if (! $student) {

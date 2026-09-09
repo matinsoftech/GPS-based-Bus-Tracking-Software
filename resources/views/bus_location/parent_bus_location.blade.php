@@ -39,8 +39,8 @@
                                 {{ strtoupper(substr($child->first_name ?? $child->full_name, 0, 1)) }}
                             </span>
                             <span>{{ $child->full_name }}</span>
-                            @if ($child->route)
-                                <span class="text-[10px] opacity-80 font-mono">({{ $child->route->name }})</span>
+                            @if ($child->routes && $child->routes->isNotEmpty())
+                                <span class="text-[10px] opacity-80 font-mono">({{ $child->routes->pluck('name')->join(', ') }})</span>
                             @endif
                         </a>
                     @endforeach

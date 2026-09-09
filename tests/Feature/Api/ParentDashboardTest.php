@@ -94,10 +94,12 @@ class ParentDashboardTest extends TestCase
 
     private function makeStudent(array $overrides = []): Student
     {
-        return Student::create(array_merge([
+        $routes = array_key_exists('route_ids', $overrides) ? $overrides['route_ids'] : [$this->route->id];
+        unset($overrides['route_ids']);
+
+        $student = Student::create(array_merge([
             'school_id' => $this->school->id,
             'parent_id' => $this->parent->id,
-            'route_id' => $this->route->id,
             'admission_no' => 'ADM-PARENT-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Bahadur',
@@ -110,6 +112,10 @@ class ParentDashboardTest extends TestCase
             'drop_location' => 'School',
             'is_active' => true,
         ], $overrides));
+
+        $student->routes()->sync($routes ?: []);
+
+        return $student;
     }
 
     public function test_parent_can_view_dashboard_with_children(): void
@@ -125,8 +131,8 @@ class ParentDashboardTest extends TestCase
             ->assertJsonPath('data.children_count', 2)
             ->assertJsonCount(2, 'data.children')
             ->assertJsonPath('data.children.0.full_name', 'Sita Bahadur')
-            ->assertJsonPath('data.children.0.route.name', 'Route A')
-            ->assertJsonPath('data.children.0.route.route_code', 'RT-PARENT-1')
+            ->assertJsonPath('data.children.0.routes.0.name', 'Route A')
+            ->assertJsonPath('data.children.0.routes.0.route_code', 'RT-PARENT-1')
             ->assertJsonStructure([
                 'message',
                 'data' => [
@@ -152,11 +158,8 @@ class ParentDashboardTest extends TestCase
                             'photo',
                             'pickup_location',
                             'drop_location',
-                            'route' => [
-                                'id',
-                                'name',
-                                'route_code',
-                                'is_active',
+                            'routes' => [
+                                ['id', 'name', 'route_code', 'is_active'],
                             ],
                             'today_attendance' => [
                                 'home_to_school' => ['check_in_at', 'check_out_at', 'status'],

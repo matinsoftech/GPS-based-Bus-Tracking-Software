@@ -262,7 +262,7 @@ class DriverTripController extends Controller
     {
         $notification = new TripStartedNotification($trip);
 
-        $students = Student::where('route_id', $trip->route_id)
+        $students = Student::whereHas('routes', fn ($query) => $query->where('route_id', $trip->route_id))
             ->with('parent.user')
             ->get();
 
@@ -305,7 +305,7 @@ class DriverTripController extends Controller
     {
         $notification = new TripEndedNotification($trip);
 
-        $students = Student::where('route_id', $trip->route_id)
+        $students = Student::whereHas('routes', fn ($query) => $query->where('route_id', $trip->route_id))
             ->with('parent.user')
             ->get();
 

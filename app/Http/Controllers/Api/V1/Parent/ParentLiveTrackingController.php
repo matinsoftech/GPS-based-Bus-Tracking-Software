@@ -23,7 +23,7 @@ class ParentLiveTrackingController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['route.activeTrip.bus.gpsDevice'])
+            ->with(['routes.activeTrip.bus.gpsDevice'])
             ->orderBy('grade')
             ->orderBy('roll_no')
             ->get();
@@ -38,12 +38,12 @@ class ParentLiveTrackingController extends Controller
                     'grade' => $student->grade,
                     'section' => $student->section,
                     'photo' => $student->photo ? asset('storage/'.$student->photo) : null,
-                    'route' => $student->route ? [
-                        'id' => $student->route->id,
-                        'name' => $student->route->name,
-                        'route_code' => $student->route->route_code,
-                    ] : null,
-                    'live_location' => $this->liveLocationFor($student->route?->activeTrip?->bus),
+                    'routes' => $student->routes->map(fn ($route) => [
+                        'id' => $route->id,
+                        'name' => $route->name,
+                        'route_code' => $route->route_code,
+                    ])->values(),
+                    'live_location' => $this->liveLocationFor($this->firstActiveBus($student->routes)),
                 ]),
             ],
         ]);
@@ -65,7 +65,7 @@ class ParentLiveTrackingController extends Controller
             ], 403);
         }
 
-        $student->load('route.activeTrip.bus.gpsDevice');
+        $student->load('routes.activeTrip.bus.gpsDevice');
 
         return response()->json([
             'message' => 'Parent child live tracking data.',
@@ -77,14 +77,25 @@ class ParentLiveTrackingController extends Controller
                     'section' => $student->section,
                     'photo' => $student->photo ? asset('storage/'.$student->photo) : null,
                 ],
-                'route' => $student->route ? [
-                    'id' => $student->route->id,
-                    'name' => $student->route->name,
-                    'route_code' => $student->route->route_code,
-                ] : null,
-                'live_location' => $this->liveLocationFor($student->route?->activeTrip?->bus),
+                'routes' => $student->routes->map(fn ($route) => [
+                    'id' => $route->id,
+                    'name' => $route->name,
+                    'route_code' => $route->route_code,
+                ])->values(),
+                'live_location' => $this->liveLocationFor($this->firstActiveBus($student->routes)),
             ],
         ]);
+    }
+
+    /**
+     * Return the bus of the first route that has an in-progress trip, if any.
+     */
+    private function firstActiveBus($routes)
+    {
+        return $routes
+            ->map(fn ($route) => $route->activeTrip?->bus)
+            ->filter()
+            ->first();
     }
 
     /**

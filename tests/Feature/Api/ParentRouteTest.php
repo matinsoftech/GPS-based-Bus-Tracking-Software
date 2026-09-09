@@ -140,10 +140,12 @@ class ParentRouteTest extends TestCase
 
     private function makeStudent(array $overrides = []): Student
     {
-        return Student::create(array_merge([
+        $routes = array_key_exists('route_ids', $overrides) ? $overrides['route_ids'] : [$this->route->id];
+        unset($overrides['route_ids']);
+
+        $student = Student::create(array_merge([
             'school_id' => $this->school->id,
             'parent_id' => $this->parent->id,
-            'route_id' => $this->route->id,
             'admission_no' => 'ADM-BUS-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Bahadur',
@@ -156,6 +158,10 @@ class ParentRouteTest extends TestCase
             'drop_location' => 'School',
             'is_active' => true,
         ], $overrides));
+
+        $student->routes()->sync($routes ?: []);
+
+        return $student;
     }
 
     private function fakeLiveTracking(array $devices): void
@@ -197,31 +203,33 @@ class ParentRouteTest extends TestCase
             ->assertOk()
             ->assertJsonPath('message', 'Parent child route data.')
             ->assertJsonPath('data.student.full_name', 'Sita Bahadur')
-            ->assertJsonPath('data.route.name', 'Route 1')
-            ->assertJsonPath('data.route.drivers.0.name', 'Ramesh Sharma')
-            ->assertJsonCount(2, 'data.route.stops')
-            ->assertJsonPath('data.route.stops.0.name', 'Chabahil')
-            ->assertJsonPath('data.live_location.imei', '123456789012345')
-            ->assertJsonPath('data.live_location.latitude', 27.7172)
-            ->assertJsonPath('data.live_location.longitude', 85.324)
-            ->assertJsonPath('data.live_location.speed_kmh', 45)
-            ->assertJsonPath('data.live_location.status_label', 'Moving')
+            ->assertJsonPath('data.routes.0.name', 'Route 1')
+            ->assertJsonPath('data.routes.0.drivers.0.name', 'Ramesh Sharma')
+            ->assertJsonCount(2, 'data.routes.0.stops')
+            ->assertJsonPath('data.routes.0.stops.0.name', 'Chabahil')
+            ->assertJsonPath('data.routes.0.live_location.imei', '123456789012345')
+            ->assertJsonPath('data.routes.0.live_location.latitude', 27.7172)
+            ->assertJsonPath('data.routes.0.live_location.longitude', 85.324)
+            ->assertJsonPath('data.routes.0.live_location.speed_kmh', 45)
+            ->assertJsonPath('data.routes.0.live_location.status_label', 'Moving')
             ->assertJsonStructure([
                 'message',
                 'data' => [
                     'student' => ['id', 'full_name', 'grade', 'section', 'photo', 'pickup_location', 'drop_location'],
-                    'route' => [
-                        'id',
-                        'name',
-                        'route_code',
-                        'is_active',
-                        'drivers' => [['id', 'name', 'phone']],
-                        'stops' => [
-                            '*' => ['id', 'name', 'latitude', 'longitude', 'stop_order', 'pickup_time', 'drop_time'],
+                    'routes' => [
+                        [
+                            'id',
+                            'name',
+                            'route_code',
+                            'is_active',
+                            'drivers' => [['id', 'name', 'phone']],
+                            'stops' => [
+                                '*' => ['id', 'name', 'latitude', 'longitude', 'stop_order', 'pickup_time', 'drop_time'],
+                            ],
+                            'school' => ['id', 'name', 'address'],
+                            'live_location',
                         ],
-                        'school' => ['id', 'name', 'address'],
                     ],
-                    'live_location',
                 ],
             ]);
     }
@@ -236,8 +244,8 @@ class ParentRouteTest extends TestCase
 
         $this->getJson('/api/v1/parent/children/'.$student->id.'/route')
             ->assertOk()
-            ->assertJsonPath('data.route.name', 'Route 1')
-            ->assertJsonPath('data.live_location', null);
+            ->assertJsonPath('data.routes.0.name', 'Route 1')
+            ->assertJsonPath('data.routes.0.live_location', null);
     }
 
     public function test_parent_cannot_view_another_parents_child(): void
@@ -255,7 +263,6 @@ class ParentRouteTest extends TestCase
         $otherStudent = Student::create([
             'school_id' => $this->school->id,
             'parent_id' => $otherParent->id,
-            'route_id' => $this->route->id,
             'admission_no' => 'ADM-BUS-OTHER-'.uniqid(),
             'first_name' => 'Gita',
             'last_name' => 'Sharma',
@@ -266,6 +273,7 @@ class ParentRouteTest extends TestCase
             'drop_location' => 'School',
             'is_active' => true,
         ]);
+        $otherStudent->routes()->sync([$this->route->id]);
 
         $this->fakeLiveTracking([]);
 
@@ -278,7 +286,7 @@ class ParentRouteTest extends TestCase
 
     public function test_child_without_route_returns_404(): void
     {
-        $student = $this->makeStudent(['route_id' => null]);
+        $student = $this->makeStudent(['route_ids' => []]);
 
         $this->fakeLiveTracking([]);
 

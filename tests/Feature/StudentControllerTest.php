@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\ParentProfile;
 use App\Models\Route;
 use App\Models\School;
+use App\Models\Student;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -69,7 +70,7 @@ class StudentControllerTest extends TestCase
             'roll_no' => '01',
             'pickup_location' => 'Gaushala',
             'drop_location' => 'Bright Future School',
-            'route_id' => $route->id,
+            'route_ids' => [$route->id],
             'is_active' => 1,
         ]);
 
@@ -78,8 +79,11 @@ class StudentControllerTest extends TestCase
             'admission_no' => 'STD001',
             'school_id' => $school->id,
             'parent_id' => $parent->id,
-            'route_id' => $route->id,
             'first_name' => 'Anita',
+        ]);
+        $this->assertDatabaseHas('route_student', [
+            'route_id' => $route->id,
+            'student_id' => Student::where('admission_no', 'STD001')->value('id'),
         ]);
     }
 
@@ -143,10 +147,10 @@ class StudentControllerTest extends TestCase
             'section' => 'B',
             'pickup_location' => 'Koteshwor',
             'drop_location' => 'Bright Future School',
-            'route_id' => $otherRoute->id,
+            'route_ids' => [$otherRoute->id],
         ]);
 
-        $response->assertSessionHasErrors('route_id');
+        $response->assertSessionHasErrors('route_ids');
 
         $this->assertDatabaseMissing('students', [
             'admission_no' => 'STD002',

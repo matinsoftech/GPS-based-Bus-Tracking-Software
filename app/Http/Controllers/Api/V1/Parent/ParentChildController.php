@@ -21,7 +21,7 @@ class ParentChildController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['route'])
+            ->with(['routes'])
             ->orderBy('grade')
             ->orderBy('roll_no')
             ->get();
@@ -50,12 +50,12 @@ class ParentChildController extends Controller
                     'pickup_location' => $student->pickup_location,
                     'drop_location' => $student->drop_location,
                     'is_active' => $student->is_active,
-                    'route' => $student->route ? [
-                        'id' => $student->route->id,
-                        'name' => $student->route->name,
-                        'route_code' => $student->route->route_code,
-                        'is_active' => $student->route->is_active,
-                    ] : null,
+                    'routes' => $student->routes->map(fn ($route) => [
+                        'id' => $route->id,
+                        'name' => $route->name,
+                        'route_code' => $route->route_code,
+                        'is_active' => $route->is_active,
+                    ])->values(),
                     'today_attendance' => $this->todayAttendanceFor(
                         $todayRecords->get($student->id.'-'.Attendance::TRIP_HOME_TO_SCHOOL),
                         $todayRecords->get($student->id.'-'.Attendance::TRIP_SCHOOL_TO_HOME),
@@ -81,7 +81,7 @@ class ParentChildController extends Controller
             ], 403);
         }
 
-        $student->load(['school', 'route']);
+        $student->load(['school', 'routes']);
 
         $todayRecords = Attendance::query()
             ->where('student_id', $student->id)
@@ -117,14 +117,14 @@ class ParentChildController extends Controller
                         'address' => $student->school->address,
                     ] : null,
                 ],
-                'route' => $student->route ? [
-                    'id' => $student->route->id,
-                    'name' => $student->route->name,
-                    'route_code' => $student->route->route_code,
-                    'start_location' => $student->route->start_location,
-                    'end_location' => $student->route->end_location,
-                    'is_active' => $student->route->is_active,
-                ] : null,
+                'routes' => $student->routes->map(fn ($route) => [
+                    'id' => $route->id,
+                    'name' => $route->name,
+                    'route_code' => $route->route_code,
+                    'start_location' => $route->start_location,
+                    'end_location' => $route->end_location,
+                    'is_active' => $route->is_active,
+                ])->values(),
                 'today_attendance' => $this->todayAttendanceFor(
                     $todayRecords->get(Attendance::TRIP_HOME_TO_SCHOOL),
                     $todayRecords->get(Attendance::TRIP_SCHOOL_TO_HOME),

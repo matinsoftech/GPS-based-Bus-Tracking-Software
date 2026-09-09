@@ -43,7 +43,7 @@ class DriverDashboardController extends Controller
         $routes = $driver->routes()->orderBy('name')->get();
 
         $routeIds = $driver->routes()->pluck('driver_route.route_id');
-        $studentsCount = \App\Models\Student::whereIn('route_id', $routeIds)->count();
+        $studentsCount = \App\Models\Student::whereHas('routes', fn ($query) => $query->whereIn('route_id', $routeIds))->count();
         $buses->each(fn ($bus) => $bus->setAttribute('students_count', $studentsCount));
 
         $busIds = $buses->pluck('id');

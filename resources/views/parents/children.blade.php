@@ -19,7 +19,7 @@
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 @foreach ($children as $child)
                     @php
-                        $route = $child->route;
+                        $route = $child->routes->first();
                         $activeTrip = $route?->activeTrip;
                     @endphp
                     <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">

@@ -148,10 +148,9 @@ class PrincipalDashboardTest extends TestCase
 
     private function makeStudent(int $routeId, ParentProfile $parent): Student
     {
-        return Student::create([
+        $student = Student::create([
             'school_id' => $this->school->id,
             'parent_id' => $parent->id,
-            'route_id' => $routeId,
             'admission_no' => 'ADM-PR-'.uniqid(),
             'first_name' => 'Sita',
             'last_name' => 'Sharma',
@@ -164,6 +163,10 @@ class PrincipalDashboardTest extends TestCase
             'drop_location' => 'School',
             'is_active' => true,
         ]);
+
+        $student->routes()->sync([$routeId]);
+
+        return $student;
     }
 
     private function makeRoute(string $name, string $code, bool $isActive): Route
