@@ -44,11 +44,26 @@ class BusLocationController extends Controller
             $assignedRoutes = $selectedChild?->routes ?? collect();
             $routes = $assignedRoutes;
 
-            $route = $assignedRoutes
-                ->first(fn ($r) => $r->activeTrip)
+            $requestedRouteId = $request->query('route_id');
+            $route = $requestedRouteId
+                ? ($assignedRoutes->firstWhere('id', $requestedRouteId) ?? null)
+                : null;
+
+            $route = $route
+                ?? $assignedRoutes->first(fn ($r) => $r->activeTrip)
                 ?? $assignedRoutes->first();
 
             $bus = $route?->activeTrip?->bus;
+
+            $studentStops = collect();
+
+            if ($selectedChild && $route) {
+                $studentStops = $selectedChild->stops()
+                    ->where('route_stops.route_id', $route->id)
+                    ->get();
+            }
+
+            $studentStopIds = $studentStops->pluck('id')->all();
 
             if ($route) {
                 $route->load(['stops', 'school', 'activeTrip.bus', 'activeTrip.driver']);
@@ -70,6 +85,8 @@ class BusLocationController extends Controller
                 'route',
                 'bus',
                 'routes',
+                'studentStops',
+                'studentStopIds',
                 'latestLocation',
                 'fleetMap'
             ));
@@ -115,14 +132,35 @@ class BusLocationController extends Controller
 
             $selectedChildId = $request->query('child_id');
 
-            // With a specific child selected, return the single normalized payload
-            // consumed by the parent telemetry cards / stop timeline.
+            // With a specific child selected, return the payload for the selected
+            // route's bus: the normalized device payload (consumed by the parent
+            // telemetry cards / stop timeline) by default, or the fleet map payload
+            // (consumed by the map refresh) when the caller passes view=fleet.
             if ($selectedChildId) {
                 $selectedChild = $children->firstWhere('id', $selectedChildId);
-                $bus = $selectedChild?->routes
-                    ?->first(fn ($r) => $r->activeTrip)?->activeTrip?->bus;
+
+                $assignedRoutes = $selectedChild?->routes ?? collect();
+
+                $requestedRouteId = $request->query('route_id');
+                $route = $requestedRouteId
+                    ? ($assignedRoutes->firstWhere('id', $requestedRouteId) ?? null)
+                    : null;
+
+                $route = $route
+                    ?? $assignedRoutes->first(fn ($r) => $r->activeTrip)
+                    ?? $assignedRoutes->first();
+
+                $bus = $route?->activeTrip?->bus;
 
                 $payload = $this->latestLocationForBus($bus);
+
+                if ($request->query('view') === 'fleet') {
+                    return response()->json(
+                        $route
+                            ? $this->fleetMap->forRoute($route, $payload)
+                            : ['buses' => [], 'routes' => [], 'summary' => [], 'school' => null, 'updated_at' => now()->toIso8601String()]
+                    );
+                }
 
                 return response()->json($this->stopArrivals->withStopContext($bus, $payload));
             }

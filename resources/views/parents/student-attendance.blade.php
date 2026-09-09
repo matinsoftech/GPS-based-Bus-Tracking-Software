@@ -81,10 +81,10 @@
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr class="text-gray-500 dark:text-gray-400">
                             <th class="px-5 py-3 font-medium">Date</th>
-                            <th class="px-5 py-3 font-medium">Trip</th>
+                            {{-- <th class="px-5 py-3 font-medium">Trip</th> --}}
                             <th class="px-5 py-3 font-medium">Check In</th>
                             <th class="px-5 py-3 font-medium">Check Out</th>
-                            <th class="px-5 py-3 font-medium">Bus</th>
+                            <th class="px-5 py-3 font-medium">Route</th>
                             <th class="px-5 py-3 font-medium">Status</th>
                         </tr>
                     </thead>
@@ -92,7 +92,7 @@
                         @forelse ($records as $record)
                             <tr class="text-gray-700 dark:text-gray-200">
                                 <td class="px-5 py-3 whitespace-nowrap">{{ $record->date->format('M d, Y') }}</td>
-                                <td class="px-5 py-3 whitespace-nowrap">
+                                {{-- <td class="px-5 py-3 whitespace-nowrap">
                                     <div class="flex flex-col items-start gap-1">
                                         @if ($record->route?->route_type)
                                             <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $record->route->route_type_color_classes }}">
@@ -103,7 +103,7 @@
                                             {{ $record->tripLabel() }}
                                         </span>
                                     </div>
-                                </td>
+                                </td> --}}
                                 <td class="px-5 py-3 whitespace-nowrap">
                                     @if ($record->check_in_at)
                                         <span class="text-xs font-medium text-green-700 dark:text-green-400">
@@ -122,7 +122,14 @@
                                         <span class="text-xs text-gray-400 dark:text-gray-500">—</span>
                                     @endif
                                 </td>
-                                <td class="px-5 py-3 whitespace-nowrap">{{ $record->route?->name ?? '—' }}</td>
+                                <td class="px-5 py-3 whitespace-nowrap">
+                                    <span class="font-medium text-gray-900 dark:text-white">{{ $record->route?->name ?? '—' }}</span>
+                                    @if ($record->route)
+                                        <span class="ml-1 text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                                            ({{ $record->route->route_type_label }})
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3">
                                     @if ($record->isCheckedOut())
                                         <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">Completed</span>

@@ -193,7 +193,7 @@ class ParentControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('School to Home (Drop)');
-        $response->assertSee('bg-purple-50');
+        $response->assertSee('(School to Home)');
         $response->assertSee('Route B');
         $response->assertDontSee('Route A');
     }

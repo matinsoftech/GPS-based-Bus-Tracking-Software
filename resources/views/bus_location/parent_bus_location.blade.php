@@ -77,7 +77,26 @@
                 </div>
             </div>
         @else
-            @php $route = $routes->first(); @endphp
+            @if ($routes->count() > 1)
+                <!-- Route Selector Tabs -->
+                <div
+                    class="rounded-2xl border border-gray-200 bg-white p-3 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+                    <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar">
+                        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 shrink-0">Route:</span>
+                        @foreach ($routes as $r)
+                            @php $isRouteActive = $route && $route->id === $r->id; @endphp
+                            <a href="{{ route('bus_location', ['child_id' => $selectedChild?->id, 'route_id' => $r->id]) }}"
+                                class="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition shrink-0 border {{ $isRouteActive ? 'bg-brand-500 text-white border-brand-500 shadow-sm' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-750' }}">
+                                <span>{{ $r->name }}</span>
+                                <span
+                                    class="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-mono font-semibold {{ $isRouteActive ? 'bg-white/20 text-white' : $r->route_type_color_classes }}">
+                                    {{ $r->route_type_label }}
+                                </span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
             <!-- "Where is My Bus?" Telemetry & Information Cards Grid -->
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -184,6 +203,10 @@
                         <p class="text-sm font-bold text-gray-900 dark:text-white truncate">
                             {{ $route->name }}
                         </p>
+                        <span
+                            class="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono font-semibold {{ $route->route_type_color_classes }}">
+                            {{ $route->route_type_label }}
+                        </span>
                         <p class="mt-1 text-xs font-mono font-semibold text-purple-600 dark:text-purple-400">
                             Code: {{ $route->route_code }}
                         </p>
@@ -266,7 +289,8 @@
                         </p>
                         <p class="mt-2 text-[11px] text-gray-600 dark:text-gray-300 truncate">
                             Stop:
-                            <strong>{{ $selectedChild->pickup_location ?? ($route->stops->first()->name ?? 'Assigned Stop') }}</strong>
+                            @php $assignedStopNames = $studentStops->pluck('name')->filter()->implode(', '); @endphp
+                            <strong>{{ $assignedStopNames ?: ($selectedChild->pickup_location ?? ($route->stops->first()->name ?? 'Assigned Stop')) }}</strong>
                         </p>
                     </div>
                 </div>
@@ -280,7 +304,10 @@
                 <div class="xl:col-span-7 min-w-0">
                     @include('partials.fleet-map', [
                         'fleetMap' => $fleetMap,
-                        'fleetMapRefreshUrl' => route('bus_location.latest'),
+                        'fleetMapRefreshUrl' => $route
+                            ? route('bus_location.latest', ['child_id' => $selectedChild?->id, 'route_id' => $route->id, 'view' => 'fleet'])
+                            : route('bus_location.latest'),
+                        'fleetMapHighlightStops' => $studentStopIds,
                         'fleetMapTitle' => 'My Bus Location',
                         'fleetMapSubtitle' =>
                             'Live GPS position of your children\'s buses, route paths, and stops.',
@@ -370,6 +397,13 @@
                                                     {{ $stop->name }}
                                                 </h3>
 
+                                                @if (in_array($stop->id, $studentStopIds))
+                                                    <span id="yourStopBadge-{{ $index }}"
+                                                        class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
+                                                        Your Stop
+                                                    </span>
+                                                @endif
+
                                                 <span id="stopBadge-{{ $index }}"
                                                     class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold hidden"></span>
                                             </div>
@@ -420,7 +454,8 @@
 
         const latestLocation = @json($latestLocation);
 
-        const gpsEndpoint = '{{ route('bus_location.latest') }}' + '?child_id=' + @json($selectedChild?->id);
+        const gpsEndpoint = '{{ route('bus_location.latest') }}' + '?child_id=' + @json($selectedChild?->id)
+            + (@json($route?->id) ? '&route_id=' + @json($route?->id) : '');
 
         let liveBusGps = null;
 
