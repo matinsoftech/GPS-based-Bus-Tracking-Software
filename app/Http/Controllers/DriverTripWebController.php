@@ -75,7 +75,6 @@ class DriverTripWebController extends Controller
             'bus_id' => ['required', 'integer', 'exists:buses,id'],
             'route_id' => ['nullable', 'integer', 'exists:routes,id'],
             'trip_id' => ['nullable', 'integer', 'exists:trips,id'],
-            'trip_type' => ['nullable', 'string', 'in:home_to_school,school_to_home'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -83,7 +82,6 @@ class DriverTripWebController extends Controller
             'bus_id.required' => 'Please select a bus.',
             'bus_id.exists' => 'Selected bus not found.',
             'route_id.exists' => 'Selected route not found.',
-            'trip_type.in' => 'Invalid trip type.',
             'latitude.numeric' => 'Invalid latitude.',
             'longitude.numeric' => 'Invalid longitude.',
         ]);
@@ -154,7 +152,9 @@ class DriverTripWebController extends Controller
         }
 
         $trip = DB::transaction(function () use ($bus, $driver, $route, $validated) {
-            $tripType = $validated['trip_type'] ?? Trip::TYPE_HOME_TO_SCHOOL;
+            $tripType = $route->route_type === Route::ROUTE_TYPE_SCHOOL_TO_HOME
+                ? Trip::TYPE_SCHOOL_TO_HOME
+                : Trip::TYPE_HOME_TO_SCHOOL;
 
             return Trip::create([
                 'bus_id' => $bus->id,

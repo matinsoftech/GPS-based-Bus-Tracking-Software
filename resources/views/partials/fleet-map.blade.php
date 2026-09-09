@@ -4,6 +4,7 @@
     $fleetSchool = $fleetMap['school'] ?? null;
     $fleetRoutes = $fleetMap['routes'] ?? [];
     $fleetMapRefreshUrl = $fleetMapRefreshUrl ?? null;
+    $fleetMapHighlightStops = $fleetMapHighlightStops ?? [];
     $fleetMapTitle = $fleetMapTitle ?? 'Fleet Overview Map';
     $fleetMapSubtitle = $fleetMapSubtitle ?? 'Live location of every school bus, route paths, and stops';
     $fleetMapHeight = $fleetMapHeight ?? 'h-[520px]';
@@ -215,6 +216,7 @@
         };
 
         const refreshUrl = @json($fleetMapRefreshUrl);
+        const highlightStopIds = @json($fleetMapHighlightStops);
         const REFRESH_INTERVAL_MS = 30000;
 
         const STATUS_COLORS = {
@@ -591,19 +593,20 @@
             routeLayers.push(outer, inner);
 
             stops.forEach(stop => {
+                const isMyStop = highlightStopIds.includes(stop.id);
                 const stopIcon = L.divIcon({
                     className: '',
                     html: `
-                        <div style="background:${color};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);">${stop.stop_order}</div>
+                        <div style="${isMyStop ? 'background:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,0.35),0 2px 6px rgba(0,0,0,0.35);' : `background:${color};box-shadow:0 2px 6px rgba(0,0,0,0.3);`};color:#fff;border-radius:50%;width:${isMyStop ? 26 : 22}px;height:${isMyStop ? 26 : 22}px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;border:2px solid #fff;">${isMyStop ? '★' : stop.stop_order}</div>
                     `,
-                    iconSize: [22, 22],
-                    iconAnchor: [11, 11],
+                    iconSize: [isMyStop ? 26 : 22, isMyStop ? 26 : 22],
+                    iconAnchor: [isMyStop ? 13 : 11, isMyStop ? 13 : 11],
                 });
 
                 stopMarkers.push(
-                    L.marker([Number(stop.latitude), Number(stop.longitude)], { icon: stopIcon, zIndexOffset: 100 })
+                    L.marker([Number(stop.latitude), Number(stop.longitude)], { icon: stopIcon, zIndexOffset: isMyStop ? 200 : 100 })
                         .addTo(fleetMap)
-                        .bindTooltip(`<b>Stop ${stop.stop_order}:</b> ${stop.name}`)
+                        .bindTooltip(isMyStop ? `<b>Your stop:</b> ${stop.name}` : `<b>Stop ${stop.stop_order}:</b> ${stop.name}`)
                 );
             });
         }

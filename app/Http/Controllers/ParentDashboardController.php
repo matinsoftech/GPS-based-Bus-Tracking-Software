@@ -6,6 +6,8 @@ use App\Models\Attendance;
 use App\Models\ParentProfile;
 use App\Models\Student;
 use App\Services\FleetMapService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class ParentDashboardController extends Controller
@@ -97,7 +99,7 @@ class ParentDashboardController extends Controller
      *
      * A parent can only ever see the attendance of their own linked children.
      */
-    public function studentAttendance(Student $student)
+    public function studentAttendance(Request $request, Student $student)
     {
         $user = Auth::user();
 
@@ -109,15 +111,33 @@ class ParentDashboardController extends Controller
 
         $student->load(['school', 'routes']);
 
+        $validated = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'trip' => ['nullable', 'in:home_to_school,school_to_home'],
+        ]);
+
+        $from = ! empty($validated['from'])
+            ? Carbon::parse($validated['from'])
+            : now()->subDays(30)->startOfDay();
+
+        $to = ! empty($validated['to'])
+            ? Carbon::parse($validated['to'])->endOfDay()
+            : now()->endOfDay();
+
+        $trip = $validated['trip'] ?? '';
+
         $records = Attendance::query()
             ->with(['route', 'markedBy'])
             ->where('student_id', $student->id)
+            ->whereBetween('date', [$from, $to])
+            ->when($trip !== '', fn ($query) => $query->where('trip', $trip))
             ->orderByDesc('date')
             ->orderByDesc('created_at')
             ->get();
 
         $totalRecords = $records->count();
 
-        return view('parents.student-attendance', compact('student', 'records', 'totalRecords'));
+        return view('parents.student-attendance', compact('student', 'records', 'totalRecords', 'from', 'to', 'trip'));
     }
 }

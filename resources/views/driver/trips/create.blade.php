@@ -51,7 +51,7 @@
                     @foreach ($routes as $route)
                         <option value="{{ $route->id }}"
                             @disabled($route->activeTrip)>
-                            {{ $route->name }} ({{ $route->route_code }})
+                            {{ $route->name }} ({{ $route->route_type_label }})
                             @if ($route->activeTrip)
                                 (Already in trip)
                             @endif
@@ -59,19 +59,6 @@
                     @endforeach
                 </select>
                 @error('route_id')
-                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <!-- Trip Type Selection -->
-            <div>
-                <label for="trip_type" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Trip Type <span class="text-red-500">*</span></label>
-                <select name="trip_type" id="trip_type" required
-                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-                    <option value="home_to_school" selected>Home to School</option>
-                    <option value="school_to_home">School to Home</option>
-                </select>
-                @error('trip_type')
                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                 @enderror
             </div>

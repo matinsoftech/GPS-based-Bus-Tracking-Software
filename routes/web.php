@@ -119,6 +119,10 @@ Route::middleware('auth')->group(function () {
             ->middleware('permission:trip.view')
             ->name('trips.index');
 
+        Route::post('/trips/{trip}/end', [PrincipalDashboardController::class, 'endTrip'])
+            ->middleware('permission:trip.end')
+            ->name('trips.end');
+
         Route::get('/vehicle-tracking', [PrincipalVehicleTrackingController::class, 'index'])
             ->middleware('permission:dashboard.view')
             ->name('vehicle-tracking');

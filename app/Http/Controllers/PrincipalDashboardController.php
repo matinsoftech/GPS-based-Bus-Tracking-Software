@@ -9,9 +9,12 @@ use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
 use App\Models\Trip;
+use App\Notifications\TripEndedNotification;
 use App\Services\FleetMapService;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PrincipalDashboardController extends Controller
 {
@@ -115,6 +118,69 @@ class PrincipalDashboardController extends Controller
         $trips = $query->paginate(20)->withQueryString();
 
         return view('principal.trips.index', compact('trips'));
+    }
+
+    /**
+     * End an in-progress trip from the school's trip list.
+     *
+     * A school admin can only end trips belonging to their own school.
+     */
+    public function endTrip(Trip $trip)
+    {
+        $user = Auth::user();
+        $schoolId = $this->resolveSchoolId($user);
+
+        if ($schoolId !== null && $trip->school_id !== $schoolId) {
+            abort(403, 'You are not authorized to end this trip.');
+        }
+
+        if (! $trip->isInProgress()) {
+            return redirect()->route('principal.trips.index')
+                ->with('warning', 'That trip is no longer active.');
+        }
+
+        $trip = DB::transaction(function () use ($trip) {
+            $trip->update([
+                'status' => Trip::STATUS_COMPLETED,
+                'ended_at' => now(),
+            ]);
+
+            return $trip->fresh(['bus', 'route', 'school']);
+        });
+
+        $this->notifyParentsAndPrincipal($trip, new TripEndedNotification($trip));
+
+        return redirect()->route('principal.trips.index')
+            ->with('success', "Trip ended ({$trip->trip_type_label}). Parents have been notified.");
+    }
+
+    /**
+     * Notify the parents/students on the trip's route and the school's admins.
+     */
+    private function notifyParentsAndPrincipal(Trip $trip, Notification $notification): void
+    {
+        $students = Student::whereHas('routes', fn ($query) => $query->where('route_id', $trip->route_id))
+            ->with('parent.user')
+            ->get();
+
+        foreach ($students as $student) {
+            if ($parent = $student->parent?->user) {
+                $parent->notify($notification);
+            }
+            if ($studentUser = $student->user) {
+                $studentUser->notify($notification);
+            }
+        }
+
+        $admins = SchoolAdmin::where('school_id', $trip->school_id)
+            ->with('user')
+            ->get();
+
+        foreach ($admins as $admin) {
+            if ($admin->user) {
+                $admin->user->notify($notification);
+            }
+        }
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Attendance;
 use App\Models\ParentProfile;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\Student;
 use App\Models\User;
@@ -134,6 +135,103 @@ class ParentControllerTest extends TestCase
         $response = $this->actingAs($parentA->user)->get(route('parent.student.attendance', $otherChild));
 
         $response->assertForbidden();
+    }
+
+    public function test_parent_attendance_history_shows_proper_labels_and_filters_by_trip(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $school = $this->createSchool('Sunrise Academy', 'SCH-A');
+
+        $parent = $this->createParent('Parent A', 'parenta@example.com', $school);
+        $child = $this->createStudent($parent, 'Alice Child');
+
+        $homeRoute = Route::create([
+            'school_id' => $school->id,
+            'name' => 'Route A',
+            'route_code' => 'RA',
+            'route_type' => Route::ROUTE_TYPE_HOME_TO_SCHOOL,
+            'start_location' => 'Kathmandu',
+            'end_location' => 'School',
+            'is_active' => true,
+        ]);
+
+        $schoolRoute = Route::create([
+            'school_id' => $school->id,
+            'name' => 'Route B',
+            'route_code' => 'RB',
+            'route_type' => Route::ROUTE_TYPE_SCHOOL_TO_HOME,
+            'start_location' => 'School',
+            'end_location' => 'Kathmandu',
+            'is_active' => true,
+        ]);
+
+        $child->routes()->attach([$homeRoute->id, $schoolRoute->id]);
+
+        $date = now()->toDateString();
+
+        Attendance::create([
+            'student_id' => $child->id,
+            'route_id' => $homeRoute->id,
+            'trip' => Attendance::TRIP_HOME_TO_SCHOOL,
+            'date' => $date,
+            'check_in_at' => now()->subHours(5),
+            'check_out_at' => now()->subHours(4),
+        ]);
+
+        Attendance::create([
+            'student_id' => $child->id,
+            'route_id' => $schoolRoute->id,
+            'trip' => Attendance::TRIP_SCHOOL_TO_HOME,
+            'date' => $date,
+            'check_in_at' => now()->subHours(3),
+            'check_out_at' => now()->subHours(2),
+        ]);
+
+        $response = $this->actingAs($parent->user)
+            ->get(route('parent.student.attendance', ['student' => $child, 'trip' => Attendance::TRIP_SCHOOL_TO_HOME]));
+
+        $response->assertOk();
+        $response->assertSee('School to Home (Drop)');
+        $response->assertSee('(School to Home)');
+        $response->assertSee('Route B');
+        $response->assertDontSee('Route A');
+    }
+
+    public function test_parent_attendance_history_filters_by_date_range(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $school = $this->createSchool('Sunrise Academy', 'SCH-A');
+
+        $parent = $this->createParent('Parent A', 'parenta@example.com', $school);
+        $child = $this->createStudent($parent, 'Alice Child');
+
+        $recentDate = now()->toDateString();
+        $oldDate = now()->subDays(40)->toDateString();
+
+        Attendance::create([
+            'student_id' => $child->id,
+            'trip' => Attendance::TRIP_HOME_TO_SCHOOL,
+            'date' => $recentDate,
+            'check_in_at' => now()->subHours(5),
+            'check_out_at' => now()->subHours(4),
+        ]);
+
+        Attendance::create([
+            'student_id' => $child->id,
+            'trip' => Attendance::TRIP_SCHOOL_TO_HOME,
+            'date' => $oldDate,
+            'check_in_at' => now()->subDays(40)->subHours(3),
+            'check_out_at' => now()->subDays(40)->subHours(2),
+        ]);
+
+        $response = $this->actingAs($parent->user)->get(route('parent.student.attendance', $child));
+
+        $response->assertOk();
+        $response->assertSee(now()->format('M d, Y'));
+        $response->assertDontSee(now()->subDays(40)->format('M d, Y'));
+        $response->assertSee('1 record');
     }
 
     private function createSchool(string $name, string $code): School
