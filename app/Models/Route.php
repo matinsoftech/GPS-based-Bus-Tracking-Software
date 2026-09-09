@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Route extends Model
 {
+    public const ROUTE_TYPE_HOME_TO_SCHOOL = 'home_to_school';
+
+    public const ROUTE_TYPE_SCHOOL_TO_HOME = 'school_to_home';
+
     protected $fillable = [
         'school_id',
         'name',
@@ -33,6 +37,13 @@ class Route extends Model
         return $this->route_type === 'school_to_home'
             ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400'
             : 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+    }
+
+    public function attendanceTrip(): string
+    {
+        return $this->route_type === self::ROUTE_TYPE_SCHOOL_TO_HOME
+            ? Attendance::TRIP_SCHOOL_TO_HOME
+            : Attendance::TRIP_HOME_TO_SCHOOL;
     }
 
     public function drivers()

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Parent;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\Route;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -54,11 +55,14 @@ class ParentChildController extends Controller
                         'id' => $route->id,
                         'name' => $route->name,
                         'route_code' => $route->route_code,
+                        'route_type' => $route->route_type,
                         'is_active' => $route->is_active,
                     ])->values(),
                     'today_attendance' => $this->todayAttendanceFor(
                         $todayRecords->get($student->id.'-'.Attendance::TRIP_HOME_TO_SCHOOL),
                         $todayRecords->get($student->id.'-'.Attendance::TRIP_SCHOOL_TO_HOME),
+                        $this->hasHomeTrip($student),
+                        $this->hasSchoolTrip($student),
                     ),
                 ]),
             ],
@@ -121,6 +125,7 @@ class ParentChildController extends Controller
                     'id' => $route->id,
                     'name' => $route->name,
                     'route_code' => $route->route_code,
+                    'route_type' => $route->route_type,
                     'start_location' => $route->start_location,
                     'end_location' => $route->end_location,
                     'is_active' => $route->is_active,
@@ -128,6 +133,8 @@ class ParentChildController extends Controller
                 'today_attendance' => $this->todayAttendanceFor(
                     $todayRecords->get(Attendance::TRIP_HOME_TO_SCHOOL),
                     $todayRecords->get(Attendance::TRIP_SCHOOL_TO_HOME),
+                    $this->hasHomeTrip($student),
+                    $this->hasSchoolTrip($student),
                 ),
             ],
         ]);
@@ -210,37 +217,74 @@ class ParentChildController extends Controller
         ]);
     }
 
-    private function todayAttendanceFor(?Attendance $home, ?Attendance $school): array
+    private function hasHomeTrip(Student $student): bool
+    {
+        return $student->routes->contains(
+            fn ($route) => $route->route_type !== Route::ROUTE_TYPE_SCHOOL_TO_HOME
+        );
+    }
+
+    private function hasSchoolTrip(Student $student): bool
+    {
+        return $student->routes->contains(
+            fn ($route) => $route->route_type === Route::ROUTE_TYPE_SCHOOL_TO_HOME
+        );
+    }
+
+    private function todayAttendanceFor(?Attendance $home, ?Attendance $school, bool $withHome, bool $withSchool): array
     {
         $tripStatus = fn (?Attendance $record) => $record === null
             ? 'not_checked_in'
             : ($record->isCheckedOut() ? 'completed' : 'checked_in');
 
-        $nextAction = null;
+        $nextAction = $this->resolveNextAction($home, $school, $withHome, $withSchool);
 
-        if (! $home || ! $home->isCheckedIn()) {
-            $nextAction = ['key' => 'picked_up_home', 'label' => 'Pick Up'];
-        } elseif (! $home->isCheckedOut()) {
-            $nextAction = ['key' => 'dropped_at_school', 'label' => 'Drop at School'];
-        } elseif (! $school || ! $school->isCheckedIn()) {
-            $nextAction = ['key' => 'picked_up_school', 'label' => 'Pick Up from School'];
-        } elseif (! $school->isCheckedOut()) {
-            $nextAction = ['key' => 'dropped_at_home', 'label' => 'Drop at Home'];
-        }
+        $result = [];
 
-        return [
-            'home_to_school' => [
+        if ($withHome) {
+            $result['home_to_school'] = [
                 'check_in_at' => $home?->check_in_at?->toIso8601String(),
                 'check_out_at' => $home?->check_out_at?->toIso8601String(),
                 'status' => $tripStatus($home),
-            ],
-            'school_to_home' => [
+            ];
+        }
+
+        if ($withSchool) {
+            $result['school_to_home'] = [
                 'check_in_at' => $school?->check_in_at?->toIso8601String(),
                 'check_out_at' => $school?->check_out_at?->toIso8601String(),
                 'status' => $tripStatus($school),
-            ],
-            'completed' => $nextAction === null,
-            'next_action' => $nextAction,
-        ];
+            ];
+        }
+
+        $result['completed'] = $nextAction === null;
+        $result['next_action'] = $nextAction;
+
+        return $result;
+    }
+
+    private function resolveNextAction(?Attendance $home, ?Attendance $school, bool $withHome, bool $withSchool): ?array
+    {
+        if ($withHome) {
+            if (! $home || ! $home->isCheckedIn()) {
+                return ['key' => 'picked_up_home', 'label' => 'Pick Up'];
+            }
+
+            if (! $home->isCheckedOut()) {
+                return ['key' => 'dropped_at_school', 'label' => 'Drop at School'];
+            }
+        }
+
+        if ($withSchool) {
+            if (! $school || ! $school->isCheckedIn()) {
+                return ['key' => 'picked_up_school', 'label' => 'Pick Up from School'];
+            }
+
+            if (! $school->isCheckedOut()) {
+                return ['key' => 'dropped_at_home', 'label' => 'Drop at Home'];
+            }
+        }
+
+        return null;
     }
 }

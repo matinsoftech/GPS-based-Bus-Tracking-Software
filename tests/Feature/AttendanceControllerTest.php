@@ -242,7 +242,7 @@ class AttendanceControllerTest extends TestCase
         $this->assertNull($attendance->check_out_at);
     }
 
-    public function test_driver_can_mark_both_trips_in_a_single_day(): void
+    public function test_driver_can_mark_both_stages_of_home_to_school_route(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -256,33 +256,72 @@ class AttendanceControllerTest extends TestCase
 
         $route->drivers()->attach($driver->id);
 
-        foreach (['home_to_school', 'school_to_home'] as $trip) {
-            $this->actingAs($driverUser)
-                ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
-                    'action' => 'check_in',
-                    'trip' => $trip,
-                ])
-                ->assertRedirect();
+        $this->actingAs($driverUser)
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
+                'action' => 'check_in',
+                'trip' => 'home_to_school',
+            ])
+            ->assertRedirect();
 
-            $this->actingAs($driverUser)
-                ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
-                    'action' => 'check_out',
-                    'trip' => $trip,
-                ])
-                ->assertRedirect();
-        }
+        $this->actingAs($driverUser)
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
+                'action' => 'check_out',
+                'trip' => 'home_to_school',
+            ])
+            ->assertRedirect();
 
-        $this->assertDatabaseCount('attendances', 2);
+        $this->assertDatabaseCount('attendances', 1);
 
         $homeToSchool = Attendance::where('student_id', $student->id)
             ->where('trip', 'home_to_school')
             ->first();
+
+        $this->assertNotNull($homeToSchool->check_in_at);
+        $this->assertNotNull($homeToSchool->check_out_at);
+    }
+
+    public function test_driver_can_mark_both_stages_of_school_to_home_route(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $driverUser = $this->createUser();
+        $driverUser->assignRole('Driver');
+
+        $school = $this->createSchool('SCH105C');
+        $driver = $this->createDriver($school, $driverUser, '105C');
+        $route = Route::create([
+            'name' => 'Route 105C',
+            'route_code' => 'RT-SCH105C',
+            'school_id' => $school->id,
+            'route_type' => 'school_to_home',
+            'is_active' => true,
+            'start_location' => 'School',
+            'end_location' => 'Home',
+        ]);
+        $student = $this->createStudent($school, $route, 'ADM105C');
+
+        $route->drivers()->attach($driver->id);
+
+        $this->actingAs($driverUser)
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
+                'action' => 'check_in',
+                'trip' => 'school_to_home',
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($driverUser)
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
+                'action' => 'check_out',
+                'trip' => 'school_to_home',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseCount('attendances', 1);
+
         $schoolToHome = Attendance::where('student_id', $student->id)
             ->where('trip', 'school_to_home')
             ->first();
 
-        $this->assertNotNull($homeToSchool->check_in_at);
-        $this->assertNotNull($homeToSchool->check_out_at);
         $this->assertNotNull($schoolToHome->check_in_at);
         $this->assertNotNull($schoolToHome->check_out_at);
     }
@@ -565,7 +604,7 @@ class AttendanceControllerTest extends TestCase
             ->assertDontSee('ADM113');
     }
 
-    public function test_school_to_home_requires_home_to_school_completion(): void
+    public function test_wrong_trip_for_route_type_is_rejected(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -589,7 +628,7 @@ class AttendanceControllerTest extends TestCase
         $this->assertDatabaseCount('attendances', 0);
     }
 
-    public function test_school_to_home_allowed_once_home_to_school_completed(): void
+    public function test_school_to_home_route_requires_own_check_in_before_check_out(): void
     {
         $this->seed([PermissionSeeder::class, RoleSeeder::class]);
 
@@ -598,24 +637,27 @@ class AttendanceControllerTest extends TestCase
 
         $school = $this->createSchool('SCH119');
         $driver = $this->createDriver($school, $driverUser, '119');
-        $route = $this->createRoute($school, 'Route 121');
+        $route = Route::create([
+            'name' => 'Route 121',
+            'route_code' => 'RT-SCH119',
+            'school_id' => $school->id,
+            'route_type' => 'school_to_home',
+            'is_active' => true,
+            'start_location' => 'School',
+            'end_location' => 'Home',
+        ]);
         $student = $this->createStudent($school, $route, 'ADM115');
 
         $route->drivers()->attach($driver->id);
 
         $this->actingAs($driverUser)
             ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
-                'action' => 'check_in',
-                'trip' => 'home_to_school',
-            ])
-            ->assertRedirect();
-
-        $this->actingAs($driverUser)
-            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
                 'action' => 'check_out',
-                'trip' => 'home_to_school',
+                'trip' => 'school_to_home',
             ])
-            ->assertRedirect();
+            ->assertSessionHasErrors('trip');
+
+        $this->assertDatabaseCount('attendances', 0);
 
         $this->actingAs($driverUser)
             ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
@@ -624,7 +666,21 @@ class AttendanceControllerTest extends TestCase
             ])
             ->assertRedirect();
 
-        $this->assertDatabaseCount('attendances', 2);
+        $this->actingAs($driverUser)
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
+                'action' => 'check_out',
+                'trip' => 'school_to_home',
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($driverUser)
+            ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), [
+                'action' => 'check_in',
+                'trip' => 'home_to_school',
+            ])
+            ->assertSessionHasErrors('trip');
+
+        $this->assertDatabaseCount('attendances', 1);
     }
 
     public function test_strict_sequence_is_enforced_at_each_stage(): void
@@ -651,31 +707,21 @@ class AttendanceControllerTest extends TestCase
 
         $mark('check_out', 'home_to_school')->assertSessionHasErrors('trip');
         $mark('check_in', 'school_to_home')->assertSessionHasErrors('trip');
-        $mark('check_out', 'school_to_home')->assertSessionHasErrors('trip');
         $this->assertDatabaseCount('attendances', 0);
 
         $mark('check_in', 'home_to_school')->assertRedirect();
-        $mark('check_in', 'school_to_home')->assertSessionHasErrors('trip');
         $mark('check_out', 'school_to_home')->assertSessionHasErrors('trip');
         $this->assertDatabaseCount('attendances', 1);
 
         $mark('check_out', 'home_to_school')->assertRedirect();
-        $mark('check_out', 'school_to_home')->assertSessionHasErrors('trip');
         $this->assertDatabaseCount('attendances', 1);
 
-        $mark('check_in', 'school_to_home')->assertRedirect();
-        $mark('check_out', 'home_to_school')->assertSessionHasErrors('trip');
-        $this->assertDatabaseCount('attendances', 2);
+        $mark('check_in', 'school_to_home')->assertSessionHasErrors('trip');
 
-        $mark('check_out', 'school_to_home')->assertRedirect();
-        $this->assertDatabaseCount('attendances', 2);
+        $homeToSchool = Attendance::where('student_id', $student->id)->where('trip', 'home_to_school')->first();
 
-        $mark('check_in', 'home_to_school')->assertSessionHasErrors('trip');
-
-        $this->assertNotNull(Attendance::where('student_id', $student->id)->where('trip', 'home_to_school')->first()->check_in_at);
-        $this->assertNotNull(Attendance::where('student_id', $student->id)->where('trip', 'home_to_school')->first()->check_out_at);
-        $this->assertNotNull(Attendance::where('student_id', $student->id)->where('trip', 'school_to_home')->first()->check_in_at);
-        $this->assertNotNull(Attendance::where('student_id', $student->id)->where('trip', 'school_to_home')->first()->check_out_at);
+        $this->assertNotNull($homeToSchool->check_in_at);
+        $this->assertNotNull($homeToSchool->check_out_at);
     }
 
     public function test_attendance_index_shows_completed_state_when_day_completed(): void
@@ -695,8 +741,6 @@ class AttendanceControllerTest extends TestCase
         foreach ([
             ['action' => 'check_in', 'trip' => 'home_to_school'],
             ['action' => 'check_out', 'trip' => 'home_to_school'],
-            ['action' => 'check_in', 'trip' => 'school_to_home'],
-            ['action' => 'check_out', 'trip' => 'school_to_home'],
         ] as $markup) {
             $this->actingAs($driverUser)
                 ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), $markup)
@@ -755,8 +799,8 @@ class AttendanceControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('Picked Up from Home');
         $response->assertSee('Dropped at School');
-        $response->assertSee('Picked Up from School');
-        $response->assertSee('Dropped at Home');
+        $response->assertDontSee('Picked Up from School');
+        $response->assertDontSee('Dropped at Home');
         $response->assertSee('Pick Up');
 
         $this->actingAs($driverUser)
@@ -816,8 +860,6 @@ class AttendanceControllerTest extends TestCase
         foreach ([
             ['action' => 'check_in', 'trip' => 'home_to_school'],
             ['action' => 'check_out', 'trip' => 'home_to_school'],
-            ['action' => 'check_in', 'trip' => 'school_to_home'],
-            ['action' => 'check_out', 'trip' => 'school_to_home'],
         ] as $markup) {
             $this->actingAs($driverUser)
                 ->post(route('attendance.mark', ['route' => $route, 'student' => $student]), $markup)

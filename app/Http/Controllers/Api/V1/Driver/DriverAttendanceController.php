@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Driver;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\Route;
 use App\Models\Student;
 use App\Services\AttendanceNotificationService;
 use Illuminate\Http\Request;
@@ -54,6 +55,7 @@ class DriverAttendanceController extends Controller
                     'id' => $route->id,
                     'name' => $route->name,
                     'route_code' => $route->route_code,
+                    'route_type' => $route->route_type,
                     'is_active' => $route->is_active,
                 ],
                 'total_students' => $students->count(),
@@ -78,13 +80,14 @@ class DriverAttendanceController extends Controller
                     'today_attendance' => $this->todayAttendanceFor(
                         $todayRecords->get($student->id.'-'.Attendance::TRIP_HOME_TO_SCHOOL),
                         $todayRecords->get($student->id.'-'.Attendance::TRIP_SCHOOL_TO_HOME),
+                        $route->route_type,
                     ),
                 ]),
             ],
         ]);
     }
 
-    private function todayAttendanceFor(?Attendance $home, ?Attendance $school): array
+    private function todayAttendanceFor(?Attendance $home, ?Attendance $school, string $routeType): array
     {
         $tripStatus = fn (?Attendance $record) => $record === null
             ? 'not_checked_in'
@@ -92,14 +95,28 @@ class DriverAttendanceController extends Controller
 
         $nextAction = null;
 
+        if ($routeType === Route::ROUTE_TYPE_SCHOOL_TO_HOME) {
+            if (! $school || ! $school->isCheckedIn()) {
+                $nextAction = ['key' => 'picked_up_school', 'label' => 'Pick Up from School'];
+            } elseif (! $school->isCheckedOut()) {
+                $nextAction = ['key' => 'dropped_at_home', 'label' => 'Drop at Home'];
+            }
+
+            return [
+                'school_to_home' => [
+                    'check_in_at' => $school?->check_in_at?->toIso8601String(),
+                    'check_out_at' => $school?->check_out_at?->toIso8601String(),
+                    'status' => $tripStatus($school),
+                ],
+                'completed' => $nextAction === null,
+                'next_action' => $nextAction,
+            ];
+        }
+
         if (! $home || ! $home->isCheckedIn()) {
             $nextAction = ['key' => 'picked_up_home', 'label' => 'Pick Up'];
         } elseif (! $home->isCheckedOut()) {
             $nextAction = ['key' => 'dropped_at_school', 'label' => 'Drop at School'];
-        } elseif (! $school || ! $school->isCheckedIn()) {
-            $nextAction = ['key' => 'picked_up_school', 'label' => 'Pick Up from School'];
-        } elseif (! $school->isCheckedOut()) {
-            $nextAction = ['key' => 'dropped_at_home', 'label' => 'Drop at Home'];
         }
 
         return [
@@ -107,11 +124,6 @@ class DriverAttendanceController extends Controller
                 'check_in_at' => $home?->check_in_at?->toIso8601String(),
                 'check_out_at' => $home?->check_out_at?->toIso8601String(),
                 'status' => $tripStatus($home),
-            ],
-            'school_to_home' => [
-                'check_in_at' => $school?->check_in_at?->toIso8601String(),
-                'check_out_at' => $school?->check_out_at?->toIso8601String(),
-                'status' => $tripStatus($school),
             ],
             'completed' => $nextAction === null,
             'next_action' => $nextAction,
@@ -257,56 +269,64 @@ class DriverAttendanceController extends Controller
 
         $action = null;
 
-        if (! $home || ! $home->isCheckedIn()) {
-            $attendance = Attendance::updateOrCreate(
-                [
-                    'student_id' => $student->id,
-                    'date' => $date,
-                    'trip' => Attendance::TRIP_HOME_TO_SCHOOL,
-                ],
-                [
-                    'route_id' => $route->id,
-                    'check_in_at' => $date,
+        if ($route->route_type === Route::ROUTE_TYPE_SCHOOL_TO_HOME) {
+            if (! $school || ! $school->isCheckedIn()) {
+                $attendance = Attendance::updateOrCreate(
+                    [
+                        'student_id' => $student->id,
+                        'date' => $date,
+                        'trip' => Attendance::TRIP_SCHOOL_TO_HOME,
+                    ],
+                    [
+                        'route_id' => $route->id,
+                        'check_in_at' => $date,
+                        'marked_by' => $request->user()->id,
+                    ]
+                );
+
+                $action = ['key' => 'picked_up_school', 'message' => "{$student->full_name} picked up from school."];
+            } elseif (! $school->isCheckedOut()) {
+                $school->update([
+                    'check_out_at' => $date,
                     'marked_by' => $request->user()->id,
-                ]
-            );
+                ]);
 
-            $action = ['key' => 'picked_up_home', 'message' => "{$student->full_name} picked up from home."];
-        } elseif (! $home->isCheckedOut()) {
-            $home->update([
-                'check_out_at' => $date,
-                'marked_by' => $request->user()->id,
-            ]);
-
-            $attendance = $home;
-            $action = ['key' => 'dropped_at_school', 'message' => "{$student->full_name} dropped at school."];
-        } elseif (! $school || ! $school->isCheckedIn()) {
-            $attendance = Attendance::updateOrCreate(
-                [
-                    'student_id' => $student->id,
-                    'date' => $date,
-                    'trip' => Attendance::TRIP_SCHOOL_TO_HOME,
-                ],
-                [
-                    'route_id' => $route->id,
-                    'check_in_at' => $date,
-                    'marked_by' => $request->user()->id,
-                ]
-            );
-
-            $action = ['key' => 'picked_up_school', 'message' => "{$student->full_name} picked up from school."];
-        } elseif (! $school->isCheckedOut()) {
-            $school->update([
-                'check_out_at' => $date,
-                'marked_by' => $request->user()->id,
-            ]);
-
-            $attendance = $school;
-            $action = ['key' => 'dropped_at_home', 'message' => "{$student->full_name} dropped at home."];
+                $attendance = $school;
+                $action = ['key' => 'dropped_at_home', 'message' => "{$student->full_name} dropped at home."];
+            } else {
+                return response()->json([
+                    'message' => "{$student->full_name}'s attendance is already completed for today.",
+                ], 422);
+            }
         } else {
-            return response()->json([
-                'message' => "{$student->full_name}'s attendance is already completed for today.",
-            ], 422);
+            if (! $home || ! $home->isCheckedIn()) {
+                $attendance = Attendance::updateOrCreate(
+                    [
+                        'student_id' => $student->id,
+                        'date' => $date,
+                        'trip' => Attendance::TRIP_HOME_TO_SCHOOL,
+                    ],
+                    [
+                        'route_id' => $route->id,
+                        'check_in_at' => $date,
+                        'marked_by' => $request->user()->id,
+                    ]
+                );
+
+                $action = ['key' => 'picked_up_home', 'message' => "{$student->full_name} picked up from home."];
+            } elseif (! $home->isCheckedOut()) {
+                $home->update([
+                    'check_out_at' => $date,
+                    'marked_by' => $request->user()->id,
+                ]);
+
+                $attendance = $home;
+                $action = ['key' => 'dropped_at_school', 'message' => "{$student->full_name} dropped at school."];
+            } else {
+                return response()->json([
+                    'message' => "{$student->full_name}'s attendance is already completed for today.",
+                ], 422);
+            }
         }
 
         app(AttendanceNotificationService::class)->notifyParent(

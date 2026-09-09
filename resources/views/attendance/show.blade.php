@@ -79,12 +79,6 @@
         @endif
 
         @php
-            $totals = [
-                'Picked Up from Home' => $studentStages->filter(fn ($entry) => $entry['stages'][0]['done'])->count(),
-                'Dropped at School' => $studentStages->filter(fn ($entry) => $entry['stages'][1]['done'])->count(),
-                'Picked Up from School' => $studentStages->filter(fn ($entry) => $entry['stages'][2]['done'])->count(),
-                'Dropped at Home' => $studentStages->filter(fn ($entry) => $entry['stages'][3]['done'])->count(),
-            ];
             $completedCount = $studentStages->filter(fn ($entry) => $entry['completed'])->count();
             $totalStudents = $studentStages->count();
             $hasStages = $totalStudents > 0;
@@ -127,10 +121,9 @@
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr class="text-gray-500 dark:text-gray-400">
                             <th class="px-4 py-3 font-medium md:px-5">Student</th>
-                            <th class="px-4 py-3 text-center font-medium md:px-5">Pick Up from Home</th>
-                            <th class="px-4 py-3 text-center font-medium md:px-5">Drop at School</th>
-                            <th class="px-4 py-3 text-center font-medium md:px-5">Pick Up from School</th>
-                            <th class="px-4 py-3 text-center font-medium md:px-5">Drop at Home</th>
+                            @foreach ($headers as $header)
+                                <th class="px-4 py-3 text-center font-medium md:px-5">{{ $header }}</th>
+                            @endforeach
                             <th class="px-4 py-3 font-medium md:px-5">Status</th>
                         </tr>
                     </thead>

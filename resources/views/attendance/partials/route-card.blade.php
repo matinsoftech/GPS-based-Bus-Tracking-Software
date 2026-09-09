@@ -6,7 +6,11 @@
         'dropped_home' => 0,
     ];
 
-    $dayCompleted = $route->students_count > 0 && ($stats['dropped_home'] ?? 0) >= $route->students_count;
+    $isSchoolToHome = $route->route_type === \App\Models\Route::ROUTE_TYPE_SCHOOL_TO_HOME;
+
+    $completionStat = $isSchoolToHome ? ($stats['dropped_home'] ?? 0) : ($stats['dropped_school'] ?? 0);
+
+    $dayCompleted = $route->students_count > 0 && $completionStat >= $route->students_count;
 @endphp
 
 <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -38,27 +42,35 @@
             <dt class="text-gray-500 dark:text-gray-400">Assigned Students</dt>
             <dd class="font-medium text-gray-900 dark:text-white">{{ $route->students_count }}</dd>
         </div>
-        <div class="flex justify-between gap-3">
-            <dt class="text-gray-500 dark:text-gray-400">Picked Up from Home ({{ $today }})</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">{{ $stats['picked_up_home'] ?? 0 }} / {{ $route->students_count }}</dd>
-        </div>
-        <div class="flex justify-between gap-3">
-            <dt class="text-gray-500 dark:text-gray-400">Dropped at School ({{ $today }})</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">{{ $stats['dropped_school'] ?? 0 }} / {{ $route->students_count }}</dd>
-        </div>
-        <div class="flex justify-between gap-3">
-            <dt class="text-gray-500 dark:text-gray-400">Picked Up from School ({{ $today }})</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">{{ $stats['picked_up_school'] ?? 0 }} / {{ $route->students_count }}</dd>
-        </div>
-        <div class="flex justify-between gap-3">
-            <dt class="text-gray-500 dark:text-gray-400">Dropped at Home ({{ $today }})</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">
-                {{ $stats['dropped_home'] ?? 0 }} / {{ $route->students_count }}
-                @if ($dayCompleted)
-                    <span class="ml-1 text-green-600 dark:text-green-400">✓</span>
-                @endif
-            </dd>
-        </div>
+        @if ($isSchoolToHome)
+            <div class="flex justify-between gap-3">
+                <dt class="text-gray-500 dark:text-gray-400">Picked Up from School ({{ $today }})</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">{{ $stats['picked_up_school'] ?? 0 }} / {{ $route->students_count }}</dd>
+            </div>
+            <div class="flex justify-between gap-3">
+                <dt class="text-gray-500 dark:text-gray-400">Dropped at Home ({{ $today }})</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">
+                    {{ $stats['dropped_home'] ?? 0 }} / {{ $route->students_count }}
+                    @if ($dayCompleted)
+                        <span class="ml-1 text-green-600 dark:text-green-400">✓</span>
+                    @endif
+                </dd>
+            </div>
+        @else
+            <div class="flex justify-between gap-3">
+                <dt class="text-gray-500 dark:text-gray-400">Picked Up from Home ({{ $today }})</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">{{ $stats['picked_up_home'] ?? 0 }} / {{ $route->students_count }}</dd>
+            </div>
+            <div class="flex justify-between gap-3">
+                <dt class="text-gray-500 dark:text-gray-400">Dropped at School ({{ $today }})</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">
+                    {{ $stats['dropped_school'] ?? 0 }} / {{ $route->students_count }}
+                    @if ($dayCompleted)
+                        <span class="ml-1 text-green-600 dark:text-green-400">✓</span>
+                    @endif
+                </dd>
+            </div>
+        @endif
     </dl>
 
     @if ($dayCompleted)

@@ -149,11 +149,10 @@ class ParentChildTest extends TestCase
                             'drop_location',
                             'is_active',
                             'routes' => [
-                                ['id', 'name', 'route_code', 'is_active'],
+                                ['id', 'name', 'route_code', 'route_type', 'is_active'],
                             ],
                             'today_attendance' => [
                                 'home_to_school' => ['check_in_at', 'check_out_at', 'status'],
-                                'school_to_home' => ['check_in_at', 'check_out_at', 'status'],
                                 'completed',
                                 'next_action',
                             ],
@@ -196,7 +195,9 @@ class ParentChildTest extends TestCase
             ->assertJsonPath('data.student.school.name', 'Bright Future School')
             ->assertJsonPath('data.routes.0.name', 'Route 1')
             ->assertJsonPath('data.today_attendance.home_to_school.status', 'completed')
-            ->assertJsonPath('data.today_attendance.next_action.key', 'picked_up_school')
+            ->assertJsonPath('data.today_attendance.completed', true)
+            ->assertJsonPath('data.today_attendance.next_action', null)
+            ->assertJsonMissingPath('data.today_attendance.school_to_home')
             ->assertJsonStructure([
                 'message',
                 'data' => [
@@ -222,11 +223,10 @@ class ParentChildTest extends TestCase
                         'school' => ['id', 'name', 'address'],
                     ],
                     'routes' => [
-                        ['id', 'name', 'route_code', 'start_location', 'end_location', 'is_active'],
+                        ['id', 'name', 'route_code', 'route_type', 'start_location', 'end_location', 'is_active'],
                     ],
                     'today_attendance' => [
                         'home_to_school' => ['check_in_at', 'check_out_at', 'status'],
-                        'school_to_home' => ['check_in_at', 'check_out_at', 'status'],
                         'completed',
                         'next_action',
                     ],

@@ -199,7 +199,7 @@ class DriverAttendanceTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_driver_can_mark_full_attendance_sequence(): void
+    public function test_driver_can_mark_full_attendance_sequence_for_home_to_school_route(): void
     {
         $student = $this->makeStudent();
 
@@ -226,19 +226,10 @@ class DriverAttendanceTest extends TestCase
             'route_id' => $this->route->id,
             'student_id' => $student->id,
         ])
-            ->assertOk()
-            ->assertJsonPath('message', 'Sita Sharma picked up from school.')
-            ->assertJsonPath('data.trip', 'school_to_home');
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Sita Sharma\'s attendance is already completed for today.');
 
-        $this->postJson('/api/v1/driver/attendances/mark', [
-            'route_id' => $this->route->id,
-            'student_id' => $student->id,
-        ])
-            ->assertOk()
-            ->assertJsonPath('message', 'Sita Sharma dropped at home.')
-            ->assertJsonPath('data.trip', 'school_to_home');
-
-        $this->assertDatabaseCount('attendances', 2);
+        $this->assertDatabaseCount('attendances', 1);
 
         $home = Attendance::where('student_id', $student->id)
             ->where('trip', 'home_to_school')
@@ -246,6 +237,50 @@ class DriverAttendanceTest extends TestCase
             ->first();
         $this->assertNotNull($home->check_in_at);
         $this->assertNotNull($home->check_out_at);
+    }
+
+    public function test_driver_can_mark_full_attendance_sequence_for_school_to_home_route(): void
+    {
+        $route = Route::create([
+            'name' => 'Route API-S2H',
+            'route_code' => 'RT-DAT-S2H',
+            'school_id' => $this->school->id,
+            'route_type' => 'school_to_home',
+            'start_location' => 'School',
+            'end_location' => 'Home',
+            'is_active' => true,
+        ]);
+        $route->drivers()->attach($this->driver->id);
+
+        $student = $this->makeStudent(['route_ids' => [$route->id]]);
+
+        Sanctum::actingAs($this->driverUser);
+
+        $this->postJson('/api/v1/driver/attendances/mark', [
+            'route_id' => $route->id,
+            'student_id' => $student->id,
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Sita Sharma picked up from school.')
+            ->assertJsonPath('data.trip', 'school_to_home')
+            ->assertJsonStructure(['data' => ['check_in_at']]);
+
+        $this->postJson('/api/v1/driver/attendances/mark', [
+            'route_id' => $route->id,
+            'student_id' => $student->id,
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Sita Sharma dropped at home.')
+            ->assertJsonStructure(['data' => ['check_out_at']]);
+
+        $this->postJson('/api/v1/driver/attendances/mark', [
+            'route_id' => $route->id,
+            'student_id' => $student->id,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Sita Sharma\'s attendance is already completed for today.');
+
+        $this->assertDatabaseCount('attendances', 1);
 
         $school = Attendance::where('student_id', $student->id)
             ->where('trip', 'school_to_home')
@@ -255,13 +290,13 @@ class DriverAttendanceTest extends TestCase
         $this->assertNotNull($school->check_out_at);
     }
 
-    public function test_fifth_mark_is_rejected_when_day_completed(): void
+    public function test_third_mark_is_rejected_when_day_completed_for_home_to_school_route(): void
     {
         $student = $this->makeStudent();
 
         Sanctum::actingAs($this->driverUser);
 
-        foreach (range(1, 4) as $i) {
+        foreach (range(1, 2) as $i) {
             $this->postJson('/api/v1/driver/attendances/mark', [
                 'route_id' => $this->route->id,
                 'student_id' => $student->id,
@@ -276,7 +311,7 @@ class DriverAttendanceTest extends TestCase
             ->assertJsonPath('message', 'Sita Sharma\'s attendance is already completed for today.');
     }
 
-    public function test_school_to_home_is_not_reached_until_home_to_school_is_completed(): void
+    public function test_school_to_home_route_has_its_own_two_stage_sequence(): void
     {
         $student = $this->makeStudent();
 
@@ -619,16 +654,15 @@ class DriverAttendanceTest extends TestCase
         $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id)
             ->assertOk()
             ->assertJsonPath('data.students.0.today_attendance.home_to_school.status', 'completed')
-            ->assertJsonPath('data.students.0.today_attendance.school_to_home.status', 'checked_in')
-            ->assertJsonPath('data.students.0.today_attendance.completed', false)
-            ->assertJsonPath('data.students.0.today_attendance.next_action.key', 'dropped_at_home')
+            ->assertJsonPath('data.students.0.today_attendance.completed', true)
+            ->assertJsonPath('data.students.0.today_attendance.next_action', null)
+            ->assertJsonMissingPath('data.students.0.today_attendance.school_to_home')
             ->assertJsonStructure([
                 'data' => [
                     'students' => [
                         '*' => [
                             'today_attendance' => [
                                 'home_to_school' => ['check_in_at', 'check_out_at', 'status'],
-                                'school_to_home' => ['check_in_at', 'check_out_at', 'status'],
                                 'completed',
                                 'next_action',
                             ],
@@ -647,34 +681,56 @@ class DriverAttendanceTest extends TestCase
         $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id)
             ->assertOk()
             ->assertJsonPath('data.students.0.today_attendance.home_to_school.status', 'not_checked_in')
-            ->assertJsonPath('data.students.0.today_attendance.school_to_home.status', 'not_checked_in')
             ->assertJsonPath('data.students.0.today_attendance.completed', false)
-            ->assertJsonPath('data.students.0.today_attendance.next_action.key', 'picked_up_home');
+            ->assertJsonPath('data.students.0.today_attendance.next_action.key', 'picked_up_home')
+            ->assertJsonMissingPath('data.students.0.today_attendance.school_to_home');
     }
 
-    public function test_index_shows_completed_when_all_four_stages_done(): void
+    public function test_index_shows_completed_when_both_stages_done(): void
     {
         $student = $this->makeStudent();
 
-        foreach (['home_to_school', 'school_to_home'] as $trip) {
-            Attendance::create([
-                'student_id' => $student->id,
-                'route_id' => $this->route->id,
-                'trip' => $trip,
-                'date' => now(),
-                'check_in_at' => now()->setTime(7, 15, 0),
-                'check_out_at' => now()->setTime(16, 0, 0),
-                'marked_by' => $this->driverUser->id,
-            ]);
-        }
+        Attendance::create([
+            'student_id' => $student->id,
+            'route_id' => $this->route->id,
+            'trip' => 'home_to_school',
+            'date' => now(),
+            'check_in_at' => now()->setTime(7, 15, 0),
+            'check_out_at' => now()->setTime(16, 0, 0),
+            'marked_by' => $this->driverUser->id,
+        ]);
 
         Sanctum::actingAs($this->driverUser);
 
         $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id)
             ->assertOk()
             ->assertJsonPath('data.students.0.today_attendance.home_to_school.status', 'completed')
-            ->assertJsonPath('data.students.0.today_attendance.school_to_home.status', 'completed')
             ->assertJsonPath('data.students.0.today_attendance.completed', true)
             ->assertJsonPath('data.students.0.today_attendance.next_action', null);
+    }
+
+    public function test_index_school_to_home_route_shows_only_school_trip(): void
+    {
+        $route = Route::create([
+            'name' => 'Route API-S2H-2',
+            'route_code' => 'RT-DAT-S2H-2',
+            'school_id' => $this->school->id,
+            'route_type' => 'school_to_home',
+            'start_location' => 'School',
+            'end_location' => 'Home',
+            'is_active' => true,
+        ]);
+        $route->drivers()->attach($this->driver->id);
+
+        $this->makeStudent(['route_ids' => [$route->id]]);
+
+        Sanctum::actingAs($this->driverUser);
+
+        $this->getJson('/api/v1/driver/attendances?route_id='.$route->id)
+            ->assertOk()
+            ->assertJsonPath('data.students.0.today_attendance.school_to_home.status', 'not_checked_in')
+            ->assertJsonPath('data.students.0.today_attendance.completed', false)
+            ->assertJsonPath('data.students.0.today_attendance.next_action.key', 'picked_up_school')
+            ->assertJsonMissingPath('data.students.0.today_attendance.home_to_school');
     }
 }

@@ -174,19 +174,56 @@ class AttendanceNotificationTest extends TestCase
         $this->assertNull($otherParent->user->notifications()->first());
     }
 
-    public function test_all_four_stages_notify_parent_in_sequence(): void
+    public function test_both_stages_notify_parent_in_sequence_for_home_to_school_route(): void
     {
-        $expectedKeys = ['picked_up_home', 'dropped_at_school', 'picked_up_school', 'dropped_at_home'];
+        $expectedKeys = ['picked_up_home', 'dropped_at_school'];
 
         foreach ($expectedKeys as $key) {
             $this->markViaApi()->assertOk();
         }
 
         $notifications = $this->parent->user->notifications()->get();
-        $this->assertCount(4, $notifications);
+        $this->assertCount(2, $notifications);
 
         $actions = $notifications->map(fn ($n) => $n->data['action'])->all();
         $this->assertSame($expectedKeys, $actions);
+    }
+
+    public function test_both_stages_notify_parent_in_sequence_for_school_to_home_route(): void
+    {
+        $route = Route::create([
+            'name' => 'School Return Shuttle',
+            'route_code' => 'RT-AN-S2H',
+            'school_id' => $this->school->id,
+            'route_type' => 'school_to_home',
+            'is_active' => true,
+            'start_location' => 'School',
+            'end_location' => 'Home',
+        ]);
+        $this->driver->routes()->attach($route->id);
+        $this->student->routes()->sync([$route->id]);
+
+        Sanctum::actingAs($this->driverUser, ['*']);
+
+        $this->postJson('/api/v1/driver/attendances/mark', [
+            'route_id' => $route->id,
+            'student_id' => $this->student->id,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.action', 'picked_up_school');
+
+        $this->postJson('/api/v1/driver/attendances/mark', [
+            'route_id' => $route->id,
+            'student_id' => $this->student->id,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.action', 'dropped_at_home');
+
+        $notifications = $this->parent->user->notifications()->get();
+        $this->assertCount(2, $notifications);
+
+        $actions = $notifications->map(fn ($n) => $n->data['action'])->all();
+        $this->assertSame(['picked_up_school', 'dropped_at_home'], $actions);
     }
 
     public function test_service_notifies_only_when_parent_present(): void
