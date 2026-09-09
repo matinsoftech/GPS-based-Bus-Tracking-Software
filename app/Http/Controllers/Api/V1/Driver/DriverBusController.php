@@ -94,7 +94,7 @@ class DriverBusController extends Controller
         }
 
         $routes = $driver->routes()
-            ->with(['school', 'activeTrip'])
+            ->with(['activeTrip'])
             ->orderBy('name')
             ->get();
 
@@ -107,6 +107,7 @@ class DriverBusController extends Controller
                     'id' => $driver->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'school_name' => $driver->school->name ?? null,
                 ],
                 'routes' => $routes,
             ],

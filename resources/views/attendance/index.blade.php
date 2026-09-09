@@ -5,7 +5,7 @@
         </div>
 
         <form action="{{ route('attendance.index') }}" method="GET" class="mb-6">
-            <div class="flex items-end gap-3">
+            <div class="flex flex-wrap items-end gap-3">
                 <div>
                     <label for="date" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
                     <input
@@ -15,6 +15,19 @@
                         value="{{ $today }}"
                         class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                     >
+                </div>
+                <div>
+                    <label for="route_type" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route Type</label>
+                    <select
+                        id="route_type"
+                        name="route_type"
+                        onchange="this.form.submit()"
+                        class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    >
+                        <option value="" @selected(empty($routeType))>All Route Types</option>
+                        <option value="home_to_school" @selected($routeType === 'home_to_school')>Home to School</option>
+                        <option value="school_to_home" @selected($routeType === 'school_to_home')>School to Home</option>
+                    </select>
                 </div>
                 <button
                     type="submit"

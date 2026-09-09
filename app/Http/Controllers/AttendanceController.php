@@ -46,10 +46,17 @@ class AttendanceController extends Controller
                     'checkedIn' => collect(),
                     'today' => $today,
                     'groupedBySchool' => false,
+                    'routeType' => null,
                 ]);
             }
 
             $query->whereHas('drivers', fn ($q) => $q->where('drivers.id', $driverId));
+        }
+
+        $routeType = $request->query('route_type');
+
+        if (in_array($routeType, ['home_to_school', 'school_to_home'])) {
+            $query->where('route_type', $routeType);
         }
 
         $routes = $query->orderBy('name')->get();
@@ -70,7 +77,7 @@ class AttendanceController extends Controller
 
         $groupedBySchool = $user->hasRole('Super Admin');
 
-        return view('attendance.index', compact('routes', 'checkedIn', 'today', 'groupedBySchool'));
+        return view('attendance.index', compact('routes', 'checkedIn', 'today', 'groupedBySchool', 'routeType'));
     }
 
     /**
@@ -102,10 +109,11 @@ class AttendanceController extends Controller
                 $trip => $attendanceRecords->where('trip', $trip)->keyBy('student_id'),
             ]);
 
-        $studentStages = $students->map(function (Student $student) use ($attendance) {
+        $studentStages = $students->map(function (Student $student) use ($attendance, $route) {
             $state = $this->stagesForStudent(
                 $attendance[Attendance::TRIP_HOME_TO_SCHOOL][$student->id] ?? null,
                 $attendance[Attendance::TRIP_SCHOOL_TO_HOME][$student->id] ?? null,
+                $route->route_type,
             );
 
             return [
@@ -120,7 +128,25 @@ class AttendanceController extends Controller
         $allCompleted = $students->isNotEmpty()
             && $studentStages->every(fn ($entry) => $entry['completed']);
 
-        return view('attendance.show', compact('route', 'studentStages', 'date', 'isToday', 'allCompleted'));
+        $headers = array_map(fn ($stage) => $stage['label'], $studentStages->first()['stages'] ?? []);
+
+        $totals = [];
+        foreach ($studentStages->first()['stages'] ?? [] as $stage) {
+            $totals[$stage['label']] = $studentStages->filter(
+                fn ($entry) => collect($entry['stages'])
+                    ->firstWhere('key', $stage['key'])['done'] ?? false
+            )->count();
+        }
+
+        return view('attendance.show', compact(
+            'route',
+            'studentStages',
+            'date',
+            'isToday',
+            'allCompleted',
+            'headers',
+            'totals'
+        ));
     }
 
     /**
@@ -158,7 +184,7 @@ class AttendanceController extends Controller
             ->whereDate('date', $date)
             ->first();
 
-        $state = $this->stagesForStudent($home, $school);
+        $state = $this->stagesForStudent($home, $school, $route->route_type);
 
         if ($state['completed']) {
             return back()->withErrors(['trip' => "{$student->full_name}'s attendance is already completed for this day."]);
@@ -262,10 +288,12 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Build the 4-stage daily attendance state for a student and the next valid action.
+     * Build the daily attendance state for a student against the route type.
      *
-     * Stages follow the strict sequence: Picked Up from Home -> Dropped at School
-     * -> Picked Up from School -> Dropped at Home -> Completed.
+     * A home_to_school route only tracks the Home -> School trip
+     * (Picked Up from Home -> Dropped at School), while a school_to_home
+     * route only tracks the School -> Home trip
+     * (Picked Up from School -> Dropped at Home).
      *
      * @return array{
      *     stages: array<int, array{key: string, label: string, done: bool, at: Carbon|null}>,
@@ -273,30 +301,40 @@ class AttendanceController extends Controller
      *     completed: bool,
      * }
      */
-    private function stagesForStudent(?Attendance $home, ?Attendance $school): array
+    private function stagesForStudent(?Attendance $home, ?Attendance $school, string $routeType): array
     {
-        $pickedUpHome = $home?->isCheckedIn() ?? false;
-        $droppedAtSchool = $home?->isCheckedOut() ?? false;
-        $pickedUpSchool = $school?->isCheckedIn() ?? false;
-        $droppedAtHome = $school?->isCheckedOut() ?? false;
+        if ($routeType === Route::ROUTE_TYPE_SCHOOL_TO_HOME) {
+            $pickedUpSchool = $school?->isCheckedIn() ?? false;
+            $droppedAtHome = $school?->isCheckedOut() ?? false;
 
-        $stages = [
-            ['key' => 'picked_up_home', 'label' => 'Picked Up from Home', 'done' => $pickedUpHome, 'at' => $home?->check_in_at],
-            ['key' => 'dropped_at_school', 'label' => 'Dropped at School', 'done' => $droppedAtSchool, 'at' => $home?->check_out_at],
-            ['key' => 'picked_up_school', 'label' => 'Picked Up from School', 'done' => $pickedUpSchool, 'at' => $school?->check_in_at],
-            ['key' => 'dropped_at_home', 'label' => 'Dropped at Home', 'done' => $droppedAtHome, 'at' => $school?->check_out_at],
-        ];
+            $stages = [
+                ['key' => 'picked_up_school', 'label' => 'Picked Up from School', 'done' => $pickedUpSchool, 'at' => $school?->check_in_at],
+                ['key' => 'dropped_at_home', 'label' => 'Dropped at Home', 'done' => $droppedAtHome, 'at' => $school?->check_out_at],
+            ];
 
-        if (! $pickedUpHome) {
-            $nextAction = ['action' => 'check_in', 'trip' => Attendance::TRIP_HOME_TO_SCHOOL, 'label' => 'Pick Up'];
-        } elseif (! $droppedAtSchool) {
-            $nextAction = ['action' => 'check_out', 'trip' => Attendance::TRIP_HOME_TO_SCHOOL, 'label' => 'Drop at School'];
-        } elseif (! $pickedUpSchool) {
-            $nextAction = ['action' => 'check_in', 'trip' => Attendance::TRIP_SCHOOL_TO_HOME, 'label' => 'Pick Up from School'];
-        } elseif (! $droppedAtHome) {
-            $nextAction = ['action' => 'check_out', 'trip' => Attendance::TRIP_SCHOOL_TO_HOME, 'label' => 'Drop at Home'];
+            if (! $pickedUpSchool) {
+                $nextAction = ['action' => 'check_in', 'trip' => Attendance::TRIP_SCHOOL_TO_HOME, 'label' => 'Pick Up from School'];
+            } elseif (! $droppedAtHome) {
+                $nextAction = ['action' => 'check_out', 'trip' => Attendance::TRIP_SCHOOL_TO_HOME, 'label' => 'Drop at Home'];
+            } else {
+                $nextAction = null;
+            }
         } else {
-            $nextAction = null;
+            $pickedUpHome = $home?->isCheckedIn() ?? false;
+            $droppedAtSchool = $home?->isCheckedOut() ?? false;
+
+            $stages = [
+                ['key' => 'picked_up_home', 'label' => 'Picked Up from Home', 'done' => $pickedUpHome, 'at' => $home?->check_in_at],
+                ['key' => 'dropped_at_school', 'label' => 'Dropped at School', 'done' => $droppedAtSchool, 'at' => $home?->check_out_at],
+            ];
+
+            if (! $pickedUpHome) {
+                $nextAction = ['action' => 'check_in', 'trip' => Attendance::TRIP_HOME_TO_SCHOOL, 'label' => 'Pick Up'];
+            } elseif (! $droppedAtSchool) {
+                $nextAction = ['action' => 'check_out', 'trip' => Attendance::TRIP_HOME_TO_SCHOOL, 'label' => 'Drop at School'];
+            } else {
+                $nextAction = null;
+            }
         }
 
         return [

@@ -159,11 +159,10 @@ class ParentDashboardTest extends TestCase
                             'pickup_location',
                             'drop_location',
                             'routes' => [
-                                ['id', 'name', 'route_code', 'is_active'],
+                                ['id', 'name', 'route_code', 'route_type', 'is_active'],
                             ],
                             'today_attendance' => [
                                 'home_to_school' => ['check_in_at', 'check_out_at', 'status'],
-                                'school_to_home' => ['check_in_at', 'check_out_at', 'status'],
                                 'completed',
                                 'next_action',
                             ],
@@ -171,6 +170,17 @@ class ParentDashboardTest extends TestCase
                     ],
                 ],
             ]);
+    }
+
+    public function test_dashboard_shows_route_type_in_child_routes(): void
+    {
+        $this->makeStudent();
+
+        Sanctum::actingAs($this->parentUser);
+
+        $this->getJson('/api/v1/parent/dashboard')
+            ->assertOk()
+            ->assertJsonPath('data.children.0.routes.0.route_type', 'home_to_school');
     }
 
     public function test_dashboard_shows_today_attendance_status(): void
@@ -187,23 +197,14 @@ class ParentDashboardTest extends TestCase
             'marked_by' => $this->parentUser->id,
         ]);
 
-        Attendance::create([
-            'student_id' => $student->id,
-            'route_id' => $this->route->id,
-            'trip' => 'school_to_home',
-            'date' => now(),
-            'check_in_at' => now()->setTime(15, 30, 0),
-            'marked_by' => $this->parentUser->id,
-        ]);
-
         Sanctum::actingAs($this->parentUser);
 
         $this->getJson('/api/v1/parent/dashboard')
             ->assertOk()
             ->assertJsonPath('data.children.0.today_attendance.home_to_school.status', 'completed')
-            ->assertJsonPath('data.children.0.today_attendance.school_to_home.status', 'checked_in')
-            ->assertJsonPath('data.children.0.today_attendance.completed', false)
-            ->assertJsonPath('data.children.0.today_attendance.next_action.key', 'dropped_at_home');
+            ->assertJsonPath('data.children.0.today_attendance.completed', true)
+            ->assertJsonPath('data.children.0.today_attendance.next_action', null)
+            ->assertJsonMissingPath('data.children.0.today_attendance.school_to_home');
     }
 
     public function test_dashboard_shows_not_started_when_child_has_no_records(): void
@@ -215,9 +216,43 @@ class ParentDashboardTest extends TestCase
         $this->getJson('/api/v1/parent/dashboard')
             ->assertOk()
             ->assertJsonPath('data.children.0.today_attendance.home_to_school.status', 'not_checked_in')
+            ->assertJsonPath('data.children.0.today_attendance.completed', false)
+            ->assertJsonPath('data.children.0.today_attendance.next_action.key', 'picked_up_home')
+            ->assertJsonMissingPath('data.children.0.today_attendance.school_to_home');
+    }
+
+    public function test_dashboard_shows_both_trips_when_child_has_home_and_school_routes(): void
+    {
+        $schoolToHome = Route::create([
+            'name' => 'Return Route',
+            'route_code' => 'RT-PARENT-S2H',
+            'school_id' => $this->school->id,
+            'route_type' => 'school_to_home',
+            'start_location' => 'School',
+            'end_location' => 'Home',
+            'is_active' => true,
+        ]);
+
+        $student = $this->makeStudent(['route_ids' => [$this->route->id, $schoolToHome->id]]);
+
+        Attendance::create([
+            'student_id' => $student->id,
+            'route_id' => $this->route->id,
+            'trip' => 'home_to_school',
+            'date' => now(),
+            'check_in_at' => now()->setTime(7, 15, 0),
+            'check_out_at' => now()->setTime(8, 0, 0),
+            'marked_by' => $this->parentUser->id,
+        ]);
+
+        Sanctum::actingAs($this->parentUser);
+
+        $this->getJson('/api/v1/parent/dashboard')
+            ->assertOk()
+            ->assertJsonPath('data.children.0.today_attendance.home_to_school.status', 'completed')
             ->assertJsonPath('data.children.0.today_attendance.school_to_home.status', 'not_checked_in')
             ->assertJsonPath('data.children.0.today_attendance.completed', false)
-            ->assertJsonPath('data.children.0.today_attendance.next_action.key', 'picked_up_home');
+            ->assertJsonPath('data.children.0.today_attendance.next_action.key', 'picked_up_school');
     }
 
     public function test_dashboard_returns_empty_children_when_parent_has_none(): void

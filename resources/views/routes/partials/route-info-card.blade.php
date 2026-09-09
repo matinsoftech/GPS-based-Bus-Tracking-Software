@@ -39,6 +39,12 @@
             <dd class="mt-1 text-sm font-semibold text-brand-600 dark:text-brand-400 font-mono">{{ $route->route_code }}</dd>
         </div>
 
+        <!-- Route Type -->
+        <div class="rounded-xl bg-gray-50/60 p-4 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/60 flex flex-col justify-between">
+            <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Route Type</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $route->route_type_label }}</dd>
+        </div>
+
         <!-- Start Location -->
         <div class="rounded-xl bg-gray-50/60 p-4 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/60 flex flex-col justify-between">
             <dt class="text-xs font-medium text-gray-500 dark:text-gray-400">Start Location</dt>

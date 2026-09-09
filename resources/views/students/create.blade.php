@@ -30,7 +30,7 @@
                 ->filter(fn ($route) => $route->stops->isNotEmpty())
                 ->mapWithKeys(fn ($route) => [
                     (string) $route->id => [
-                        'name' => $route->name . ($route->route_code ? " ({$route->route_code})" : ''),
+                        'name' => $route->name . " ({$route->route_type_label})",
                         'stops' => $route->stops->map(fn ($stop) => [
                             'id' => (int) $stop->id,
                             'name' => $stop->name,
@@ -261,9 +261,7 @@
                                             @change="toggleRoute({{ $route->id }})"
                                             class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500">
                                         <span class="text-sm text-gray-700 dark:text-gray-300">
-                                            {{ $route->name }}@if ($route->route_code)
-                                                ({{ $route->route_code }})
-                                            @endif
+                                            {{ $route->name }} ({{ $route->route_type_label }})
                                         </span>
                                     </label>
                                 @endforeach

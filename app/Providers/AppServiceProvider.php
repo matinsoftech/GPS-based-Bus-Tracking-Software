@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Services\SettingService;
 use App\View\Composers\HeaderComposer;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,10 +27,10 @@ class AppServiceProvider extends ServiceProvider
             HeaderComposer::class
         );
 
-        if (!$this->app->runningInConsole()) {
+        if (! $this->app->runningInConsole() || $this->app->runningUnitTests()) {
             View::share(
                 'settings',
-                $settingService->get()
+                Schema::hasTable('settings') ? $settingService->get() : null
             );
         }
     }

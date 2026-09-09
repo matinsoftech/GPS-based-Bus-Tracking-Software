@@ -53,6 +53,7 @@
                         <tr class="text-gray-500 dark:text-gray-400">
                             <th class="px-5 py-3 font-medium">Name</th>
                             <th class="px-5 py-3 font-medium">Route Code</th>
+                            <th class="px-5 py-3 font-medium">Route Type</th>
                             <th class="px-5 py-3 font-medium">Start Location</th>
                             <th class="px-5 py-3 font-medium">End Location</th>
                             <th class="px-5 py-3 font-medium">Distance</th>
@@ -68,6 +69,7 @@
                             <tr class="text-gray-700 dark:text-gray-200">
                                 <td class="px-5 py-3 font-medium">{{ $route->name }}</td>
                                 <td class="px-5 py-3">{{ $route->route_code }}</td>
+                                <td class="px-5 py-3">{{ $route->route_type_label }}</td>
                                 <td class="px-5 py-3">{{ $route->start_location }}</td>
                                 <td class="px-5 py-3">{{ $route->end_location }}</td>
                                 <td class="px-5 py-3">
@@ -117,7 +119,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
+                                <td colspan="11" class="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
                                     No routes found.
                                 </td>
                             </tr>
@@ -146,6 +148,10 @@
                     </div>
 
                     <dl class="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                        <div>
+                            <dt class="text-gray-400 dark:text-gray-500">Route Type</dt>
+                            <dd class="text-gray-700 dark:text-gray-200">{{ $route->route_type_label }}</dd>
+                        </div>
                         <div>
                             <dt class="text-gray-400 dark:text-gray-500">Start Location</dt>
                             <dd class="text-gray-700 dark:text-gray-200">{{ $route->start_location }}</dd>

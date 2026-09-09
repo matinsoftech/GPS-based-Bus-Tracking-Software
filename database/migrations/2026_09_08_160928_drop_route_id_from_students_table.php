@@ -13,7 +13,8 @@ return new class extends Migration
             DB::table('route_student')->insertUsing(
                 ['route_id', 'student_id', 'created_at', 'updated_at'],
                 DB::table('students')
-                    ->select('route_id', 'id', DB::raw('NOW()'), DB::raw('NOW()'))
+                    ->select('route_id', 'id')
+                    ->selectRaw('? as created_at, ? as updated_at', [now(), now()])
                     ->whereNotNull('route_id')
             );
         }

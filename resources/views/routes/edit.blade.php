@@ -65,6 +65,22 @@
                     </div>
 
                     <div>
+                        <label for="route_type" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route Type</label>
+                        <select
+                            id="route_type"
+                            name="route_type"
+                            required
+                            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                        >
+                            <option value="home_to_school" @selected(old('route_type', $route->route_type) === 'home_to_school')>Home to School</option>
+                            <option value="school_to_home" @selected(old('route_type', $route->route_type) === 'school_to_home')>School to Home</option>
+                        </select>
+                        @error('route_type')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
                         <label for="start_location" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Start Location</label>
                         <input
                             type="text"
