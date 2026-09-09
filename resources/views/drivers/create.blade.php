@@ -374,9 +374,9 @@
                                 <div class="min-w-0 flex-1">
                                     <span
                                         class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $route->name }}</span>
-                                    @if ($route->route_code)
+                                    @if ($route->route_type)
                                         <span
-                                            class="block text-xs text-gray-500 dark:text-gray-400">{{ $route->route_code }}</span>
+                                            class="block text-xs text-gray-500 dark:text-gray-400">{{ $route->route_type_label }}</span>
                                     @endif
                                 </div>
                             </label>
