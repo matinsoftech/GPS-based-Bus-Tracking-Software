@@ -64,25 +64,25 @@ class ParentRouteController extends Controller
                     'pickup_time' => $stop->pickup_time,
                     'drop_time' => $stop->drop_time,
                 ])->values(),
-                'drivers' => $route->drivers->map(fn ($d) => [
-                    'id' => $d->id,
-                    'name' => $d->full_name,
-                    'phone' => $d->phone,
-                ]),
-                'buses' => $activeTrip?->bus ? [[
-                    'id' => $activeTrip->bus->id,
-                    'bus_number' => $activeTrip->bus->bus_number,
-                    'registration_number' => $activeTrip->bus->registration_number,
-                    'capacity' => $activeTrip->bus->capacity,
-                    'status' => $activeTrip->bus->status,
-                    'gps_device_id' => $activeTrip->bus->gps_device_id,
-                ]] : [],
-                'school' => $route->school ? [
-                    'id' => $route->school->id,
-                    'name' => $route->school->name,
-                    'address' => $route->school->address,
-                ] : null,
-                'live_location' => $this->gps->locationPayload($activeTrip?->bus),
+                // 'drivers' => $route->drivers->map(fn ($d) => [
+                //     'id' => $d->id,
+                //     'name' => $d->full_name,
+                //     'phone' => $d->phone,
+                // ]),
+                // 'buses' => $activeTrip?->bus ? [[
+                //     'id' => $activeTrip->bus->id,
+                //     'bus_number' => $activeTrip->bus->bus_number,
+                //     'registration_number' => $activeTrip->bus->registration_number,
+                //     'capacity' => $activeTrip->bus->capacity,
+                //     'status' => $activeTrip->bus->status,
+                //     'gps_device_id' => $activeTrip->bus->gps_device_id,
+                // ]] : [],
+                // 'school' => $route->school ? [
+                //     'id' => $route->school->id,
+                //     'name' => $route->school->name,
+                //     'address' => $route->school->address,
+                // ] : null,
+                // 'live_location' => $this->gps->locationPayload($activeTrip?->bus),
             ];
         })->values();
 
