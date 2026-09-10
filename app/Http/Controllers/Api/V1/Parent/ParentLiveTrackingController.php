@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Parent;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bus;
+use App\Models\Route;
 use App\Models\Student;
 use App\Services\NazarTrackService;
 use Illuminate\Http\Request;
@@ -23,33 +24,40 @@ class ParentLiveTrackingController extends Controller
         }
 
         $children = $parent->children()
-            ->with(['routes.activeTrip.bus.gpsDevice'])
+            ->with(['routes.activeTrip.bus.gpsDevice', 'routes.activeTrip.driver'])
             ->orderBy('grade')
             ->orderBy('roll_no')
             ->get();
 
+        $routesMap = collect();
+
+        foreach ($children as $child) {
+            foreach ($child->routes as $route) {
+                if (! $routesMap->has($route->id)) {
+                    $routesMap->put($route->id, [
+                        'route' => $route,
+                        'children' => collect(),
+                    ]);
+                }
+                $routesMap[$route->id]['children']->push($child);
+            }
+        }
+
+        $routes = $routesMap->map(fn ($entry) => $this->routeResponse(
+            $entry['route'],
+            $entry['children'],
+        ))->values();
+
         return response()->json([
             'message' => 'Parent live tracking data.',
             'data' => [
-                'children_count' => $children->count(),
-                'children' => $children->map(fn ($student) => [
-                    'id' => $student->id,
-                    'full_name' => $student->full_name,
-                    'grade' => $student->grade,
-                    'section' => $student->section,
-                    'photo' => $student->photo ? asset('storage/'.$student->photo) : null,
-                    'routes' => $student->routes->map(fn ($route) => [
-                        'id' => $route->id,
-                        'name' => $route->name,
-                        'route_code' => $route->route_code,
-                    ])->values(),
-                    'live_location' => $this->liveLocationFor($this->firstActiveBus($student->routes)),
-                ]),
+                'routes_count' => $routes->count(),
+                'routes' => $routes,
             ],
         ]);
     }
 
-    public function show(Request $request, Student $student)
+    public function show(Request $request, Route $route)
     {
         $parent = $request->user()->parent;
 
@@ -59,49 +67,63 @@ class ParentLiveTrackingController extends Controller
             ], 404);
         }
 
-        if ($parent->children()->whereKey($student->id)->doesntExist()) {
+        $parentChildIds = $parent->children()->pluck('students.id');
+
+        $parentChildren = $route->students()
+            ->whereIn('students.id', $parentChildIds)
+            ->get();
+
+        if ($parentChildren->isEmpty()) {
             return response()->json([
-                'message' => 'You are not authorized to view this student.',
+                'message' => 'You are not authorized to view this route.',
             ], 403);
         }
 
-        $student->load('routes.activeTrip.bus.gpsDevice');
+        $route->load(['activeTrip.bus.gpsDevice', 'activeTrip.driver']);
 
         return response()->json([
-            'message' => 'Parent child live tracking data.',
-            'data' => [
-                'student' => [
-                    'id' => $student->id,
-                    'full_name' => $student->full_name,
-                    'grade' => $student->grade,
-                    'section' => $student->section,
-                    'photo' => $student->photo ? asset('storage/'.$student->photo) : null,
-                ],
-                'routes' => $student->routes->map(fn ($route) => [
-                    'id' => $route->id,
-                    'name' => $route->name,
-                    'route_code' => $route->route_code,
-                ])->values(),
-                'live_location' => $this->liveLocationFor($this->firstActiveBus($student->routes)),
-            ],
+            'message' => 'Route live tracking data.',
+            'data' => $this->routeResponse($route, $parentChildren),
         ]);
     }
 
-    /**
-     * Return the bus of the first route that has an in-progress trip, if any.
-     */
-    private function firstActiveBus($routes)
+    private function routeResponse(Route $route, ?iterable $children = null): array
     {
-        return $routes
-            ->map(fn ($route) => $route->activeTrip?->bus)
-            ->filter()
-            ->first();
+        $bus = $route->activeTrip?->bus;
+        $location = $this->liveLocationFor($bus);
+
+        return [
+            'id' => $route->id,
+            'name' => $route->name,
+            'route_code' => $route->route_code,
+            'route_type' => $route->route_type,
+            'route_type_label' => $route->route_type_label,
+            'is_active' => $route->is_active,
+            'children' => $children
+                ? collect($children)->map(fn (Student $child) => [
+                    'id' => $child->id,
+                    'full_name' => $child->full_name,
+                    'grade' => $child->grade,
+                    'section' => $child->section,
+                    'photo' => $child->photo ? asset('storage/'.$child->photo) : null,
+                ])->values()
+                : null,
+            'live_location' => $bus ? [
+                'bus' => [
+                    'id' => $bus->id,
+                    'bus_number' => $bus->bus_number,
+                    'registration_number' => $bus->registration_number,
+                ],
+                'driver' => $route->activeTrip?->driver ? [
+                    'id' => $route->activeTrip->driver->id,
+                    'full_name' => $route->activeTrip->driver->full_name,
+                    'phone' => $route->activeTrip->driver->phone,
+                ] : null,
+                'data' => $location,
+            ] : null,
+        ];
     }
 
-    /**
-     * Resolve a bus's live location, falling back to its last known stored
-     * position when the GPS provider has no live fix.
-     */
     private function liveLocationFor(?Bus $bus): ?array
     {
         if (! $bus) {

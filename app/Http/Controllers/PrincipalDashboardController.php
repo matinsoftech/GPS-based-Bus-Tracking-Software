@@ -7,10 +7,11 @@ use App\Models\Driver;
 use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
-use App\Models\Student;
 use App\Models\Trip;
+use App\Models\Student;
 use App\Notifications\TripEndedNotification;
 use App\Services\FleetMapService;
+use App\Traits\NotifiesRouteParticipants;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 
 class PrincipalDashboardController extends Controller
 {
+    use NotifiesRouteParticipants;
+
     public function __construct(private readonly FleetMapService $fleetMap) {}
 
     /**
@@ -159,18 +162,7 @@ class PrincipalDashboardController extends Controller
      */
     private function notifyParentsAndPrincipal(Trip $trip, Notification $notification): void
     {
-        $students = Student::whereHas('routes', fn ($query) => $query->where('route_id', $trip->route_id))
-            ->with('parent.user')
-            ->get();
-
-        foreach ($students as $student) {
-            if ($parent = $student->parent?->user) {
-                $parent->notify($notification);
-            }
-            if ($studentUser = $student->user) {
-                $studentUser->notify($notification);
-            }
-        }
+        $this->notifyRouteParticipants($trip, $notification);
 
         $admins = SchoolAdmin::where('school_id', $trip->school_id)
             ->with('user')
