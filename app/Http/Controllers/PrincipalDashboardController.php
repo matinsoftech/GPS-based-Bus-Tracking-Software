@@ -8,6 +8,7 @@ use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Trip;
+use App\Models\Student;
 use App\Notifications\TripEndedNotification;
 use App\Services\FleetMapService;
 use App\Traits\NotifiesRouteParticipants;
