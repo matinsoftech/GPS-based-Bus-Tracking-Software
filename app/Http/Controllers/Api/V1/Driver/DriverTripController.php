@@ -5,17 +5,18 @@ namespace App\Http\Controllers\Api\V1\Driver;
 use App\Http\Controllers\Controller;
 use App\Models\Route;
 use App\Models\SchoolAdmin;
-use App\Models\Student;
 use App\Models\Trip;
 use App\Models\User;
 use App\Notifications\TripEndedNotification;
 use App\Notifications\TripStartedNotification;
+use App\Traits\NotifiesRouteParticipants;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DriverTripController extends Controller
 {
+    use NotifiesRouteParticipants;
     public function index(Request $request): JsonResponse
     {
         $driver = $request->user()->driver;
@@ -264,19 +265,7 @@ class DriverTripController extends Controller
     {
         $notification = new TripStartedNotification($trip);
 
-        $students = Student::whereHas('routes', fn ($query) => $query->where('route_id', $trip->route_id))
-            ->with('parent.user')
-            ->get();
-
-        foreach ($students as $student) {
-            $parent = $student->parent?->user;
-
-            if (! $parent) {
-                continue;
-            }
-
-            $parent->notify($notification);
-        }
+        $this->notifyRouteParticipants($trip, $notification);
 
         $driverUser = $trip->driver?->user;
 
@@ -307,19 +296,7 @@ class DriverTripController extends Controller
     {
         $notification = new TripEndedNotification($trip);
 
-        $students = Student::whereHas('routes', fn ($query) => $query->where('route_id', $trip->route_id))
-            ->with('parent.user')
-            ->get();
-
-        foreach ($students as $student) {
-            $parent = $student->parent?->user;
-
-            if (! $parent) {
-                continue;
-            }
-
-            $parent->notify($notification);
-        }
+        $this->notifyRouteParticipants($trip, $notification);
 
         $driverUser = $trip->driver?->user;
 

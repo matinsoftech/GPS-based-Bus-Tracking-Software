@@ -28,13 +28,13 @@ class TestTripStartedNotification extends Command
 
         $notified = 0;
 
-        foreach ($trip->route->students()->with('parent.user')->get() as $student) {
-            $parent = $student->parent?->user;
+        $students = $trip->route->students()->with('parent.user')->get();
 
-            if (! $parent) {
-                continue;
-            }
+        $notifiedParents = $students->pluck('parent.user')
+            ->filter()
+            ->unique('id');
 
+        foreach ($notifiedParents as $parent) {
             $parent->notify($notification);
             $notified++;
         }

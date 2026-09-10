@@ -4,15 +4,16 @@ namespace App\Services;
 
 use App\Models\Bus;
 use App\Models\RouteStop;
-use App\Models\Student;
 use App\Models\Trip;
 use App\Models\TripStopArrival;
 use App\Notifications\BusStopArrivalNotification;
+use App\Traits\NotifiesRouteParticipants;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class StopArrivalService
 {
+    use NotifiesRouteParticipants;
     /** A live bus is considered stopped when speed is at or below this (km/h). */
     public const STOPPED_SPEED_KPH = 3;
 
@@ -147,20 +148,7 @@ class StopArrivalService
      */
     protected function notifyParents(Trip $trip, RouteStop $stop, TripStopArrival $arrival): void
     {
-        $students = Student::whereHas('routes', fn ($query) => $query->where('route_id', $trip->route_id))
-            ->with('parent.user')
-            ->get();
-
-        $notification = new BusStopArrivalNotification($trip, $arrival, $stop);
-
-        foreach ($students as $student) {
-            if ($parent = $student->parent?->user) {
-                $parent->notify($notification);
-            }
-            if ($studentUser = $student->user) {
-                $studentUser->notify($notification);
-            }
-        }
+        $this->notifyRouteParticipants($trip, new BusStopArrivalNotification($trip, $arrival, $stop));
     }
 
     /**
