@@ -278,7 +278,7 @@ class ParentLiveTrackingTest extends TestCase
                             'children' => [['id', 'full_name', 'grade', 'section', 'photo']],
                             'live_location' => [
                                 'bus' => ['id', 'bus_number', 'registration_number'],
-                                'driver' => ['id', 'full_name', 'phone'],
+                                'driver',
                                 'data',
                             ],
                         ],
@@ -363,7 +363,7 @@ class ParentLiveTrackingTest extends TestCase
             ->assertJsonMissingPath('exception');
     }
 
-    public function test_parent_can_view_single_child_live_tracking(): void
+    public function test_parent_can_view_single_route_live_tracking(): void
     {
         $student = $this->makeStudent();
 
@@ -389,42 +389,38 @@ class ParentLiveTrackingTest extends TestCase
 
         Sanctum::actingAs($this->parentUser);
 
-        $this->getJson('/api/v1/parent/children/'.$student->id.'/live-tracking')
+        $this->getJson('/api/v1/parent/routes/'.$this->route->id.'/live-tracking')
             ->assertOk()
-            ->assertJsonPath('message', 'Parent child live tracking data.')
-            ->assertJsonPath('data.student.full_name', 'Sita Bahadur')
-            ->assertJsonPath('data.routes.0.name', 'Route 1')
-            ->assertJsonPath('data.routes.0.live_location.data.imei', '123456789012345')
-            ->assertJsonPath('data.routes.0.live_location.data.speed_kmh', 45)
-            ->assertJsonPath('data.routes.0.live_location.data.status_label', 'Moving')
+            ->assertJsonPath('message', 'Route live tracking data.')
+            ->assertJsonPath('data.name', 'Route 1')
+            ->assertJsonPath('data.children.0.full_name', 'Sita Bahadur')
+            ->assertJsonPath('data.live_location.bus.bus_number', $this->route->activeTrip->bus->bus_number)
+            ->assertJsonPath('data.live_location.driver.full_name', $this->driver->full_name)
+            ->assertJsonPath('data.live_location.driver.phone', $this->driver->phone)
+            ->assertJsonPath('data.live_location.data.imei', '123456789012345')
+            ->assertJsonPath('data.live_location.data.speed_kmh', 45)
+            ->assertJsonPath('data.live_location.data.status_label', 'Moving')
             ->assertJsonStructure([
                 'message',
                 'data' => [
-                    'student' => ['id', 'full_name', 'grade', 'section', 'photo'],
-                    'routes' => [
-                        '*' => [
-                            'id',
-                            'name',
-                            'route_code',
-                            'route_type',
-                            'route_type_label',
-                            'is_active',
-                            'children',
-                            'live_location' => [
-                                'bus' => ['id', 'bus_number', 'registration_number'],
-                                'driver' => ['id', 'full_name', 'phone'],
-                                'data',
-                            ],
-                        ],
+                    'id',
+                    'name',
+                    'route_code',
+                    'route_type',
+                    'route_type_label',
+                    'is_active',
+                    'children' => [['id', 'full_name', 'grade', 'section', 'photo']],
+                    'live_location' => [
+                        'bus' => ['id', 'bus_number', 'registration_number'],
+                        'driver' => ['id', 'full_name', 'phone'],
+                        'data',
                     ],
                 ],
             ]);
     }
 
-    public function test_parent_cannot_view_another_parents_child(): void
+    public function test_parent_cannot_view_route_without_children(): void
     {
-        $student = $this->makeStudent();
-
         $otherParentUser = User::factory()->create();
         $otherParentUser->assignRole('Parent');
         ParentProfile::create([
@@ -435,13 +431,15 @@ class ParentLiveTrackingTest extends TestCase
             'address' => 'Kathmandu',
         ]);
 
+        $this->makeStudent();
+
         $this->fakeLiveTracking([]);
 
         Sanctum::actingAs($otherParentUser);
 
-        $this->getJson('/api/v1/parent/children/'.$student->id.'/live-tracking')
+        $this->getJson('/api/v1/parent/routes/'.$this->route->id.'/live-tracking')
             ->assertForbidden()
-            ->assertJsonPath('message', 'You are not authorized to view this student.');
+            ->assertJsonPath('message', 'You are not authorized to view this route.');
     }
 
     public function test_user_without_parent_profile_gets_404(): void
@@ -456,7 +454,7 @@ class ParentLiveTrackingTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->getJson('/api/v1/parent/live-tracking')->assertNotFound();
-        $this->getJson('/api/v1/parent/children/'.$student->id.'/live-tracking')->assertNotFound();
+        $this->getJson('/api/v1/parent/routes/'.$this->route->id.'/live-tracking')->assertNotFound();
     }
 
     public function test_non_parent_user_is_forbidden(): void
@@ -469,18 +467,17 @@ class ParentLiveTrackingTest extends TestCase
         Sanctum::actingAs($driverUser);
 
         $this->getJson('/api/v1/parent/live-tracking')->assertForbidden();
-        $this->getJson('/api/v1/parent/children/'.$student->id.'/live-tracking')->assertForbidden();
+        $this->getJson('/api/v1/parent/routes/'.$this->route->id.'/live-tracking')->assertForbidden();
     }
 
-    public function test_show_returns_clean_404_for_nonexistent_student(): void
+    public function test_show_returns_clean_404_for_nonexistent_route(): void
     {
         $this->fakeLiveTracking([]);
 
         Sanctum::actingAs($this->parentUser);
 
-        $this->getJson('/api/v1/parent/children/999999/live-tracking')
+        $this->getJson('/api/v1/parent/routes/999999/live-tracking')
             ->assertNotFound()
-            ->assertJsonPath('message', 'Student not found.')
             ->assertJsonMissingPath('exception')
             ->assertJsonMissingPath('trace');
     }

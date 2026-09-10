@@ -57,7 +57,7 @@ class ParentLiveTrackingController extends Controller
         ]);
     }
 
-    public function show(Request $request, Student $student)
+    public function show(Request $request, Route $route)
     {
         $parent = $request->user()->parent;
 
@@ -67,28 +67,23 @@ class ParentLiveTrackingController extends Controller
             ], 404);
         }
 
-        if ($parent->children()->whereKey($student->id)->doesntExist()) {
+        $parentChildIds = $parent->children()->pluck('students.id');
+
+        $parentChildren = $route->students()
+            ->whereIn('students.id', $parentChildIds)
+            ->get();
+
+        if ($parentChildren->isEmpty()) {
             return response()->json([
-                'message' => 'You are not authorized to view this student.',
+                'message' => 'You are not authorized to view this route.',
             ], 403);
         }
 
-        $student->load('routes.activeTrip.bus.gpsDevice', 'routes.activeTrip.driver');
-
-        $routes = $student->routes->map(fn ($route) => $this->routeResponse($route))->values();
+        $route->load(['activeTrip.bus.gpsDevice', 'activeTrip.driver']);
 
         return response()->json([
-            'message' => 'Parent child live tracking data.',
-            'data' => [
-                'student' => [
-                    'id' => $student->id,
-                    'full_name' => $student->full_name,
-                    'grade' => $student->grade,
-                    'section' => $student->section,
-                    'photo' => $student->photo ? asset('storage/'.$student->photo) : null,
-                ],
-                'routes' => $routes,
-            ],
+            'message' => 'Route live tracking data.',
+            'data' => $this->routeResponse($route, $parentChildren),
         ]);
     }
 

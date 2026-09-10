@@ -69,7 +69,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/children/{student}', [ParentChildController::class, 'show']);
             Route::get('/children/{student}/history', [ParentChildController::class, 'history']);
             Route::get('/children/{student}/route', [ParentRouteController::class, 'show']);
-            Route::get('/children/{student}/live-tracking', [ParentLiveTrackingController::class, 'show']);
+            Route::get('/routes/{route}/live-tracking', [ParentLiveTrackingController::class, 'show']);
             Route::get('/live-tracking', [ParentLiveTrackingController::class, 'index']);
         });
 
