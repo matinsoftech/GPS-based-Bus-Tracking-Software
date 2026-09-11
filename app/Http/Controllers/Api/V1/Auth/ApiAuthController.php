@@ -24,6 +24,8 @@ class ApiAuthController extends Controller
             ], 401);
         }
 
+        $user->tokens()->delete();
+
         $token = $user->createToken('mobile-app')->plainTextToken;
 
         return response()->json([
