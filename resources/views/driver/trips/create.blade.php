@@ -21,7 +21,7 @@
 
             <!-- Bus Selection -->
             <div>
-                <label for="bus_id" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Bus <span class="text-red-500">*</span></label>
+                <x-label for="bus_id" value="Bus" required />
                 <select name="bus_id" id="bus_id" required x-model="selectedBusId" @change="prefillGps($event.target.value)"
                     class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                     <option value="">Select a bus</option>
@@ -44,7 +44,7 @@
 
             <!-- Route Selection -->
             <div>
-                <label for="route_id" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route <span class="text-red-500">*</span></label>
+                <x-label for="route_id" value="Route" required />
                 <select name="route_id" id="route_id" required x-model="selectedRouteId" {{-- @change="onRouteChange($event.target.value)" --}}
                     class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                     <option value="">Select a route</option>

@@ -112,6 +112,12 @@ class DriverProfileController extends Controller
                 'id' => $driver->school->id,
                 'name' => $driver->school->name,
                 'address' => $driver->school->address,
+                'phone' => $driver->school->phone,
+                'email' => $driver->school->email,
+                'logo_url' => $driver->school->logo
+                    ? asset('storage/'.$driver->school->logo)
+                    : null,
+                'principal_name' => $driver->school->principal_name,
             ],
         ];
     }

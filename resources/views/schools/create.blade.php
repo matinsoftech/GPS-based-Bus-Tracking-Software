@@ -30,7 +30,7 @@
 
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
-                    <label for="name" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School Name</label>
+                    <x-label for="name" value="School Name" required />
                     <input
                         type="text"
                         id="name"
@@ -45,7 +45,7 @@
                 </div>
 
                 <div>
-                    <label for="code" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School Code</label>
+                    <x-label for="code" value="School Code" required />
                     <input
                         type="text"
                         id="code"
@@ -60,7 +60,7 @@
                 </div>
 
                 <div>
-                    <label for="email" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <x-label for="email" value="Email" required />
                     <input
                         type="email"
                         id="email"
@@ -75,7 +75,7 @@
                 </div>
 
                 <div>
-                    <label for="phone" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+                    <x-label for="phone" value="Phone" />
                     <input
                         type="text"
                         id="phone"
@@ -89,7 +89,7 @@
                 </div>
 
                 <div>
-                    <label for="principal_name" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Principal Name</label>
+                    <x-label for="principal_name" value="Principal Name" />
                     <input
                         type="text"
                         id="principal_name"
@@ -103,7 +103,7 @@
                 </div>
 
                 <div>
-                    <label for="status" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <x-label for="status" value="Status" required />
                     <select
                         id="status"
                         name="status"
@@ -119,7 +119,7 @@
                 </div>
 
                 <div>
-                    <label for="latitude" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Latitude</label>
+                    <x-label for="latitude" value="Latitude" />
                     <input
                         type="number"
                         step="any"
@@ -134,7 +134,7 @@
                 </div>
 
                 <div>
-                    <label for="longitude" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Longitude</label>
+                    <x-label for="longitude" value="Longitude" />
                     <input
                         type="number"
                         step="any"
@@ -428,7 +428,7 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    <label for="address" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                    <x-label for="address" value="Address" />
                     <textarea
                         id="address"
                         name="address"
@@ -441,7 +441,7 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    <label for="logo" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Logo</label>
+                    <x-label for="logo" value="Logo" />
                     <input
                         type="file"
                         id="logo"

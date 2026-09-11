@@ -35,7 +35,7 @@
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                        <label for="name" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route Name</label>
+                        <x-label for="name" value="Route Name" required />
                         <input
                             type="text"
                             id="name"
@@ -50,7 +50,7 @@
                     </div>
 
                     <div>
-                        <label for="route_code" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route Code</label>
+                        <x-label for="route_code" value="Route Code" required />
                         <input
                             type="text"
                             id="route_code"
@@ -65,7 +65,7 @@
                     </div>
 
                     <div>
-                        <label for="route_type" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route Type</label>
+                        <x-label for="route_type" value="Route Type" required />
                         <select
                             id="route_type"
                             name="route_type"
@@ -81,7 +81,7 @@
                     </div>
 
                     <div>
-                        <label for="start_location" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Start Location</label>
+                        <x-label for="start_location" value="Start Location" required />
                         <input
                             type="text"
                             id="start_location"
@@ -96,7 +96,7 @@
                     </div>
 
                     <div>
-                        <label for="end_location" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">End Location</label>
+                        <x-label for="end_location" value="End Location" required />
                         <input
                             type="text"
                             id="end_location"
@@ -111,7 +111,7 @@
                     </div>
 
                     <div>
-                        <label for="estimated_distance" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Estimated Distance (km)</label>
+                        <x-label for="estimated_distance" value="Estimated Distance (km)" />
                         <input
                             type="number"
                             id="estimated_distance"
@@ -127,7 +127,7 @@
                     </div>
 
                     <div>
-                        <label for="estimated_duration" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Estimated Duration (minutes)</label>
+                        <x-label for="estimated_duration" value="Estimated Duration (minutes)" />
                         <input
                             type="number"
                             id="estimated_duration"
@@ -164,7 +164,7 @@
                         </div>
                     @else
                         <div>
-                            <label for="school_id" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School</label>
+                            <x-label for="school_id" value="School" required />
                             <select
                                 id="school_id"
                                 name="school_id"

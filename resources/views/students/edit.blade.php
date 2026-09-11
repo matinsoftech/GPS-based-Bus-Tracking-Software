@@ -93,8 +93,7 @@
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                        <label for="admission_no"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Admission No</label>
+                        <x-label for="admission_no" value="Admission No" required />
                         <input type="text" id="admission_no" name="admission_no"
                             value="{{ old('admission_no', $student->admission_no) }}" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -104,8 +103,7 @@
                     </div>
 
                     <div>
-                        <label for="first_name"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">First Name</label>
+                        <x-label for="first_name" value="First Name" required />
                         <input type="text" id="first_name" name="first_name"
                             value="{{ old('first_name', $student->first_name) }}" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -115,8 +113,7 @@
                     </div>
 
                     <div>
-                        <label for="last_name"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
+                        <x-label for="last_name" value="Last Name" />
                         <input type="text" id="last_name" name="last_name"
                             value="{{ old('last_name', $student->last_name) }}"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -126,9 +123,7 @@
                     </div>
 
                     <div>
-                        <label for="date_of_birth"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Date of
-                            Birth</label>
+                        <x-label for="date_of_birth" value="Date of Birth" required />
                         <input type="date" id="date_of_birth" name="date_of_birth"
                             value="{{ old('date_of_birth', $student->date_of_birth?->format('Y-m-d')) }}"
                             max="{{ now()->subYears(18)->format('Y-m-d') }}" required
@@ -140,8 +135,7 @@
                     </div>
 
                     <div>
-                        <label for="gender"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Gender</label>
+                        <x-label for="gender" value="Gender" required />
                         <select id="gender" name="gender" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                             <option value="" disabled>Select Gender</option>
@@ -155,8 +149,7 @@
                     </div>
 
                     <div>
-                        <label for="grade"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Grade</label>
+                        <x-label for="grade" value="Grade" required />
                         <input type="text" id="grade" name="grade" value="{{ old('grade', $student->grade) }}"
                             required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -166,8 +159,7 @@
                     </div>
 
                     <div>
-                        <label for="section"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Section</label>
+                        <x-label for="section" value="Section" />
                         <input type="text" id="section" name="section"
                             value="{{ old('section', $student->section) }}"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -177,8 +169,7 @@
                     </div>
 
                     <div>
-                        <label for="roll_no"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Roll No</label>
+                        <x-label for="roll_no" value="Roll No" />
                         <input type="text" id="roll_no" name="roll_no"
                             value="{{ old('roll_no', $student->roll_no) }}"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -188,8 +179,7 @@
                     </div>
 
                     <div>
-                        <label for="photo"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Photo</label>
+                        <x-label for="photo" value="Photo" />
                         @if ($student->photo)
                             <div class="mb-2 flex items-center gap-3">
                                 <img src="{{ asset('storage/' . $student->photo) }}" alt="Current photo"
@@ -225,8 +215,7 @@
                         </div>
                     @else
                         <div>
-                            <label for="school_id"
-                                class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School</label>
+                            <x-label for="school_id" value="School" required />
                             <select id="school_id" name="school_id" required
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                                 <option value="" disabled>Select School</option>
@@ -242,8 +231,7 @@
                     @endif
 
                     <div>
-                        <label for="parent_id"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Parent</label>
+                        <x-label for="parent_id" value="Parent" required />
                         <select id="parent_id" name="parent_id" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                             <option value="" disabled>Select Parent</option>
@@ -258,9 +246,9 @@
                     </div>
 
                     <div class="md:col-span-2">
-                        <label
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Assigned
-                            Routes</label>
+                        <x-label
+                            value="Assigned
+                            Routes" />
                         @if ($routes->isEmpty())
                             <p class="text-sm text-gray-500 dark:text-gray-400">
                                 No routes available. <a href="{{ route('routes.create') }}"
