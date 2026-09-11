@@ -151,7 +151,7 @@ class RouteController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'route_code' => 'required|string|max:50|unique:routes,route_code,'.$route->id,
-            'route_type' => 'required|in:home_to_school,school_to_home',
+            'route_type' => 'nullable|in:home_to_school,school_to_home',
             'start_location' => 'required|string|max:255',
             'end_location' => 'required|string|max:255',
             'estimated_distance' => 'nullable|numeric|min:0',

@@ -64,7 +64,7 @@
                         @enderror
                     </div>
 
-                    <div>
+                    {{-- <div>
                         <x-label for="route_type" value="Route Type" required />
                         <select
                             id="route_type"
@@ -78,7 +78,7 @@
                         @error('route_type')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                    </div>
+                    </div> --}}
 
                     <div>
                         <x-label for="start_location" value="Start Location" required />
