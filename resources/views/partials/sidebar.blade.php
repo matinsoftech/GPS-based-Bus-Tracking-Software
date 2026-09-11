@@ -303,6 +303,20 @@
             ],
         ],
         [
+            'title' => 'Support',
+            'items' => [
+                [
+                    'key' => 'problem-reports',
+                    'label' => 'Problem Reports',
+                    'route' => 'principal.problem-reports.index',
+                    'active' => 'problem-reports',
+                    'icon' => 'heroicon-o-exclamation-triangle',
+                    'permission' => 'report.view',
+                    'dropdown' => null,
+                ],
+            ],
+        ],
+        [
             'title' => 'Account',
             'items' => [
                 [

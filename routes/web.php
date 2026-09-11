@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\ParentProfileController;
 use App\Http\Controllers\PrincipalDashboardController;
+use App\Http\Controllers\PrincipalProblemReportController;
 use App\Http\Controllers\PrincipalVehicleTrackingController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
@@ -130,6 +131,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/vehicle-tracking/data', [PrincipalVehicleTrackingController::class, 'data'])
             ->middleware('permission:dashboard.view')
             ->name('vehicle-tracking.data');
+
+        Route::get('/problem-reports', [PrincipalProblemReportController::class, 'index'])
+            ->middleware('permission:report.view')
+            ->name('problem-reports.index');
+
+        Route::post('/problem-reports/{problemReport}/resolve', [PrincipalProblemReportController::class, 'resolve'])
+            ->middleware('permission:report.view')
+            ->name('problem-reports.resolve');
     });
 
     /*
