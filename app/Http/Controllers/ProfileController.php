@@ -18,8 +18,12 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'profile' => $this->resolveRoleProfile($user),
+            'roleLabel' => $this->resolveRoleLabel($user),
         ]);
     }
 
@@ -57,6 +61,10 @@ class ProfileController extends Controller
 
         if ($user->wasChanged('name')) {
             $this->syncNameToProfiles($user);
+        }
+
+        if ($request->filled('phone')) {
+            $this->syncPhoneToProfile($user, $request->input('phone'));
         }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
@@ -102,6 +110,55 @@ class ProfileController extends Controller
             $user->parent()->update([
                 'name' => $user->name,
             ]);
+        }
+    }
+
+    private function resolveRoleProfile(User $user): ?object
+    {
+        if ($user->driver) {
+            return $user->driver;
+        }
+
+        if ($user->parent) {
+            return $user->parent;
+        }
+
+        return \App\Models\SchoolAdmin::where('user_id', $user->id)->first();
+    }
+
+    private function resolveRoleLabel(User $user): string
+    {
+        if ($user->hasRole('School Admin')) {
+            return 'School Admin';
+        }
+
+        if ($user->hasRole('Driver')) {
+            return 'Driver';
+        }
+
+        if ($user->hasRole('Parent')) {
+            return 'Parent';
+        }
+
+        if ($user->hasRole('Super Admin')) {
+            return 'Super Admin';
+        }
+
+        return 'User';
+    }
+
+    private function syncPhoneToProfile(User $user, string $phone): void
+    {
+        if ($user->driver) {
+            $user->driver()->update(['phone' => $phone]);
+        }
+
+        if ($user->parent) {
+            $user->parent()->update(['phone' => $phone]);
+        }
+
+        if (! $user->driver && ! $user->parent) {
+            \App\Models\SchoolAdmin::where('user_id', $user->id)->update(['phone' => $phone]);
         }
     }
 }

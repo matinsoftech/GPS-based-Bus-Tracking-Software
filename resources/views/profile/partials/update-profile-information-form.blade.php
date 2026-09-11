@@ -48,6 +48,12 @@
         </div>
 
         <div>
+            <x-input-label for="phone" :value="__('Phone')" />
+            <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full" :value="old('phone', $profile->phone ?? null)" maxlength="20" />
+            <x-input-error class="mt-2" :messages="$errors->get('phone')" />
+        </div>
+
+        <div>
             <x-input-label for="profile_photo" :value="__('Profile Photo')" />
             <div class="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center">
                 @if ($user->profile_photo)
