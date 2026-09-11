@@ -33,7 +33,7 @@
 
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
-                    <label for="name" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                    <x-label for="name" value="Name" required />
                     <input
                         type="text"
                         id="name"
@@ -48,7 +48,7 @@
                 </div>
 
                 <div>
-                    <label for="email" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <x-label for="email" value="Email" required />
                     <input
                         type="email"
                         id="email"
@@ -63,7 +63,7 @@
                 </div>
 
                 <div>
-                    <label for="password" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                    <x-label for="password" value="Password" />
                     <input
                         type="password"
                         id="password"
@@ -77,7 +77,7 @@
                 </div>
 
                 <div>
-                    <label for="role" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+                    <x-label for="role" value="Role" required />
                     <select
                         id="role"
                         name="role"
@@ -97,7 +97,7 @@
                 </div>
 
                 <div>
-                    <label for="status" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <x-label for="status" value="Status" required />
                     <select
                         id="status"
                         name="status"
@@ -112,7 +112,7 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    <label for="profile_photo" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Photo</label>
+                    <x-label for="profile_photo" value="Profile Photo" />
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
                         @if ($user->profile_photo)
                             <img

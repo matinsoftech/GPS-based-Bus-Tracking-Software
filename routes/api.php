@@ -14,7 +14,9 @@ use App\Http\Controllers\Api\V1\Parent\ParentDashboardController;
 use App\Http\Controllers\Api\V1\Parent\ParentLiveTrackingController;
 use App\Http\Controllers\Api\V1\Parent\ParentRouteController;
 use App\Http\Controllers\Api\V1\Principal\PrincipalDashboardController;
+use App\Http\Controllers\Api\V1\Principal\PrincipalProblemReportController;
 use App\Http\Controllers\Api\V1\Principal\StudentController;
+use App\Http\Controllers\Api\V1\ProblemReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -34,6 +36,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
+        Route::post('/problem-reports', [ProblemReportController::class, 'store']);
 
         Route::prefix('driver')->group(function () {
             Route::get('/dashboard', [DriverDashboardController::class, 'index']);
@@ -73,10 +77,11 @@ Route::prefix('v1')->group(function () {
             Route::get('/live-tracking', [ParentLiveTrackingController::class, 'index']);
         });
 
-        // Route::prefix('principal')->middleware(['role:School Admin', 'permission:dashboard.view'])->group(function () {
-        //     Route::get('/dashboard', [PrincipalDashboardController::class, 'index']);
-        //     Route::get('/profile', [PrincipalDashboardController::class, 'profile']);
-        // });
+        Route::prefix('principal')->middleware('role:School Admin')->group(function () {
+            Route::get('/problem-reports', [PrincipalProblemReportController::class, 'index']);
+            Route::get('/problem-reports/{problemReport}', [PrincipalProblemReportController::class, 'show']);
+            Route::post('/problem-reports/{problemReport}/resolve', [PrincipalProblemReportController::class, 'resolve']);
+        });
 
         // Route::middleware('role:School Admin')->prefix('students')->group(function () {
         //     Route::get('/', [StudentController::class, 'index'])->middleware('permission:student.view');

@@ -206,6 +206,12 @@ class ParentDashboardController extends Controller
                 'id' => $parent->school->id,
                 'name' => $parent->school->name,
                 'address' => $parent->school->address,
+                'phone' => $parent->school->phone,
+                'email' => $parent->school->email,
+                'logo_url' => $parent->school->logo
+                    ? asset('storage/'.$parent->school->logo)
+                    : null,
+                'principal_name' => $parent->school->principal_name,
             ] : null,
             'children_count' => $parent->children()->count(),
         ];

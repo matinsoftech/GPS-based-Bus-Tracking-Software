@@ -25,8 +25,7 @@
 
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
-                    <label for="name" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School
-                        Name</label>
+                    <x-label for="name" value="School Name" required />
                     <input type="text" id="name" name="name" value="{{ old('name', $school->name) }}"
                         required
                         class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -36,8 +35,7 @@
                 </div>
 
                 <div>
-                    <label for="code" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School
-                        Code</label>
+                    <x-label for="code" value="School Code" required />
                     <input type="text" id="code" name="code" value="{{ old('code', $school->code) }}"
                         required
                         class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -47,8 +45,7 @@
                 </div>
 
                 <div>
-                    <label for="email"
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <x-label for="email" value="Email" required />
                     <input type="email" id="email" name="email" value="{{ old('email', $school->email) }}"
                         required
                         class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -58,8 +55,7 @@
                 </div>
 
                 <div>
-                    <label for="phone"
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+                    <x-label for="phone" value="Phone" />
                     <input type="text" id="phone" name="phone" value="{{ old('phone', $school->phone) }}"
                         class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                     @error('phone')
@@ -68,8 +64,7 @@
                 </div>
 
                 <div>
-                    <label for="principal_name"
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Principal Name</label>
+                    <x-label for="principal_name" value="Principal Name" />
                     <input type="text" id="principal_name" name="principal_name"
                         value="{{ old('principal_name', $school->principal_name) }}"
                         class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -79,8 +74,7 @@
                 </div>
 
                 <div>
-                    <label for="status"
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <x-label for="status" value="Status" required />
                     <select id="status" name="status"
                         class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                         <option value="active" @selected(old('status', $school->status) === 'active')>Active</option>
@@ -93,8 +87,7 @@
                 </div>
 
                 <div>
-                    <label for="latitude"
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Latitude</label>
+                    <x-label for="latitude" value="Latitude" />
                     <input type="number" step="any" id="latitude" name="latitude"
                         value="{{ old('latitude', $school->latitude) }}"
                         class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -104,8 +97,7 @@
                 </div>
 
                 <div>
-                    <label for="longitude"
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Longitude</label>
+                    <x-label for="longitude" value="Longitude" />
                     <input type="number" step="any" id="longitude" name="longitude"
                         value="{{ old('longitude', $school->longitude) }}"
                         class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -175,8 +167,7 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    <label for="address"
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                    <x-label for="address" value="Address" />
                     <textarea id="address" name="address" rows="3"
                         class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">{{ old('address', $school->address) }}</textarea>
                     @error('address')
@@ -185,8 +176,7 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    <label for="logo"
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Logo</label>
+                    <x-label for="logo" value="Logo" />
                     @if ($school->logo)
                         <img src="{{ \Illuminate\Support\Facades\Storage::url($school->logo) }}"
                             alt="{{ $school->name }} logo" class="mb-3 h-16 w-16 rounded-lg object-cover">

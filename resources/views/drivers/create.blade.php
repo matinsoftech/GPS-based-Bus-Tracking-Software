@@ -30,8 +30,7 @@
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                        <label for="email"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                        <x-label for="email" value="Email" required />
                         <input type="email" id="email" name="email" value="{{ old('email') }}" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                         @error('email')
@@ -40,8 +39,7 @@
                     </div>
 
                     <div>
-                        <label for="password"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                        <x-label for="password" value="Password" required />
                         <input type="password" id="password" name="password" minlength="8" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                         @error('password')
@@ -62,8 +60,7 @@
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                        <label for="first_name"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">First Name</label>
+                        <x-label for="first_name" value="First Name" required />
                         <input type="text" id="first_name" name="first_name" value="{{ old('first_name') }}" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                         @error('first_name')
@@ -72,8 +69,7 @@
                     </div>
 
                     <div>
-                        <label for="last_name"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
+                        <x-label for="last_name" value="Last Name" required />
                         <input type="text" id="last_name" name="last_name" value="{{ old('last_name') }}" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                         @error('last_name')
@@ -82,8 +78,7 @@
                     </div>
 
                     <div>
-                        <label for="gender"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Gender</label>
+                        <x-label for="gender" value="Gender" required />
                         <select id="gender" name="gender" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                             <option value="">Select Gender</option>
@@ -97,9 +92,7 @@
                     </div>
 
                     <div>
-                        <label for="date_of_birth"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Date of
-                            Birth</label>
+                        <x-label for="date_of_birth" value="Date of Birth" required />
                         <input type="date" id="date_of_birth" name="date_of_birth"
                             value="{{ old('date_of_birth') }}" max="{{ now()->subYears(18)->format('Y-m-d') }}"
                             required onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
@@ -110,8 +103,7 @@
                     </div>
 
                     <div>
-                        <label for="phone"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</label>
+                        <x-label for="phone" value="Phone Number" required />
                         <input type="text" id="phone" name="phone" value="{{ old('phone') }}"
                             placeholder="98XXXXXXXX" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -121,8 +113,7 @@
                     </div>
 
                     <div class="md:col-span-2">
-                        <label for="address"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                        <x-label for="address" value="Address" required />
                         <textarea id="address" name="address" rows="3" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">{{ old('address') }}</textarea>
                         @error('address')
@@ -131,8 +122,7 @@
                     </div>
 
                     <div>
-                        <label for="city"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">City</label>
+                        <x-label for="city" value="City" />
                         <input type="text" id="city" name="city" value="{{ old('city') }}"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                         @error('city')
@@ -141,8 +131,7 @@
                     </div>
 
                     <div>
-                        <label for="state"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">State</label>
+                        <x-label for="state" value="State" />
                         <input type="text" id="state" name="state" value="{{ old('state') }}"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                         @error('state')
@@ -151,8 +140,7 @@
                     </div>
 
                     <div>
-                        <label for="country"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Country</label>
+                        <x-label for="country" value="Country" />
                         <input type="text" id="country" name="country" value="{{ old('country', 'Nepal') }}"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                         @error('country')
@@ -161,8 +149,7 @@
                     </div>
 
                     <div>
-                        <label for="postal_code"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Postal Code</label>
+                        <x-label for="postal_code" value="Postal Code" />
                         <input type="text" id="postal_code" name="postal_code" value="{{ old('postal_code') }}"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                         @error('postal_code')
@@ -180,9 +167,7 @@
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                        <label for="license_number"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">License
-                            Number</label>
+                        <x-label for="license_number" value="License Number" required />
                         <input type="text" id="license_number" name="license_number"
                             value="{{ old('license_number') }}" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -192,9 +177,7 @@
                     </div>
 
                     <div>
-                        <label for="license_type"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">License
-                            Type</label>
+                        <x-label for="license_type" value="License Type" required />
                         <select id="license_type" name="license_type" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                             <option value="">Select License Type</option>
@@ -208,9 +191,7 @@
                     </div>
 
                     <div>
-                        <label for="experience_years"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Driving Experience
-                            (Years)</label>
+                        <x-label for="experience_years" value="Driving Experience (Years)" />
                         <input type="number" id="experience_years" name="experience_years"
                             value="{{ old('experience_years') }}" min="0" max="80"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -220,9 +201,7 @@
                     </div>
 
                     <div>
-                        <label for="license_issue_date"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">License Issue
-                            Date</label>
+                        <x-label for="license_issue_date" value="License Issue Date" required />
                         <input type="date" id="license_issue_date" name="license_issue_date"
                             value="{{ old('license_issue_date') }}" max="{{ date('Y-m-d') }}" required
                             onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
@@ -233,9 +212,7 @@
                     </div>
 
                     <div>
-                        <label for="license_expiry_date"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">License Expiry
-                            Date</label>
+                        <x-label for="license_expiry_date" value="License Expiry Date" required />
                         <input type="date" id="license_expiry_date" name="license_expiry_date"
                             value="{{ old('license_expiry_date') }}" required
                             onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
@@ -268,8 +245,7 @@
                         </div>
                     @else
                         <div>
-                            <label for="school_id"
-                                class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School</label>
+                            <x-label for="school_id" value="School" />
                             <select id="school_id" name="school_id"
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                                 <option value="">Select School (optional)</option>
@@ -285,9 +261,7 @@
                     @endif
 
                     <div>
-                        <label for="joining_date"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Joining
-                            Date</label>
+                        <x-label for="joining_date" value="Joining Date" required />
                         <input type="date" id="joining_date" name="joining_date"
                             value="{{ old('joining_date', now()->toDateString()) }}" required
                             onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
@@ -298,8 +272,7 @@
                     </div>
 
                     <div>
-                        <label for="status"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                        <x-label for="status" value="Status" required />
                         <select id="status" name="status" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                             <option value="Active" @selected(old('status', 'Active') === 'Active')>Active</option>
@@ -312,8 +285,7 @@
                     </div>
 
                     <div class="md:col-span-2">
-                        <label for="remarks"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Remarks</label>
+                        <x-label for="remarks" value="Remarks" />
                         <textarea id="remarks" name="remarks" rows="3"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">{{ old('remarks') }}</textarea>
                         @error('remarks')

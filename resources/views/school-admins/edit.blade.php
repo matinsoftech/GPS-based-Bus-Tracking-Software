@@ -35,7 +35,7 @@
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                        <label for="name" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                        <x-label for="name" value="Full Name" required />
                         <input
                             type="text"
                             id="name"
@@ -50,7 +50,7 @@
                     </div>
 
                     <div>
-                        <label for="email" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                        <x-label for="email" value="Email" required />
                         <input
                             type="email"
                             id="email"
@@ -65,7 +65,7 @@
                     </div>
 
                     <div>
-                        <label for="password" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                        <x-label for="password" value="Password" />
                         <input
                             type="password"
                             id="password"
@@ -87,7 +87,7 @@
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                        <label for="school_id" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School</label>
+                        <x-label for="school_id" value="School" required />
                         @if ($superAdmin)
                             <select
                                 id="school_id"
@@ -115,7 +115,7 @@
                     </div>
 
                     <div>
-                        <label for="phone" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+                        <x-label for="phone" value="Phone" required />
                         <input
                             type="text"
                             id="phone"
@@ -130,7 +130,7 @@
                     </div>
 
                     <div>
-                        <label for="designation" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Designation</label>
+                        <x-label for="designation" value="Designation" />
                         <input
                             type="text"
                             id="designation"
@@ -144,7 +144,7 @@
                     </div>
 
                     <div class="md:col-span-2">
-                        <label for="address" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                        <x-label for="address" value="Address" />
                         <textarea
                             id="address"
                             name="address"

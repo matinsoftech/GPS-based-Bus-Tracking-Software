@@ -30,8 +30,7 @@
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                        <label for="bus_number"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Bus Number</label>
+                        <x-label for="bus_number" value="Bus Number" required />
                         <input type="text" id="bus_number" name="bus_number" value="{{ old('bus_number') }}"
                             placeholder="BUS-001" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -41,9 +40,7 @@
                     </div>
 
                     <div>
-                        <label for="registration_number"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Registration
-                            Number</label>
+                        <x-label for="registration_number" value="Registration Number" required />
                         <input type="text" id="registration_number" name="registration_number"
                             value="{{ old('registration_number') }}" placeholder="BA 1 KHA 1234" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -53,8 +50,7 @@
                     </div>
 
                     <div>
-                        <label for="make"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Make</label>
+                        <x-label for="make" value="Make" />
                         <input type="text" id="make" name="make" value="{{ old('make') }}"
                             placeholder="Ashok Leyland"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -64,8 +60,7 @@
                     </div>
 
                     <div>
-                        <label for="model"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Model</label>
+                        <x-label for="model" value="Model" />
                         <input type="text" id="model" name="model" value="{{ old('model') }}"
                             placeholder="Viking"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -75,8 +70,7 @@
                     </div>
 
                     <div>
-                        <label for="year"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Year</label>
+                        <x-label for="year" value="Year" />
                         <input type="number" id="year" name="year" value="{{ old('year') }}" min="1950"
                             max="{{ now()->year }}" placeholder="{{ now()->year }}"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -86,8 +80,7 @@
                     </div>
 
                     <div>
-                        <label for="capacity"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Capacity</label>
+                        <x-label for="capacity" value="Capacity" required />
                         <input type="number" id="capacity" name="capacity" value="{{ old('capacity', 40) }}"
                             min="1" max="200" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -97,8 +90,7 @@
                     </div>
 
                     <div>
-                        <label for="fuel_type"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Fuel Type</label>
+                        <x-label for="fuel_type" value="Fuel Type" />
                         <select id="fuel_type" name="fuel_type"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                             <option value="">Select Fuel Type</option>
@@ -114,8 +106,7 @@
                     </div>
 
                     <div>
-                        <label for="gps_device_id"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">IOT IMEI</label>
+                        <x-label for="gps_device_id" value="IOT IMEI" />
                         <input type="text" id="gps_device_id" name="gps_device_id"
                             value="{{ old('gps_device_id') }}" placeholder="GPS-1001"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -125,9 +116,7 @@
                     </div>
 
                     <div>
-                        <label for="insurance_number"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Insurance
-                            Number</label>
+                        <x-label for="insurance_number" value="Insurance Number" />
                         <input type="text" id="insurance_number" name="insurance_number"
                             value="{{ old('insurance_number') }}"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
@@ -137,9 +126,7 @@
                     </div>
 
                     <div>
-                        <label for="insurance_expiry_date"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Insurance Expiry
-                            Date</label>
+                        <x-label for="insurance_expiry_date" value="Insurance Expiry Date" />
                         <input type="date" id="insurance_expiry_date" name="insurance_expiry_date"
                             value="{{ old('insurance_expiry_date') }}"
                             onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
@@ -150,9 +137,7 @@
                     </div>
 
                     <div>
-                        <label for="last_service_date"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Last Service
-                            Date</label>
+                        <x-label for="last_service_date" value="Last Service Date" />
                         <input type="date" id="last_service_date" name="last_service_date"
                             value="{{ old('last_service_date') }}" max="{{ date('Y-m-d') }}"
                             onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
@@ -163,8 +148,7 @@
                     </div>
 
                     <div>
-                        <label for="status"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                        <x-label for="status" value="Status" required />
                         <select id="status" name="status" required
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                             <option value="Active" @selected(old('status', 'Active') === 'Active')>Active</option>
@@ -190,8 +174,7 @@
                         </div>
                     @else
                         <div>
-                            <label for="school_id"
-                                class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School</label>
+                            <x-label for="school_id" value="School" />
                             <select id="school_id" name="school_id"
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                                 <option value="">Select School (optional)</option>
@@ -207,8 +190,7 @@
                     @endif
 
                     <div class="md:col-span-2">
-                        <label for="notes"
-                            class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                        <x-label for="notes" value="Notes" />
                         <textarea id="notes" name="notes" rows="3"
                             class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">{{ old('notes') }}</textarea>
                         @error('notes')
@@ -225,8 +207,7 @@
                 </h2>
 
                 <div>
-                    <label for="driver_ids"
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Drivers</label>
+                    <x-label for="driver_ids" value="Drivers" />
                     <div
                         class="max-h-48 overflow-y-auto rounded-lg border border-gray-300 p-3 dark:border-gray-600 dark:bg-gray-800">
                         @forelse ($drivers as $driver)

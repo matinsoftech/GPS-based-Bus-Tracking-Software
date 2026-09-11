@@ -35,7 +35,7 @@
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                        <label for="name" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                        <x-label for="name" value="Full Name" required />
                         <input
                             type="text"
                             id="name"
@@ -50,7 +50,7 @@
                     </div>
 
                     <div>
-                        <label for="email" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                        <x-label for="email" value="Email" required />
                         <input
                             type="email"
                             id="email"
@@ -65,7 +65,7 @@
                     </div>
 
                     <div>
-                        <label for="password" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                        <x-label for="password" value="Password" />
                         <input
                             type="password"
                             id="password"
@@ -88,7 +88,7 @@
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     @if(auth()->user()->hasAnyRole(['School Admin', 'Principal']))
                         <div>
-                            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School</label>
+                            <x-label value="School" />
                             <input
                                 type="text"
                                 value="{{ isset($school) && $school ? $school->name : 'School not assigned' }}"
@@ -101,7 +101,7 @@
                         </div>
                     @else
                         <div>
-                            <label for="school_id" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School</label>
+                            <x-label for="school_id" value="School" required />
                             <select
                                 id="school_id"
                                 name="school_id"
@@ -119,7 +119,7 @@
                     @endif
 
                     <div>
-                        <label for="phone" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+                        <x-label for="phone" value="Phone" required />
                         <input
                             type="text"
                             id="phone"
@@ -134,7 +134,7 @@
                     </div>
 
                     <div>
-                        <label for="alternate_phone" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Alternate Phone</label>
+                        <x-label for="alternate_phone" value="Alternate Phone" />
                         <input
                             type="text"
                             id="alternate_phone"
@@ -148,7 +148,7 @@
                     </div>
 
                     <div>
-                        <label for="occupation" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Occupation</label>
+                        <x-label for="occupation" value="Occupation" />
                         <input
                             type="text"
                             id="occupation"
@@ -162,7 +162,7 @@
                     </div>
 
                     <div class="md:col-span-2">
-                        <label for="address" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
+                        <x-label for="address" value="Address" required />
                         <textarea
                             id="address"
                             name="address"
