@@ -11,6 +11,7 @@ use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\ParentProfileController;
 use App\Http\Controllers\PrincipalDashboardController;
 use App\Http\Controllers\PrincipalProblemReportController;
+use App\Http\Controllers\PrincipalSubscriptionController;
 use App\Http\Controllers\PrincipalVehicleTrackingController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
@@ -139,6 +140,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/problem-reports/{problemReport}/resolve', [PrincipalProblemReportController::class, 'resolve'])
             ->middleware('permission:report.view')
             ->name('problem-reports.resolve');
+
+        Route::get('/subscription', [PrincipalSubscriptionController::class, 'index'])
+            ->middleware('permission:dashboard.view')
+            ->name('subscription');
     });
 
     /*

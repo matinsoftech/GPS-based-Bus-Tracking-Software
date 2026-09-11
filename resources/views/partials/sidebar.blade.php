@@ -303,6 +303,20 @@
             ],
         ],
         [
+            'title' => 'Subscription & Plan',
+            'items' => [
+                [
+                    'key' => 'subscription',
+                    'label' => 'Subscription & Plan',
+                    'route' => 'principal.subscription',
+                    'active' => 'subscription',
+                    'icon' => 'heroicon-o-receipt-percent',
+                    'permission' => null,
+                    'dropdown' => null,
+                ],
+            ],
+        ],
+        [
             'title' => 'Support',
             'items' => [
                 [
