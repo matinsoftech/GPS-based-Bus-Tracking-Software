@@ -132,6 +132,10 @@ class ParentProfileController extends Controller
             }
         }
 
+        if ($error = app(\App\Services\PlanLimitService::class)->assertCreatable('parents', (int) $validated['school_id'])) {
+            return back()->withInput()->withErrors(['plan_limit' => $error]);
+        }
+
         try {
             DB::transaction(function () use ($validated) {
                 $user = User::create([
