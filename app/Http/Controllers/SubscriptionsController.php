@@ -109,17 +109,27 @@ class SubscriptionsController extends Controller
             ? $plan->monthly_price
             : $plan->yearly_price;
 
-        $subscription->update([
+        $payload = [
             'school_id' => $school->id,
             'plan_id' => $plan->id,
             'billing_cycle' => $request->billing_cycle,
             'amount' => $amount,
             'status' => $status,
-            'starts_at' => $subscription->starts_at ?? now(),
             'trial_ends_at' => $status === 'trialing'
                 ? ($subscription->trial_ends_at ?? now()->addDays(14))
                 : $subscription->trial_ends_at,
-        ]);
+        ];
+
+        if ($request->billing_cycle !== $subscription->billing_cycle) {
+            $payload['starts_at'] = now();
+            $payload['ends_at'] = $request->billing_cycle === 'monthly'
+                ? $payload['starts_at']->copy()->addMonth()
+                : $payload['starts_at']->copy()->addYear();
+        } else {
+            $payload['starts_at'] = $subscription->starts_at ?? now();
+        }
+
+        $subscription->update($payload);
 
         return redirect()
             ->route('subscriptions.index')
