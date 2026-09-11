@@ -79,7 +79,7 @@ class FleetMapService
      */
     public function forRoute(Route $route, ?array $location = null): array
     {
-        $route->loadMissing(['stops']);
+        $route->loadMissing(['stops', 'activeTrip.driver']);
 
         $bus = $route->activeTrip?->bus;
 
@@ -234,7 +234,9 @@ class FleetMapService
             'bus_number' => $bus->bus_number,
             'registration_number' => $bus->registration_number,
             'status' => $bus->status,
-            'driver_name' => $bus->drivers->first()?->full_name,
+            'driver_name' => $routeOrTrips instanceof Collection
+                ? $routeOrTrips->firstWhere('bus_id', $bus->id)?->driver?->full_name
+                : $routeOrTrips->activeTrip?->driver?->full_name,
             'route_id' => $route?->id,
             'route_name' => $route?->name,
             'school_name' => $bus->school?->name,
