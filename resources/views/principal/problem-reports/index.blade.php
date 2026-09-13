@@ -80,7 +80,7 @@
                             <th class="px-5 py-3 text-left font-medium">Severity</th>
                             <th class="px-5 py-3 text-left font-medium">Category</th>
                             <th class="px-5 py-3 text-left font-medium">Reporter</th>
-                            <th class="px-5 py-3 text-left font-medium">Bus</th>
+                            {{-- <th class="px-5 py-3 text-left font-medium">Bus</th> --}}
                             <th class="px-5 py-3 text-left font-medium">Description</th>
                             <th class="px-5 py-3 text-left font-medium">Submitted</th>
                             <th class="px-5 py-3 text-left font-medium">Status</th>
@@ -107,7 +107,7 @@
                                     <span class="text-xs text-gray-400 dark:text-gray-500">{{ $report->reporter?->getRoleNames()->first() ?? '' }}</span>
                                 </td>
                                 <td class="px-5 py-3">
-                                    <span class="text-sm">{{ $report->bus?->bus_number ?? '—' }}</span>
+                                    {{-- <span class="text-sm">{{ $report->bus?->bus_number ?? '—' }}</span> --}}
                                 </td>
                                 <td class="px-5 py-3">
                                     <span class="block max-w-xs truncate text-sm" title="{{ $report->description }}">{{ $report->description }}</span>
