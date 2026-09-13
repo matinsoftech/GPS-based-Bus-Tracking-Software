@@ -26,7 +26,10 @@
             'expired' => 'bg-gray-100 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400',
         ];
 
-        $daysLeft = $subscription && $subscription->ends_at
+        $canShowCountdown = $subscription
+            && in_array($subscription->status, ['trialing', 'active'], true);
+
+        $daysLeft = $canShowCountdown && $subscription->ends_at
             ? now()->startOfDay()->diffInDays($subscription->ends_at->copy()->startOfDay(), false)
             : null;
 
@@ -58,7 +61,35 @@
                         </span>
                     </div>
 
-                    @if ($daysLeft !== null)
+                    @if ($subscription->status === 'expired')
+                            <div class="mt-4 inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-600 dark:bg-gray-500/10 dark:text-gray-400">
+                                <x-heroicon-o-x-circle class="h-5 w-5 shrink-0" />
+                                This subscription has expired
+                                @if ($subscription->ends_at)
+                                    <span class="text-xs font-normal text-gray-500/80 dark:text-gray-400/80">
+                                        &middot; ended {{ $subscription->ends_at->format('M d, Y') }}
+                                    </span>
+                                @endif
+                            </div>
+                        @elseif ($subscription->status === 'cancelled')
+                            <div class="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 dark:bg-red-500/10 dark:text-red-400">
+                                <x-heroicon-o-x-circle class="h-5 w-5 shrink-0" />
+                                This subscription was cancelled
+                                <span class="text-xs font-normal text-red-600/70 dark:text-red-400/70">
+                                    &middot; cancelled {{ ($subscription->cancelled_at ?? $subscription->ends_at)?->format('M d, Y') }}
+                                </span>
+                            </div>
+                        @elseif ($subscription->status === 'past_due')
+                            <div class="mt-4 inline-flex items-center gap-2 rounded-xl bg-yellow-50 px-4 py-2.5 text-sm font-medium text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400">
+                                <x-heroicon-o-exclamation-triangle class="h-5 w-5 shrink-0" />
+                                Payment is past due
+                                @if ($subscription->ends_at)
+                                    <span class="text-xs font-normal text-yellow-600/70 dark:text-yellow-400/70">
+                                        &middot; ends {{ $subscription->ends_at->format('M d, Y') }}
+                                    </span>
+                                @endif
+                            </div>
+                        @elseif ($daysLeft !== null)
                         @if ($daysLeft >= 0)
                             <div class="mt-4 inline-flex items-center gap-2 rounded-xl bg-green-50 px-4 py-2.5 text-sm font-medium text-green-700 dark:bg-green-500/10 dark:text-green-400">
                                 <x-heroicon-o-clock class="h-5 w-5 shrink-0" />

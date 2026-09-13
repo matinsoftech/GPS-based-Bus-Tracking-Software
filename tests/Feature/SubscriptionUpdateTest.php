@@ -62,7 +62,7 @@ class SubscriptionUpdateTest extends TestCase
             'amount' => 1999,
             'status' => 'active',
             'starts_at' => now()->subMonth(),
-            'ends_at' => now(),
+            'ends_at' => now()->addMonth(),
             'trial_ends_at' => null,
         ]);
     }

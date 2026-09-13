@@ -118,6 +118,17 @@ class PrincipalSubscriptionTest extends TestCase
             ->assertSee('Expired');
     }
 
+    public function test_expired_subscription_does_not_show_days_left(): void
+    {
+        $this->subscribeSchool('expired');
+
+        $response = $this->actingAs($this->principal)->get(route('principal.subscription'));
+
+        $response->assertOk()
+            ->assertSee('This subscription has expired')
+            ->assertDontSee('days left');
+    }
+
     public function test_school_admin_sees_empty_state_when_no_subscription(): void
     {
         $response = $this->actingAs($this->principal)->get(route('principal.subscription'));
