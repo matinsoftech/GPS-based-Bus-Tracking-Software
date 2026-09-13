@@ -80,11 +80,13 @@ class ParentChildTest extends TestCase
         $this->route = Route::create([
             'school_id' => $this->school->id,
             'name' => 'Route 1',
-            'route_code' => 'RT-PCT-' . strtoupper(bin2hex(random_bytes(3))),
+            'route_code' => 'RT-PCT-'.strtoupper(bin2hex(random_bytes(3))),
             'start_location' => 'Start',
             'end_location' => 'End',
             'is_active' => true,
         ]);
+
+        $this->activateSubscription($this->school);
     }
 
     private function makeStudent(array $overrides = []): Student

@@ -11,6 +11,7 @@ use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\ParentProfileController;
 use App\Http\Controllers\PrincipalDashboardController;
 use App\Http\Controllers\PrincipalProblemReportController;
+use App\Http\Controllers\PrincipalSubscriptionController;
 use App\Http\Controllers\PrincipalVehicleTrackingController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
@@ -51,7 +52,7 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'subscription'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
@@ -139,6 +140,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/problem-reports/{problemReport}/resolve', [PrincipalProblemReportController::class, 'resolve'])
             ->middleware('permission:report.view')
             ->name('problem-reports.resolve');
+
+        Route::get('/subscription', [PrincipalSubscriptionController::class, 'index'])
+            ->middleware('permission:dashboard.view')
+            ->name('subscription');
     });
 
     /*
@@ -717,6 +722,16 @@ Route::middleware('auth')->group(function () {
     //     return view('images');
     // })->name('images');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Paywall
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->get('/subscription-inactive', function () {
+    return view('subscriptions.inactive');
+})->name('subscription.inactive');
 
 /*
 |--------------------------------------------------------------------------

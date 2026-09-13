@@ -61,6 +61,8 @@ class DriverBusTripFlagTest extends TestCase
             'status' => 'Active',
             'created_by' => $this->driverUser->id,
         ]);
+
+        $this->activateSubscription($school);
     }
 
     private function createBus(string $number): Bus

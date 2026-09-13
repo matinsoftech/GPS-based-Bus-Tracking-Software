@@ -7,10 +7,13 @@ use App\Http\Requests\UpdateSubscriptionRequest;
 use App\Models\Plan;
 use App\Models\School;
 use App\Models\Subscription;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 
 class SubscriptionsController extends Controller
 {
+    public function __construct(private readonly SubscriptionService $subscriptions) {}
+
     public function index(Request $request)
     {
         $search = $request->search;
@@ -45,33 +48,12 @@ class SubscriptionsController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        if ($school->activeSubscription) {
-            return back()->with(
-                'error',
-                "{$school->name} already has an active subscription."
-            );
-        }
-
-        $status = $request->status ?? 'trialing';
-        $amount = $request->billing_cycle === 'monthly'
-            ? $plan->monthly_price
-            : $plan->yearly_price;
-
-        $startsAt = now();
-        $endsAt = $request->billing_cycle === 'monthly'
-            ? $startsAt->copy()->addMonth()
-            : $startsAt->copy()->addYear();
-
-        Subscription::create([
-            'school_id' => $school->id,
-            'plan_id' => $plan->id,
-            'billing_cycle' => $request->billing_cycle,
-            'amount' => $amount,
-            'status' => $status,
-            'starts_at' => $startsAt,
-            'ends_at' => $endsAt,
-            'trial_ends_at' => $status === 'trialing' ? $startsAt->copy()->addDays(14) : null,
-        ]);
+        $this->subscriptions->create(
+            $school,
+            $plan,
+            $request->billing_cycle,
+            $request->status ?? 'trialing'
+        );
 
         return redirect()
             ->route('subscriptions.index')
@@ -104,22 +86,30 @@ class SubscriptionsController extends Controller
             );
         }
 
-        $status = $request->status ?? $subscription->status;
-        $amount = $request->billing_cycle === 'monthly'
-            ? $plan->monthly_price
-            : $plan->yearly_price;
+        $previousBillingCycle = $subscription->billing_cycle;
 
-        $subscription->update([
-            'school_id' => $school->id,
-            'plan_id' => $plan->id,
-            'billing_cycle' => $request->billing_cycle,
-            'amount' => $amount,
+        $this->subscriptions->upgrade($subscription, $plan, $request->billing_cycle);
+        $subscription->refresh();
+
+        $status = $request->status ?? $subscription->status;
+
+        $payload = [
             'status' => $status,
-            'starts_at' => $subscription->starts_at ?? now(),
             'trial_ends_at' => $status === 'trialing'
                 ? ($subscription->trial_ends_at ?? now()->addDays(14))
                 : $subscription->trial_ends_at,
-        ]);
+        ];
+
+        if ($request->billing_cycle !== $previousBillingCycle) {
+            $payload['starts_at'] = now();
+            $payload['ends_at'] = $request->billing_cycle === 'monthly'
+                ? $payload['starts_at']->copy()->addMonth()
+                : $payload['starts_at']->copy()->addYear();
+        } else {
+            $payload['starts_at'] = $subscription->starts_at ?? now();
+        }
+
+        $subscription->update($payload);
 
         return redirect()
             ->route('subscriptions.index')

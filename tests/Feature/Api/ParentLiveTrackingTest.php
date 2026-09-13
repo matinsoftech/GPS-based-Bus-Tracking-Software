@@ -96,6 +96,8 @@ class ParentLiveTrackingTest extends TestCase
             'end_location' => 'End',
             'is_active' => true,
         ]);
+
+        $this->activateSubscription($this->school);
     }
 
     private function makeRoute(string $name): Route

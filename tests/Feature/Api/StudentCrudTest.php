@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Api;
 
-use App\Models\Route;
 use App\Models\ParentProfile;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
@@ -74,6 +74,8 @@ class StudentCrudTest extends TestCase
         $this->parent = $this->makeParent($this->school, 'Hari Sharma', '9812345678');
 
         $this->route = $this->makeRoute($this->school, 'STU-ROUTE-1');
+
+        $this->activateSubscription($this->school);
     }
 
     private function makeParent(School $school, string $name, string $phone): ParentProfile

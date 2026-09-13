@@ -174,6 +174,10 @@ class StudentController extends Controller
         $stops = $validated['stops'] ?? [];
         unset($validated['stops'], $validated['route_ids']);
 
+        if ($error = app(\App\Services\PlanLimitService::class)->assertCreatable('students', (int) $validated['school_id'])) {
+            return back()->withInput()->withErrors(['plan_limit' => $error]);
+        }
+
         $student = Student::create($validated);
         $student->routes()->sync($routeIds);
         $student->stops()->sync($stops);

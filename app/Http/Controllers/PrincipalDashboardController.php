@@ -7,10 +7,11 @@ use App\Models\Driver;
 use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
-use App\Models\Trip;
 use App\Models\Student;
+use App\Models\Trip;
 use App\Notifications\TripEndedNotification;
 use App\Services\FleetMapService;
+use App\Services\SchoolContextService;
 use App\Traits\NotifiesRouteParticipants;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Notification;
@@ -21,7 +22,10 @@ class PrincipalDashboardController extends Controller
 {
     use NotifiesRouteParticipants;
 
-    public function __construct(private readonly FleetMapService $fleetMap) {}
+    public function __construct(
+        private readonly FleetMapService $fleetMap,
+        private readonly SchoolContextService $context
+    ) {}
 
     /**
      * Show the principal (school admin) dashboard.
@@ -30,7 +34,7 @@ class PrincipalDashboardController extends Controller
     {
         $user = Auth::user();
 
-        $schoolId = $this->resolveSchoolId($user);
+        $schoolId = $this->context->resolveSchool($user)?->id;
 
         $busQuery = Bus::query();
         $driverQuery = Driver::query();
@@ -100,7 +104,7 @@ class PrincipalDashboardController extends Controller
     {
         $user = Auth::user();
 
-        return response()->json($this->fleetMap->forSchool($this->resolveSchoolId($user)));
+        return response()->json($this->fleetMap->forSchool($this->context->resolveSchool($user)?->id));
     }
 
     /**
@@ -109,7 +113,7 @@ class PrincipalDashboardController extends Controller
     public function tripsIndex(Request $request)
     {
         $user = Auth::user();
-        $schoolId = $this->resolveSchoolId($user);
+        $schoolId = $this->context->resolveSchool($user)?->id;
 
         $query = Trip::with(['bus', 'route', 'driver', 'school'])
             ->orderByDesc('started_at');
@@ -131,7 +135,7 @@ class PrincipalDashboardController extends Controller
     public function endTrip(Trip $trip)
     {
         $user = Auth::user();
-        $schoolId = $this->resolveSchoolId($user);
+        $schoolId = $this->context->resolveSchool($user)?->id;
 
         if ($schoolId !== null && $trip->school_id !== $schoolId) {
             abort(403, 'You are not authorized to end this trip.');
@@ -173,25 +177,5 @@ class PrincipalDashboardController extends Controller
                 $admin->user->notify($notification);
             }
         }
-    }
-
-    /**
-     * Resolve the principal's school id from the user record and fallbacks.
-     */
-    private function resolveSchoolId($user): ?int
-    {
-        $schoolId = $user->school_id;
-
-        if (! $schoolId) {
-            $schoolId = SchoolAdmin::where('user_id', $user->id)->value('school_id');
-        }
-
-        if (! $schoolId) {
-            $schoolId = School::where('principal_name', $user->name)
-                ->orWhere('email', $user->email)
-                ->value('id');
-        }
-
-        return $schoolId;
     }
 }

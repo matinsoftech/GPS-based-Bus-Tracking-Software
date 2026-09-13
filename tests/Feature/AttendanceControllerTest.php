@@ -20,7 +20,7 @@ class AttendanceControllerTest extends TestCase
 
     private function createSchool(string $code = 'SCH001'): School
     {
-        return School::create([
+        $school = School::create([
             'name' => "School {$code}",
             'code' => $code,
             'email' => "admin{$code}@example.com",
@@ -29,6 +29,10 @@ class AttendanceControllerTest extends TestCase
             'principal_name' => 'Principal Name',
             'status' => 'active',
         ]);
+
+        $this->activateSubscription($school);
+
+        return $school;
     }
 
     private function createUser(array $attributes = []): User

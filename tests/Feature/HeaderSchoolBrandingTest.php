@@ -34,6 +34,8 @@ class HeaderSchoolBrandingTest extends TestCase
             'status' => 'active',
             'logo' => 'schools/test-logo.png',
         ]);
+
+        $this->activateSubscription($this->school);
     }
 
     public function test_driver_dashboard_header_shows_their_school_name(): void

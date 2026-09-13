@@ -32,6 +32,31 @@ class School extends Model
         return $this->hasMany(Student::class);
     }
 
+    public function buses()
+    {
+        return $this->hasMany(Bus::class);
+    }
+
+    public function parents()
+    {
+        return $this->hasMany(ParentProfile::class);
+    }
+
+    public function drivers()
+    {
+        return $this->hasMany(Driver::class);
+    }
+
+    public function routes()
+    {
+        return $this->hasMany(Route::class);
+    }
+
+    public function gpsDevices()
+    {
+        return $this->hasMany(GpsDevice::class);
+    }
+
     public function subscriptions()
     {
         return $this->hasMany(Subscription::class);

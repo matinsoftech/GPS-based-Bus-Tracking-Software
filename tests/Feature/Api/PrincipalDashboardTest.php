@@ -78,6 +78,8 @@ class PrincipalDashboardTest extends TestCase
         ]);
 
         $this->fakeLiveTracking([]);
+
+        $this->activateSubscription($this->school);
     }
 
     private function fakeLiveTracking(array $devices): void

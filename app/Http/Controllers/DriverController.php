@@ -238,6 +238,10 @@ class DriverController extends Controller
             }
         }
 
+        if ($error = app(\App\Services\PlanLimitService::class)->assertCreatable('drivers', (int) $validated['school_id'])) {
+            return back()->withInput()->withErrors(['plan_limit' => $error]);
+        }
+
         $validated['employee_id'] = $request->input('employee_id') ?: 'DRV-'.now()->format('YmdHis').'-'.random_int(1000, 9999);
 
         /*

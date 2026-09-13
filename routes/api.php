@@ -27,7 +27,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/reset-password', [ApiPasswordController::class, 'resetPassword']);
 
     // Protected
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
         Route::get('/auth/me', [ApiAuthController::class, 'me']);
         Route::post('/auth/logout', [ApiAuthController::class, 'logout']);
         Route::put('/auth/change-password', [ApiPasswordController::class, 'changePassword']);

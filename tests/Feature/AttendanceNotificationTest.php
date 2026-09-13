@@ -94,6 +94,8 @@ class AttendanceNotificationTest extends TestCase
         $this->driver->routes()->attach($this->route->id);
 
         $this->student = $this->createStudent('ADM-AN-1', $this->parent, $this->route);
+
+        $this->activateSubscription($this->school);
     }
 
     private function createStudent(string $admissionNo, ParentProfile $parent, Route $route): Student

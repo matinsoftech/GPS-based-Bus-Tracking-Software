@@ -120,6 +120,10 @@ class BusController extends Controller
             }
         }
 
+        if ($error = app(\App\Services\PlanLimitService::class)->assertCreatable('buses', (int) $validated['school_id'])) {
+            return back()->withInput()->withErrors(['plan_limit' => $error]);
+        }
+
         $validated['created_by'] = $user->id;
         $driverIds = $validated['driver_ids'] ?? [];
         unset($validated['driver_ids']);

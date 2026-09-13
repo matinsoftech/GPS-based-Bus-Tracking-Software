@@ -166,7 +166,7 @@ class PrincipalTripEndTest extends TestCase
 
     private function createSchool(string $name, string $code): School
     {
-        return School::create([
+        $school = School::create([
             'name' => $name,
             'code' => $code,
             'email' => strtolower($code).'@school.com',
@@ -175,6 +175,10 @@ class PrincipalTripEndTest extends TestCase
             'principal_name' => 'Principal',
             'status' => 'active',
         ]);
+
+        $this->activateSubscription($school);
+
+        return $school;
     }
 
     private function createDriver(School $school): Driver

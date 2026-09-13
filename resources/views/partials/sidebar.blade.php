@@ -59,15 +59,6 @@
                     'dropdown' => null,
                 ],
                 [
-                    'key' => 'subscriptions',
-                    'label' => 'Subscriptions',
-                    'route' => 'subscriptions.index',
-                    'active' => 'subscriptions',
-                    'icon' => 'heroicon-o-receipt-percent',
-                    'permission' => 'subscription.view',
-                    'dropdown' => null,
-                ],
-                [
                     'key' => 'school-admin-management',
                     'label' => 'School Admin',
                     'route' => 'school-admins.index',
@@ -144,6 +135,24 @@
             'title' => 'Administration',
             'items' => [
                 [
+                    'key' => 'subscriptions',
+                    'label' => 'Subscriptions',
+                    'route' => 'subscriptions.index',
+                    'active' => 'subscriptions',
+                    'icon' => 'heroicon-o-receipt-percent',
+                    'permission' => 'subscription.view',
+                    'dropdown' => null,
+                ],
+                [
+                    'key' => 'plans',
+                    'label' => 'Plans',
+                    'route' => 'plans.index',
+                    'active' => 'plans',
+                    'icon' => 'heroicon-o-currency-dollar',
+                    'permission' => 'plan.view',
+                    'dropdown' => null,
+                ],
+                [
                     'key' => 'roles-permissions',
                     'label' => 'Roles & Permissions',
                     'route' => 'roles.index',
@@ -176,15 +185,6 @@
                     'permission' => null,
                     'dropdown' => null,
                 ],
-                [
-                    'key' => 'plans',
-                    'label' => 'Plans',
-                    'route' => 'plans.index',
-                    'active' => 'plans',
-                    'icon' => 'heroicon-o-currency-dollar',
-                    'permission' => 'plan.view',
-                    'dropdown' => null,
-                ],
             ],
         ],
     ];
@@ -200,6 +200,7 @@
                     'active' => ['overview', 'dashboard'],
                     'icon' => 'heroicon-o-home',
                     'permission' => null,
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
             ],
@@ -214,6 +215,7 @@
                     'active' => 'students',
                     'icon' => 'heroicon-o-academic-cap',
                     'permission' => null,
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
                 [
@@ -223,6 +225,7 @@
                     'active' => 'parents',
                     'icon' => 'heroicon-o-users',
                     'permission' => null,
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
                 [
@@ -232,6 +235,7 @@
                     'active' => 'drivers',
                     'icon' => 'heroicon-o-user-group',
                     'permission' => 'driver.view',
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
                 [
@@ -241,6 +245,7 @@
                     'active' => 'buses',
                     'icon' => 'heroicon-o-truck',
                     'permission' => 'bus.view',
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
                 [
@@ -250,6 +255,7 @@
                     'active' => 'school-admin-management',
                     'icon' => 'heroicon-o-user-group',
                     'permission' => 'school-admin.view',
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
                 [
@@ -259,6 +265,7 @@
                     'active' => 'route-management',
                     'icon' => 'heroicon-o-map',
                     'permission' => null,
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
             ],
@@ -273,6 +280,7 @@
                     'active' => 'trips',
                     'icon' => 'heroicon-o-clipboard-document-list',
                     'permission' => 'trip.view',
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
                 [
@@ -282,6 +290,7 @@
                     'active' => 'attendance',
                     'icon' => 'heroicon-o-document-check',
                     'permission' => 'attendance.view',
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
             ],
@@ -297,9 +306,24 @@
                     'active' => 'vehicle-tracking',
                     'icon' => 'heroicon-o-map-pin',
                     'permission' => null,
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
                 // ['key' => 'notifications', 'label' => 'Notifications', 'route' => 'dashboard', 'active' => 'notifications', 'icon' => 'heroicon-o-bell', 'permission' => null, 'dropdown' => null],
+            ],
+        ],
+        [
+            'title' => 'Subscription & Plan',
+            'items' => [
+                [
+                    'key' => 'subscription',
+                    'label' => 'Subscription & Plan',
+                    'route' => 'principal.subscription',
+                    'active' => 'subscription',
+                    'icon' => 'heroicon-o-receipt-percent',
+                    'permission' => null,
+                    'dropdown' => null,
+                ],
             ],
         ],
         [
@@ -312,6 +336,7 @@
                     'active' => 'problem-reports',
                     'icon' => 'heroicon-o-exclamation-triangle',
                     'permission' => 'report.view',
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
             ],
@@ -343,6 +368,7 @@
                     'active' => ['overview', 'dashboard'],
                     'icon' => 'heroicon-o-home',
                     'permission' => null,
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
             ],
@@ -357,6 +383,7 @@
                     'active' => 'trips',
                     'icon' => 'heroicon-o-clipboard-document-list',
                     'permission' => 'trip.view',
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
                 [
@@ -366,6 +393,7 @@
                     'active' => 'attendance',
                     'icon' => 'heroicon-o-document-check',
                     'permission' => 'attendance.view',
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
             ],
@@ -380,6 +408,7 @@
                     'active' => 'live-tracking',
                     'icon' => 'heroicon-o-eye',
                     'permission' => null,
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
                 // ['key' => 'notifications', 'label' => 'Notifications', 'route' => 'driver.dashboard', 'active' => 'notifications', 'icon' => 'heroicon-o-bell', 'permission' => null, 'dropdown' => null],
@@ -412,6 +441,7 @@
                     'active' => ['overview', 'dashboard'],
                     'icon' => 'heroicon-o-home',
                     'permission' => null,
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
                 [
@@ -421,6 +451,7 @@
                     'active' => 'my-children',
                     'icon' => 'heroicon-o-users',
                     'permission' => null,
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
             ],
@@ -435,6 +466,7 @@
                     'active' => 'bus-location',
                     'icon' => 'heroicon-o-map-pin',
                     'permission' => null,
+                    'subscription' => true,
                     'dropdown' => null,
                 ],
             ],
@@ -553,6 +585,11 @@
      * Each menu item can declare a `permission` key. Items (and dropdown
      * sub-items) the current user is not allowed to view are hidden.
      * Leave the key off for items that require no permission.
+     *
+     * Items flagged with `subscription => true` are also hidden while the
+     * school's subscription is not usable (see the `subscriptionOk` flag
+     * bound by the HeaderComposer), e.g. Profile and the subscription page
+     * stay visible under a paywall.
      */
     $can = function ($permission) {
         if (empty($permission)) {
@@ -561,18 +598,26 @@
         return auth()->check() && auth()->user()->can($permission);
     };
 
+    $allowed = function ($item) use ($can, $subscriptionOk) {
+        if (! $can($item['permission'] ?? null)) {
+            return false;
+        }
+
+        return empty($item['subscription']) || $subscriptionOk;
+    };
+
     $menu = array_values(
         array_filter(
-            array_map(function ($group) use ($can) {
+            array_map(function ($group) use ($allowed, $can) {
                 $items = array_values(
-                    array_filter($group['items'], function ($item) use ($can) {
-                        if (!$can($item['permission'] ?? null)) {
+                    array_filter($group['items'], function ($item) use ($allowed, $can) {
+                        if (! $allowed($item)) {
                             return false;
                         }
 
                         if (!empty($item['dropdown'])) {
                             $item['dropdown'] = array_values(
-                                array_filter($item['dropdown'], fn($sub) => $can($sub['permission'] ?? null)),
+                                array_filter($item['dropdown'], $allowed),
                             );
 
                             return count($item['dropdown']) > 0;

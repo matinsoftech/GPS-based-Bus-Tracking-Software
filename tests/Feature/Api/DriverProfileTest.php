@@ -60,6 +60,8 @@ class DriverProfileTest extends TestCase
             'status' => 'Active',
             'created_by' => $this->driverUser->id,
         ]);
+
+        $this->activateSubscription($school);
     }
 
     public function test_driver_can_view_their_profile(): void

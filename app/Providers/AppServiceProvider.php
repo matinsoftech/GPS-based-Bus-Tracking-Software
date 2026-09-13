@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         View::composer(
-            ['partials.header', 'partials.sidebar'],
+            ['layouts.app', 'partials.header', 'partials.sidebar'],
             HeaderComposer::class
         );
 

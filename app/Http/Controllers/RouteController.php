@@ -96,6 +96,10 @@ class RouteController extends Controller
             $validated['school_id'] = $this->getUserSchoolId($user);
         }
 
+        if ($error = app(\App\Services\PlanLimitService::class)->assertCreatable('routes', (int) $validated['school_id'])) {
+            return back()->withInput()->withErrors(['plan_limit' => $error]);
+        }
+
         $validated['is_active'] = $request->boolean('is_active');
 
         Route::create($validated);

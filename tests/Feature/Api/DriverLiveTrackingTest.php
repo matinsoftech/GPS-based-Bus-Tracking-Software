@@ -60,6 +60,8 @@ class DriverLiveTrackingTest extends TestCase
             'status' => 'Active',
             'created_by' => $this->driverUser->id,
         ]);
+
+        $this->activateSubscription($this->school);
     }
 
     private function fakeLiveTracking(array $devices): void
