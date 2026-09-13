@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\School;
 use App\Models\Bus;
 use App\Models\Driver;
+use App\Models\School;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -31,6 +31,8 @@ class DriverControllerTest extends TestCase
             'principal_name' => 'Principal Name',
             'status' => 'active',
         ]);
+
+        $this->activateSubscription($school);
 
         $driver = Driver::create([
             'school_id' => $school->id,

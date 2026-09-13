@@ -35,6 +35,7 @@ $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(valu
         @include('partials.sidebar')
 
         <div class="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
+            @include('partials.subscription-banner')
             @include('partials.overlay')
             @include('partials.header')
 

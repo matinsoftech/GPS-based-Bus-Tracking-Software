@@ -30,6 +30,8 @@ class StudentControllerTest extends TestCase
             'status' => 'active',
         ]);
 
+        $this->activateSubscription($school);
+
         $admin = User::factory()->create([
             'school_id' => $school->id,
         ]);
@@ -100,6 +102,8 @@ class StudentControllerTest extends TestCase
             'principal_name' => 'Principal Name',
             'status' => 'active',
         ]);
+
+        $this->activateSubscription($school);
 
         $otherSchool = School::create([
             'name' => 'Other School',

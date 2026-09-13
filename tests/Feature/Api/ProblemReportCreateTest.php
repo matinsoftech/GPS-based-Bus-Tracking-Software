@@ -77,6 +77,8 @@ class ProblemReportCreateTest extends TestCase
             'phone' => '9812345600',
             'address' => 'Chabahil, Kathmandu',
         ]);
+
+        $this->activateSubscription($this->school);
     }
 
     public function test_driver_can_report_a_problem(): void

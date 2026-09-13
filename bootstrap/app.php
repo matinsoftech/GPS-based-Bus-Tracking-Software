@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureActiveSubscription;
 use App\Models\Bus;
 use App\Models\ParentProfile;
 use App\Models\Student;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'subscription' => EnsureActiveSubscription::class,
         ]);
 
         RedirectIfAuthenticated::redirectUsing(

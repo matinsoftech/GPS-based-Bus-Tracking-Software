@@ -80,6 +80,8 @@ class PrincipalProblemReportTest extends TestCase
             'designation' => 'Principal',
             'address' => 'Lalitpur',
         ]);
+
+        $this->activateSubscription($this->school);
     }
 
     private function makeReport(School $school, array $overrides = []): ProblemReport

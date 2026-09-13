@@ -136,6 +136,8 @@ class ParentRouteTest extends TestCase
             'stop_order' => 2,
             'drop_time' => '15:30:00',
         ]);
+
+        $this->activateSubscription($this->school);
     }
 
     private function makeStudent(array $overrides = []): Student

@@ -52,7 +52,7 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'subscription'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
@@ -722,6 +722,16 @@ Route::middleware('auth')->group(function () {
     //     return view('images');
     // })->name('images');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Paywall
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->get('/subscription-inactive', function () {
+    return view('subscriptions.inactive');
+})->name('subscription.inactive');
 
 /*
 |--------------------------------------------------------------------------

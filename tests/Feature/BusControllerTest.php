@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Bus;
 use App\Models\Driver;
-use App\Models\Route;
 use App\Models\School;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
@@ -148,6 +147,8 @@ class BusControllerTest extends TestCase
 
         $schoolAdmin->school_id = $school->id;
         $schoolAdmin->save();
+
+        $this->activateSubscription($school);
 
         $driver = Driver::create([
             'school_id' => $school->id,

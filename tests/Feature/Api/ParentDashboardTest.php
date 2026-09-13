@@ -90,6 +90,8 @@ class ParentDashboardTest extends TestCase
             'is_active' => true,
         ]);
         $this->route->drivers()->attach($driver->id);
+
+        $this->activateSubscription($this->school);
     }
 
     private function makeStudent(array $overrides = []): Student

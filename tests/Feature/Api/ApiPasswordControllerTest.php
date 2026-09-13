@@ -2,15 +2,14 @@
 
 namespace Tests\Feature\Api;
 
-use App\Models\User;
 use App\Models\Driver;
 use App\Models\ParentProfile;
 use App\Models\School;
+use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
 
 class ApiPasswordControllerTest extends TestCase
@@ -29,6 +28,7 @@ class ApiPasswordControllerTest extends TestCase
             'address' => 'Test Address',
             'status' => 'active',
         ]);
+        $this->activateSubscription($school);
         $user = User::factory()->create(['email' => 'driver@test.com']);
         Driver::create([
             'user_id' => $user->id,
@@ -71,6 +71,7 @@ class ApiPasswordControllerTest extends TestCase
             'address' => 'Test Address',
             'status' => 'active',
         ]);
+        $this->activateSubscription($school);
         $user = User::factory()->create(['email' => 'parent@test.com']);
         ParentProfile::create([
             'user_id' => $user->id,
