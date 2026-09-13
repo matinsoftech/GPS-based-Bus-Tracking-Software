@@ -113,7 +113,7 @@ class NotificationController extends Controller
         $query = $this->scopeByRole($query, $user);
         $count = $query->count();
 
-        $query->markAsRead();
+        $query->update(['read_at' => now()]);
 
         return response()->json([
             'message' => 'All notifications marked as read.',

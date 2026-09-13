@@ -77,11 +77,11 @@ Route::prefix('v1')->group(function () {
             Route::get('/live-tracking', [ParentLiveTrackingController::class, 'index']);
         });
 
-        Route::prefix('principal')->middleware('role:School Admin')->group(function () {
-            Route::get('/problem-reports', [PrincipalProblemReportController::class, 'index']);
-            Route::get('/problem-reports/{problemReport}', [PrincipalProblemReportController::class, 'show']);
-            Route::post('/problem-reports/{problemReport}/resolve', [PrincipalProblemReportController::class, 'resolve']);
-        });
+        // Route::prefix('principal')->middleware('role:School Admin')->group(function () {
+        //     Route::get('/problem-reports', [PrincipalProblemReportController::class, 'index']);
+        //     Route::get('/problem-reports/{problemReport}', [PrincipalProblemReportController::class, 'show']);
+        //     Route::post('/problem-reports/{problemReport}/resolve', [PrincipalProblemReportController::class, 'resolve']);
+        // });
 
         // Route::middleware('role:School Admin')->prefix('students')->group(function () {
         //     Route::get('/', [StudentController::class, 'index'])->middleware('permission:student.view');

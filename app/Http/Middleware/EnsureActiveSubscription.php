@@ -30,6 +30,17 @@ class EnsureActiveSubscription
         'notifications.read-all',
     ];
 
+    /**
+     * API endpoint patterns that stay reachable while the school's
+     * subscription is not active, so users can manage their account and
+     * alerts. Login/forgot-password/reset-password are public and already
+     * outside the gated group.
+     */
+    private const API_BYPASS_PATTERNS = [
+        'api/v1/auth/*',
+        'api/v1/notifications*',
+    ];
+
     private const INACTIVE_MESSAGE = 'Your school\'s subscription is not active.';
 
     public function __construct(private readonly SchoolContextService $context) {}
@@ -37,6 +48,10 @@ class EnsureActiveSubscription
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
+
+        if ($request->is(self::API_BYPASS_PATTERNS)) {
+            return $next($request);
+        }
 
         if ($this->context->userHasAccess($user)) {
             return $next($request);
@@ -48,7 +63,11 @@ class EnsureActiveSubscription
         }
 
         if ($request->is('api/*')) {
-            abort(403, self::INACTIVE_MESSAGE);
+            return response()->json([
+                'message' => self::INACTIVE_MESSAGE,
+                'subscription_required' => true,
+                'status' => 'inactive',
+            ], Response::HTTP_FORBIDDEN);
         }
 
         if ($user && $user->hasAnyRole(['School Admin', 'Principal'])) {

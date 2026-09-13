@@ -261,6 +261,43 @@ class SubscriptionGatingTest extends TestCase
             ->assertStatus(403);
     }
 
+    public function test_api_403_marks_subscription_as_required(): void
+    {
+        Sanctum::actingAs($this->driverUser);
+
+        $this->getJson('/api/v1/driver/dashboard')
+            ->assertStatus(403)
+            ->assertJson([
+                'message' => "Your school's subscription is not active.",
+                'subscription_required' => true,
+                'status' => 'inactive',
+            ])
+            ->assertDontSee('exception')
+            ->assertDontSee('trace');
+    }
+
+    public function test_api_account_endpoints_stay_reachable_when_blocked(): void
+    {
+        Sanctum::actingAs($this->driverUser);
+
+        $this->getJson('/api/v1/auth/me')->assertOk();
+        $this->postJson('/api/v1/auth/logout')->assertOk();
+        $this->putJson('/api/v1/auth/change-password', [
+            'current_password' => 'wrong-current-password',
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123',
+        ])->assertStatus(422);
+    }
+
+    public function test_api_notification_endpoints_stay_reachable_when_blocked(): void
+    {
+        Sanctum::actingAs($this->driverUser);
+
+        $this->getJson('/api/v1/notifications')->assertOk();
+        $this->getJson('/api/v1/notifications/unread-count')->assertOk();
+        $this->postJson('/api/v1/notifications/read-all')->assertOk();
+    }
+
     public function test_api_allows_active_school(): void
     {
         $this->subscribe('active');
