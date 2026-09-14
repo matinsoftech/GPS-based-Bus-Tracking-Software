@@ -232,7 +232,9 @@ class SubscriptionGatingTest extends TestCase
 
         $this->actingAs($this->principal)
             ->get(route('invoices.show', $invoice))
-            ->assertOk();
+            ->assertOk()
+            ->assertDontSee('Mark as Paid')
+            ->assertDontSee('Void');
 
         $this->actingAs($this->principal)
             ->get(route('invoices.print', $invoice))
