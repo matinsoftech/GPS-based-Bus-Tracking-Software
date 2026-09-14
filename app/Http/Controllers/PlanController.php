@@ -77,7 +77,7 @@ class PlanController extends Controller
 
     public function destroy(Plan $plan)
     {
-        if ($plan->subscriptions()->exists() || $plan->invoices()->exists()) {
+        if ($plan->subscriptions()->withTrashed()->exists() || $plan->invoices()->withTrashed()->exists()) {
             return back()->with('error', 'You cannot delete this plan because it is referenced by subscriptions or invoices.');
         }
 

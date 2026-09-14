@@ -110,6 +110,48 @@ class PlanControllerTest extends TestCase
         $this->assertDatabaseHas('plans', ['id' => $plan->id]);
     }
 
+    public function test_plan_with_soft_deleted_subscription_cannot_be_deleted(): void
+    {
+        $plan = $this->makePlan();
+        $this->attachSubscription($plan, 'active')->delete();
+
+        $this->actingAs($this->admin)
+            ->delete(route('plans.destroy', $plan))
+            ->assertRedirect()
+            ->assertSessionHas('error', 'You cannot delete this plan because it is referenced by subscriptions or invoices.');
+
+        $this->assertDatabaseHas('plans', ['id' => $plan->id]);
+    }
+
+    public function test_plan_with_soft_deleted_invoice_cannot_be_deleted(): void
+    {
+        $plan = $this->makePlan();
+        $subscription = $this->attachSubscription($plan, 'active');
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-PLAN-0002',
+            'school_id' => $this->school->id,
+            'subscription_id' => $subscription->id,
+            'plan_id' => $plan->id,
+            'billing_cycle' => 'monthly',
+            'amount' => '1999.00',
+            'currency' => 'NPR',
+            'billing_period_start' => now()->subMonth(),
+            'billing_period_end' => now(),
+            'issued_at' => now()->subWeek(),
+            'due_at' => now()->addDays(7),
+            'status' => 'unpaid',
+        ]);
+        $invoice->delete();
+
+        $this->actingAs($this->admin)
+            ->delete(route('plans.destroy', $plan))
+            ->assertRedirect()
+            ->assertSessionHas('error', 'You cannot delete this plan because it is referenced by subscriptions or invoices.');
+
+        $this->assertDatabaseHas('plans', ['id' => $plan->id]);
+    }
+
     public function test_plan_without_references_can_be_deleted(): void
     {
         $plan = $this->makePlan();
