@@ -7,11 +7,28 @@
                     Update the subscription for {{ $subscription->school->name }}.
                 </p>
             </div>
-            <a href="{{ route('subscriptions.index') }}"
-                class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
-                Back
-            </a>
+            <div class="flex flex-wrap items-center gap-2">
+                @if ($subscription->status === 'active')
+                    <form action="{{ route('invoices.store', $subscription) }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                            class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                            Generate Invoice
+                        </button>
+                    </form>
+                @endif
+                <a href="{{ route('subscriptions.index') }}"
+                    class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                    Back
+                </a>
+            </div>
         </div>
+
+        @if (session('success'))
+            <div class="mb-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                {{ session('success') }}
+            </div>
+        @endif
 
         @if (session('error'))
             <div class="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">

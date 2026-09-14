@@ -138,6 +138,9 @@ class PermissionSeeder extends Seeder
 
         // Subscriptions
         'subscription' => self::CRUD,
+
+        // Invoices
+        'invoice' => self::CRUD,
     ];
 
     /**

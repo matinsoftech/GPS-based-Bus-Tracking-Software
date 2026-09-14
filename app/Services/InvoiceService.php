@@ -1,0 +1,160 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Invoice;
+use App\Models\Plan;
+use App\Models\Subscription;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+class InvoiceService
+{
+    private const CURRENCY = 'NPR';
+
+    private const DUE_DAYS = 7;
+
+    /**
+     * Generate an invoice for a subscription's current billing period.
+     *
+     * Invoices are only created for `active` subscriptions (no invoice for
+     * trials) and never twice for the same billing period. Returns the
+     * existing invoice when one already covers the period.
+     */
+    public function generateForSubscription(Subscription $subscription): ?Invoice
+    {
+        if ($subscription->status !== 'active') {
+            return null;
+        }
+
+        $plan = $subscription->plan;
+
+        if ($plan === null || ! $plan->is_active) {
+            return null;
+        }
+
+        $existing = $this->findForPeriod($subscription);
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $issuedAt = now();
+
+        return DB::transaction(function () use ($subscription, $plan, $issuedAt) {
+            $periodStart = $subscription->starts_at ?? $issuedAt;
+            $periodEnd = $subscription->ends_at;
+
+            return Invoice::create([
+                'invoice_number' => $this->generateInvoiceNumber(),
+                'school_id' => $subscription->school_id,
+                'subscription_id' => $subscription->id,
+                'plan_id' => $plan->id,
+                'billing_cycle' => $subscription->billing_cycle,
+                'amount' => $this->getPlanPrice($plan, $subscription->billing_cycle),
+                'currency' => self::CURRENCY,
+                'billing_period_start' => $periodStart,
+                'billing_period_end' => $periodEnd,
+                'issued_at' => $issuedAt,
+                'due_at' => $issuedAt->copy()->addDays(self::DUE_DAYS),
+                'status' => 'unpaid',
+            ]);
+        });
+    }
+
+    /**
+     * Find the invoice already covering this subscription's billing period,
+     * if any. Guards against duplicate invoices per period.
+     */
+    public function findForPeriod(Subscription $subscription): ?Invoice
+    {
+        $query = Invoice::query()
+            ->where('subscription_id', $subscription->id);
+
+        if ($subscription->starts_at !== null && $subscription->ends_at !== null) {
+            $query->where('billing_period_start', $subscription->starts_at)
+                ->where('billing_period_end', $subscription->ends_at);
+        } else {
+            $query->whereNotNull('billing_period_start')
+                ->whereNotNull('billing_period_end');
+        }
+
+        return $query->first();
+    }
+
+    /**
+     * Mark an unpaid invoice as paid.
+     */
+    public function markAsPaid(Invoice $invoice): Invoice
+    {
+        if ($invoice->status === 'paid') {
+            return $invoice;
+        }
+
+        if ($invoice->status === 'void') {
+            throw ValidationException::withMessages([
+                'invoice' => 'A voided invoice cannot be marked as paid.',
+            ]);
+        }
+
+        DB::transaction(function () use ($invoice) {
+            $invoice->update([
+                'status' => 'paid',
+                'paid_at' => now(),
+            ]);
+        });
+
+        return $invoice->refresh();
+    }
+
+    /**
+     * Void an unpaid invoice.
+     */
+    public function void(Invoice $invoice): Invoice
+    {
+        if ($invoice->status === 'paid') {
+            throw ValidationException::withMessages([
+                'invoice' => 'A paid invoice cannot be voided.',
+            ]);
+        }
+
+        if ($invoice->status === 'void') {
+            throw ValidationException::withMessages([
+                'invoice' => 'The invoice is already voided.',
+            ]);
+        }
+
+        DB::transaction(function () use ($invoice) {
+            $invoice->update(['status' => 'void']);
+        });
+
+        return $invoice->refresh();
+    }
+
+    /**
+     * Resolve the agreed price for a billing cycle from the plan.
+     */
+    public function getPlanPrice(Plan $plan, string $billingCycle): float
+    {
+        return match ($billingCycle) {
+            'monthly' => (float) $plan->monthly_price,
+            'yearly' => (float) $plan->yearly_price,
+            default => throw ValidationException::withMessages([
+                'billing_cycle' => 'Invalid billing cycle.',
+            ]),
+        };
+    }
+
+    /**
+     * Next sequential invoice number (INV-000001, INV-000002, ...).
+     *
+     * The unique invoice_number column is the backstop under concurrent
+     * writes; the auto-increment id keeps numbers gap-free after soft deletes.
+     */
+    public function generateInvoiceNumber(): string
+    {
+        $next = (int) Invoice::withTrashed()->max('id') + 1;
+
+        return 'INV-'.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+    }
+}

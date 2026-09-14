@@ -41,8 +41,8 @@ class StudentSeeder extends Seeder
                     ->get();
 
                 foreach ($students as $index => $student) {
-                    $student->update([
-                        'route_id' => $routes->get($index % $routes->count())->id,
+                    $student->routes()->syncWithoutDetaching([
+                        $routes->get($index % $routes->count())->id,
                     ]);
                 }
             }

@@ -6,26 +6,27 @@ use App\Http\Controllers\BusLocationController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\DriverDashboardController;
 use App\Http\Controllers\DriverTripWebController;
+use App\Http\Controllers\InvoicesController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\ParentProfileController;
+use App\Http\Controllers\PlanController;
 use App\Http\Controllers\PrincipalDashboardController;
 use App\Http\Controllers\PrincipalProblemReportController;
 use App\Http\Controllers\PrincipalSubscriptionController;
 use App\Http\Controllers\PrincipalVehicleTrackingController;
-use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\RouteStopController;
 use App\Http\Controllers\SchoolAdminController;
 use App\Http\Controllers\SchoolController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubscriptionsController;
 use App\Http\Controllers\SuperAdminDashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleTrackingController;
-use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -662,6 +663,36 @@ Route::middleware(['auth', 'subscription'])->group(function () {
         ->middleware(['role:Super Admin', 'permission:subscription.delete'])
         ->name('subscriptions.destroy');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Invoices (Super Admin only)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/invoices', [InvoicesController::class, 'index'])
+        ->middleware(['role:Super Admin|School Admin|Principal', 'permission:invoice.view'])
+        ->name('invoices.index');
+
+    Route::get('/invoices/{invoice}', [InvoicesController::class, 'show'])
+        ->middleware(['role:Super Admin|School Admin|Principal', 'permission:invoice.view'])
+        ->name('invoices.show');
+
+    Route::get('/invoices/{invoice}/print', [InvoicesController::class, 'print'])
+        ->middleware(['role:Super Admin|School Admin|Principal', 'permission:invoice.view'])
+        ->name('invoices.print');
+
+    Route::post('/subscriptions/{subscription}/invoices', [InvoicesController::class, 'store'])
+        ->middleware(['role:Super Admin', 'permission:invoice.create'])
+        ->name('invoices.store');
+
+    Route::post('/invoices/{invoice}/pay', [InvoicesController::class, 'markAsPaid'])
+        ->middleware(['role:Super Admin', 'permission:invoice.update'])
+        ->name('invoices.mark-paid');
+
+    Route::post('/invoices/{invoice}/void', [InvoicesController::class, 'void'])
+        ->middleware(['role:Super Admin', 'permission:invoice.update'])
+        ->name('invoices.void');
+
     // Notification Routes
 
     Route::get('/notifications', [NotificationController::class, 'index'])
@@ -675,8 +706,6 @@ Route::middleware(['auth', 'subscription'])->group(function () {
 
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
         ->name('notifications.read-all');
-
-
 
     Route::get(
         '/settings',
