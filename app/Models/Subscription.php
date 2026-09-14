@@ -42,7 +42,7 @@ class Subscription extends Model
 
     public function plan()
     {
-        return $this->belongsTo(Plan::class);
+        return $this->belongsTo(Plan::class)->withTrashed();
     }
 
     public function invoices()
