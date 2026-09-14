@@ -150,4 +150,78 @@ class SubscriptionUpdateTest extends TestCase
         $this->assertSame((float) $this->plan->monthly_price, (float) $this->subscription->amount);
         $this->assertTrue($this->subscription->ends_at->eq($originalEndsAt));
     }
+
+    public function test_changing_status_to_past_due_sets_two_day_grace_period(): void
+    {
+        $response = $this->actingAs($this->admin)->put(
+            route('subscriptions.update', $this->subscription),
+            [
+                'school_id' => $this->school->id,
+                'plan_id' => $this->plan->id,
+                'billing_cycle' => 'monthly',
+                'status' => 'past_due',
+            ]
+        );
+
+        $response->assertRedirect(route('subscriptions.index'));
+
+        $this->subscription->refresh();
+
+        $this->assertSame('past_due', $this->subscription->status);
+        $this->assertNull($this->subscription->trial_ends_at);
+        $this->assertTrue(
+            $this->subscription->ends_at->between(
+                now()->addDays(2)->subMinute(),
+                now()->addDays(2)->addMinute()
+            )
+        );
+    }
+
+    public function test_past_due_subscription_cannot_be_changed_back_to_active(): void
+    {
+        $this->subscription->update([
+            'status' => 'past_due',
+            'trial_ends_at' => null,
+            'ends_at' => now()->addDays(2),
+        ]);
+
+        $response = $this->actingAs($this->admin)->put(
+            route('subscriptions.update', $this->subscription),
+            [
+                'school_id' => $this->school->id,
+                'plan_id' => $this->plan->id,
+                'billing_cycle' => 'monthly',
+                'status' => 'active',
+            ]
+        );
+
+        $response->assertSessionHasErrors('status');
+
+        $this->subscription->refresh();
+        $this->assertSame('past_due', $this->subscription->status);
+    }
+
+    public function test_past_due_subscription_can_be_cancelled(): void
+    {
+        $this->subscription->update([
+            'status' => 'past_due',
+            'trial_ends_at' => null,
+            'ends_at' => now()->addDays(2),
+        ]);
+
+        $response = $this->actingAs($this->admin)->put(
+            route('subscriptions.update', $this->subscription),
+            [
+                'school_id' => $this->school->id,
+                'plan_id' => $this->plan->id,
+                'billing_cycle' => 'monthly',
+                'status' => 'cancelled',
+            ]
+        );
+
+        $response->assertRedirect(route('subscriptions.index'));
+
+        $this->subscription->refresh();
+        $this->assertSame('cancelled', $this->subscription->status);
+    }
 }

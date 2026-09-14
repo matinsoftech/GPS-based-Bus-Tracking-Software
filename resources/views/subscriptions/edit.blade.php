@@ -103,12 +103,21 @@
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Status</h2>
                     <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
                         @foreach (['trialing', 'active', 'past_due', 'cancelled', 'expired'] as $status)
-                            <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-white/[0.03]">
+                            @php
+                                $blockedActive = $subscription->status === 'past_due' && $status === 'active';
+                            @endphp
+                            <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-white/[0.03] {{ $blockedActive ? 'cursor-not-allowed opacity-50' : '' }}">
                                 <input type="radio" name="status" value="{{ $status }}" {{ old('status', $subscription->status) === $status ? 'checked' : '' }}
+                                    {{ $blockedActive ? 'disabled' : '' }}
                                     class="h-4 w-4 border-gray-300 text-brand-500 focus:ring-brand-500">
                                 <span class="text-sm font-medium capitalize text-gray-700 dark:text-gray-300">{{ str_replace('_', ' ', $status) }}</span>
                             </label>
                         @endforeach
+                        @if ($subscription->status === 'past_due')
+                            <p class="mt-4 text-xs text-red-600 dark:text-red-400">
+                                A past due subscription cannot be changed back to active. Create a new subscription to activate it.
+                            </p>
+                        @endif
                     </div>
                     <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
                         Current amount: ₹{{ number_format($subscription->amount, 2) }} (recalculated when plan/cycle changes)

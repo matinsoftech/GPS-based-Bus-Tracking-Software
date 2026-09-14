@@ -70,6 +70,7 @@ class School extends Model
     public function activeSubscription()
     {
         return $this->hasOne(Subscription::class)
-            ->whereIn('status', ['trialing', 'active']);
+            ->whereIn('status', ['trialing', 'active', 'past_due'])
+            ->orderByRaw("CASE WHEN status = 'active' THEN 0 WHEN status = 'trialing' THEN 1 ELSE 2 END");
     }
 }

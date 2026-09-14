@@ -178,6 +178,24 @@ class SubscriptionGatingTest extends TestCase
             ->assertRedirect(route('principal.subscription'));
     }
 
+    public function test_school_admin_with_future_past_due_subscription_can_access_modules(): void
+    {
+        $this->subscribe('past_due', 'future');
+
+        $this->actingAs($this->principal)
+            ->get(route('buses.index'))
+            ->assertOk();
+    }
+
+    public function test_school_admin_with_lapsed_past_due_subscription_is_blocked(): void
+    {
+        $this->subscribe('past_due', 'past');
+
+        $this->actingAs($this->principal)
+            ->get(route('buses.index'))
+            ->assertRedirect(route('principal.subscription'));
+    }
+
     public function test_active_subscription_with_past_end_date_is_blocked(): void
     {
         $this->subscribe('active', 'past');

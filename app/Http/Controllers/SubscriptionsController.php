@@ -117,6 +117,11 @@ class SubscriptionsController extends Controller
             $payload['starts_at'] = $subscription->starts_at ?? now();
         }
 
+        if ($status === 'past_due') {
+            $payload['trial_ends_at'] = null;
+            $payload['ends_at'] = now()->addDays(2);
+        }
+
         $subscription->update($payload);
 
         if ($status === 'active') {

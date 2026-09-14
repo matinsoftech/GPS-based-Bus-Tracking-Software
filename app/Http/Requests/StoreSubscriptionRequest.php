@@ -17,7 +17,7 @@ class StoreSubscriptionRequest extends FormRequest
             'school_id' => ['required', 'exists:schools,id'],
             'plan_id' => ['required', 'exists:plans,id'],
             'billing_cycle' => ['required', 'in:monthly,yearly'],
-            'status' => ['nullable', 'in:trialing,active'],
+            'status' => ['nullable', 'in:trialing,active,past_due'],
         ];
     }
 

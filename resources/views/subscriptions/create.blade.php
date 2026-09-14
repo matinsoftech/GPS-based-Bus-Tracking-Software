@@ -94,6 +94,11 @@
                                 class="h-4 w-4 border-gray-300 text-brand-500 focus:ring-brand-500">
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Active</span>
                         </label>
+                        <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-white/[0.03]">
+                            <input type="radio" name="status" value="past_due" {{ old('status') === 'past_due' ? 'checked' : '' }}
+                                class="h-4 w-4 border-gray-300 text-brand-500 focus:ring-brand-500">
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Past Due</span>
+                        </label>
                     </div>
                 </div>
 
