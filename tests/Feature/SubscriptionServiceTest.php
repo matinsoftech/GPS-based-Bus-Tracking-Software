@@ -136,6 +136,48 @@ class SubscriptionServiceTest extends TestCase
         $this->assertTrue($subscription->ends_at->eq($subscription->trial_ends_at));
     }
 
+    public function test_create_past_due_sets_two_day_grace_period(): void
+    {
+        $subscription = $this->service->create($this->school, $this->plan, 'monthly', 'past_due');
+
+        $this->assertSame('past_due', $subscription->status);
+        $this->assertSame('monthly', $subscription->billing_cycle);
+        $this->assertSame(1999.0, (float) $subscription->amount);
+        $this->assertTrue($subscription->starts_at->isToday());
+        $this->assertNull($subscription->trial_ends_at);
+        $this->assertTrue($subscription->ends_at->between(
+            now()->addDays(2)->subMinute(),
+            now()->addDays(2)->addMinute()
+        ));
+    }
+
+    public function test_create_active_allowed_when_school_has_past_due_subscription(): void
+    {
+        $this->subscribe('past_due');
+
+        $active = $this->service->create($this->school, $this->plan, 'monthly', 'active');
+
+        $this->assertSame('active', $active->status);
+        $this->assertSame(2, Subscription::where('school_id', $this->school->id)->count());
+        $this->assertSame('past_due', Subscription::first()->status);
+    }
+
+    public function test_active_subscription_is_preferred_over_past_due(): void
+    {
+        $pastDue = $this->subscribe('past_due');
+        $active = $this->service->create($this->school, $this->plan, 'monthly', 'active');
+
+        $this->assertSame($active->id, $this->school->fresh()->activeSubscription->id);
+        $this->assertNotSame($pastDue->id, $this->school->fresh()->activeSubscription->id);
+    }
+
+    public function test_past_due_only_school_active_subscription_is_past_due(): void
+    {
+        $pastDue = $this->subscribe('past_due');
+
+        $this->assertSame($pastDue->id, $this->school->fresh()->activeSubscription->id);
+    }
+
     public function test_create_rejects_invalid_status(): void
     {
         $this->expectException(ValidationException::class);
@@ -321,6 +363,24 @@ class SubscriptionServiceTest extends TestCase
         $subscription = $this->subscribe('active', [], ['ends_at' => now()->subDay()]);
 
         $this->assertFalse($this->service->isActive($subscription));
+    }
+
+    public function test_is_active_true_for_future_past_due_subscription(): void
+    {
+        $subscription = $this->subscribe('past_due', [], ['ends_at' => now()->addDay()]);
+
+        $this->assertTrue($this->service->isActive($subscription));
+    }
+
+    public function test_expire_if_needed_expires_lapsed_past_due_subscription(): void
+    {
+        $subscription = $this->subscribe('past_due', [], ['ends_at' => now()->subDay()]);
+
+        $changed = $this->service->expireIfNeeded($subscription);
+        $subscription->refresh();
+
+        $this->assertTrue($changed);
+        $this->assertSame('expired', $subscription->status);
     }
 
     /** 8. Renew subscription */

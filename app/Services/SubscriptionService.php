@@ -13,7 +13,12 @@ class SubscriptionService
     /**
      * Statuses that still grant access to the product.
      */
-    private const USABLE_STATUSES = ['trialing', 'active'];
+    private const USABLE_STATUSES = ['trialing', 'active', 'past_due'];
+
+    /**
+     * Grace window applied when a past_due subscription is created or edited.
+     */
+    private const PAST_DUE_GRACE_DAYS = 2;
 
     /**
      * Create a trial subscription for a school.
@@ -37,7 +42,7 @@ class SubscriptionService
         string $status = 'trialing',
         int $trialDays = 14
     ): Subscription {
-        if (! in_array($status, ['trialing', 'active'], true)) {
+        if (! in_array($status, ['trialing', 'active', 'past_due'], true)) {
             throw ValidationException::withMessages([
                 'status' => 'The selected status is invalid.',
             ]);
@@ -49,7 +54,9 @@ class SubscriptionService
             ]);
         }
 
-        if ($school->activeSubscription()->exists()) {
+        if ($school->subscriptions()
+            ->whereIn('status', ['trialing', 'active'])
+            ->exists()) {
             throw ValidationException::withMessages([
                 'subscription' => 'The school already has an active subscription.',
             ]);
@@ -70,6 +77,9 @@ class SubscriptionService
             if ($status === 'trialing') {
                 $trialEndsAt = $startsAt->copy()->addDays($trialDays);
                 $endsAt = $trialEndsAt;
+            } elseif ($status === 'past_due') {
+                $trialEndsAt = null;
+                $endsAt = $startsAt->copy()->addDays(self::PAST_DUE_GRACE_DAYS);
             } else {
                 $trialEndsAt = null;
                 $endsAt = $billingCycle === 'yearly'

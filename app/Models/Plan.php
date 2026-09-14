@@ -46,6 +46,11 @@ class Plan extends Model
         return $this->hasMany(Subscription::class);
     }
 
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     public function hasFeature(string $feature): bool
     {
         return (bool) data_get($this->features, $feature, false);

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Driver;
+use App\Models\Invoice;
 use App\Models\ParentProfile;
 use App\Models\Plan;
 use App\Models\School;
@@ -178,6 +179,24 @@ class SubscriptionGatingTest extends TestCase
             ->assertRedirect(route('principal.subscription'));
     }
 
+    public function test_school_admin_with_future_past_due_subscription_can_access_modules(): void
+    {
+        $this->subscribe('past_due', 'future');
+
+        $this->actingAs($this->principal)
+            ->get(route('buses.index'))
+            ->assertOk();
+    }
+
+    public function test_school_admin_with_lapsed_past_due_subscription_is_blocked(): void
+    {
+        $this->subscribe('past_due', 'past');
+
+        $this->actingAs($this->principal)
+            ->get(route('buses.index'))
+            ->assertRedirect(route('principal.subscription'));
+    }
+
     public function test_active_subscription_with_past_end_date_is_blocked(): void
     {
         $this->subscribe('active', 'past');
@@ -185,6 +204,95 @@ class SubscriptionGatingTest extends TestCase
         $this->actingAs($this->principal)
             ->get(route('buses.index'))
             ->assertRedirect(route('principal.subscription'));
+    }
+
+    public function test_inactive_school_admin_can_view_own_invoices(): void
+    {
+        $subscription = $this->subscribe('expired');
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-GATE-0001',
+            'school_id' => $this->school->id,
+            'subscription_id' => $subscription->id,
+            'plan_id' => $subscription->plan_id,
+            'billing_cycle' => 'monthly',
+            'amount' => '1999.00',
+            'currency' => 'NPR',
+            'billing_period_start' => now()->subMonth(),
+            'billing_period_end' => now(),
+            'issued_at' => now()->subWeek(),
+            'due_at' => now()->addDays(7),
+            'status' => 'unpaid',
+        ]);
+
+        $this->actingAs($this->principal)
+            ->get(route('invoices.index'))
+            ->assertOk()
+            ->assertSee($invoice->invoice_number);
+
+        $this->actingAs($this->principal)
+            ->get(route('invoices.show', $invoice))
+            ->assertOk()
+            ->assertDontSee('Mark as Paid')
+            ->assertDontSee('Void');
+
+        $this->actingAs($this->principal)
+            ->get(route('invoices.print', $invoice))
+            ->assertOk();
+    }
+
+    public function test_inactive_school_admin_cannot_see_other_schools_invoices(): void
+    {
+        $otherSchool = School::create([
+            'name' => 'Riverside School',
+            'code' => 'SCH-GATE-2',
+            'email' => 'riverside@example.com',
+            'phone' => '9800000904',
+            'address' => 'Lalitpur',
+            'status' => 'active',
+        ]);
+
+        $otherPlan = Plan::create([
+            'name' => 'Other Gating Plan',
+            'monthly_price' => 999,
+            'yearly_price' => 9999,
+            'features' => ['live_tracking' => true],
+            'is_active' => true,
+        ]);
+
+        $otherSubscription = Subscription::create([
+            'school_id' => $otherSchool->id,
+            'plan_id' => $otherPlan->id,
+            'billing_cycle' => 'monthly',
+            'amount' => 999,
+            'status' => 'active',
+            'starts_at' => now()->subMonth(),
+            'ends_at' => now()->addMonth(),
+        ]);
+
+        $otherInvoice = Invoice::create([
+            'invoice_number' => 'INV-GATE-0002',
+            'school_id' => $otherSchool->id,
+            'subscription_id' => $otherSubscription->id,
+            'plan_id' => $otherPlan->id,
+            'billing_cycle' => 'monthly',
+            'amount' => '999.00',
+            'currency' => 'NPR',
+            'billing_period_start' => now()->subMonth(),
+            'billing_period_end' => now(),
+            'issued_at' => now()->subWeek(),
+            'due_at' => now()->addDays(7),
+            'status' => 'unpaid',
+        ]);
+
+        $this->actingAs($this->principal)
+            ->get(route('invoices.index'))
+            ->assertOk()
+            ->assertDontSee($otherInvoice->invoice_number);
+
+        $this->actingAs($this->principal)
+            ->get(route('invoices.show', $otherInvoice))
+            ->assertForbidden();
     }
 
     public function test_super_admin_has_access_without_subscription(): void

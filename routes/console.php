@@ -11,3 +11,13 @@ Artisan::command('inspire', function () {
 Schedule::command('gps:process-live-tracking')
     ->everyMinute()
     ->withoutOverlapping();
+
+Schedule::command('subscriptions:expire')
+    ->dailyAt('00:05')
+    ->timezone('UTC')
+    ->withoutOverlapping();
+
+Schedule::command('invoices:issue-upcoming')
+    ->dailyAt('00:10')
+    ->timezone('UTC')
+    ->withoutOverlapping();

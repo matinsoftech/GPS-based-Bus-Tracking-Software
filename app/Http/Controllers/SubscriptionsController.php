@@ -7,12 +7,16 @@ use App\Http\Requests\UpdateSubscriptionRequest;
 use App\Models\Plan;
 use App\Models\School;
 use App\Models\Subscription;
+use App\Services\InvoiceService;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 
 class SubscriptionsController extends Controller
 {
-    public function __construct(private readonly SubscriptionService $subscriptions) {}
+    public function __construct(
+        private readonly SubscriptionService $subscriptions,
+        private readonly InvoiceService $invoices
+    ) {}
 
     public function index(Request $request)
     {
@@ -48,12 +52,16 @@ class SubscriptionsController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        $this->subscriptions->create(
+        $subscription = $this->subscriptions->create(
             $school,
             $plan,
             $request->billing_cycle,
             $request->status ?? 'trialing'
         );
+
+        if ($subscription->status === 'active') {
+            $this->invoices->generateForSubscription($subscription);
+        }
 
         return redirect()
             ->route('subscriptions.index')
@@ -109,7 +117,16 @@ class SubscriptionsController extends Controller
             $payload['starts_at'] = $subscription->starts_at ?? now();
         }
 
+        if ($status === 'past_due') {
+            $payload['trial_ends_at'] = null;
+            $payload['ends_at'] = now()->addDays(2);
+        }
+
         $subscription->update($payload);
+
+        if ($status === 'active') {
+            $this->invoices->generateForSubscription($subscription->refresh());
+        }
 
         return redirect()
             ->route('subscriptions.index')
