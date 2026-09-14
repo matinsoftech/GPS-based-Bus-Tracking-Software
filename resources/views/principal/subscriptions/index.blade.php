@@ -62,32 +62,53 @@
                     </div>
 
                     @if ($subscription->status === 'expired')
-                            <div class="mt-4 inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-600 dark:bg-gray-500/10 dark:text-gray-400">
-                                <x-heroicon-o-x-circle class="h-5 w-5 shrink-0" />
-                                This subscription has expired
-                                @if ($subscription->ends_at)
-                                    <span class="text-xs font-normal text-gray-500/80 dark:text-gray-400/80">
-                                        &middot; ended {{ $subscription->ends_at->format('M d, Y') }}
-                                    </span>
-                                @endif
+                            <div class="mt-4 flex flex-wrap items-center gap-3">
+                                <div class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-600 dark:bg-gray-500/10 dark:text-gray-400">
+                                    <x-heroicon-o-x-circle class="h-5 w-5 shrink-0" />
+                                    This subscription has expired
+                                    @if ($subscription->ends_at)
+                                        <span class="text-xs font-normal text-gray-500/80 dark:text-gray-400/80">
+                                            &middot; ended {{ $subscription->ends_at->format('M d, Y') }}
+                                        </span>
+                                    @endif
+                                </div>
+                                <a href="{{ route('invoices.index') }}"
+                                    class="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                                    <x-heroicon-o-document-text class="h-4 w-4 shrink-0" />
+                                    View Invoices
+                                </a>
                             </div>
                         @elseif ($subscription->status === 'cancelled')
-                            <div class="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 dark:bg-red-500/10 dark:text-red-400">
-                                <x-heroicon-o-x-circle class="h-5 w-5 shrink-0" />
-                                This subscription was cancelled
-                                <span class="text-xs font-normal text-red-600/70 dark:text-red-400/70">
-                                    &middot; cancelled {{ ($subscription->cancelled_at ?? $subscription->ends_at)?->format('M d, Y') }}
-                                </span>
+                            <div class="mt-4 flex flex-wrap items-center gap-3">
+                                <div class="inline-flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 dark:bg-red-500/10 dark:text-red-400">
+                                    <x-heroicon-o-x-circle class="h-5 w-5 shrink-0" />
+                                    This subscription was cancelled
+                                    <span class="text-xs font-normal text-red-600/70 dark:text-red-400/70">
+                                        &middot; cancelled {{ ($subscription->cancelled_at ?? $subscription->ends_at)?->format('M d, Y') }}
+                                    </span>
+                                </div>
+                                <a href="{{ route('invoices.index') }}"
+                                    class="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                                    <x-heroicon-o-document-text class="h-4 w-4 shrink-0" />
+                                    View Invoices
+                                </a>
                             </div>
                         @elseif ($subscription->status === 'past_due')
-                            <div class="mt-4 inline-flex items-center gap-2 rounded-xl bg-yellow-50 px-4 py-2.5 text-sm font-medium text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400">
-                                <x-heroicon-o-exclamation-triangle class="h-5 w-5 shrink-0" />
-                                Payment is past due
-                                @if ($subscription->ends_at)
-                                    <span class="text-xs font-normal text-yellow-600/70 dark:text-yellow-400/70">
-                                        &middot; ends {{ $subscription->ends_at->format('M d, Y') }}
-                                    </span>
-                                @endif
+                            <div class="mt-4 flex flex-wrap items-center gap-3">
+                                <div class="inline-flex items-center gap-2 rounded-xl bg-yellow-50 px-4 py-2.5 text-sm font-medium text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400">
+                                    <x-heroicon-o-exclamation-triangle class="h-5 w-5 shrink-0" />
+                                    Payment is past due
+                                    @if ($subscription->ends_at)
+                                        <span class="text-xs font-normal text-yellow-600/70 dark:text-yellow-400/70">
+                                            &middot; ends {{ $subscription->ends_at->format('M d, Y') }}
+                                        </span>
+                                    @endif
+                                </div>
+                                <a href="{{ route('invoices.index') }}"
+                                    class="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                                    <x-heroicon-o-document-text class="h-4 w-4 shrink-0" />
+                                    View Invoices
+                                </a>
                             </div>
                         @elseif ($daysLeft !== null)
                         @if ($daysLeft >= 0)
@@ -198,6 +219,11 @@
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Your school doesn't have a subscription yet. Contact your administrator to get started.
                 </p>
+                <a href="{{ route('invoices.index') }}"
+                    class="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                    <x-heroicon-o-document-text class="h-4 w-4 shrink-0" />
+                    View Invoices
+                </a>
             </div>
         @endif
     </div>

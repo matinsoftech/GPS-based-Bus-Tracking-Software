@@ -28,6 +28,9 @@ class EnsureActiveSubscription
         'notifications.unread-count',
         'notifications.read',
         'notifications.read-all',
+        'invoices.index',
+        'invoices.show',
+        'invoices.print',
     ];
 
     /**
