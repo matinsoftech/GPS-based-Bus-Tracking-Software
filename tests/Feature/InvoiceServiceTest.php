@@ -244,6 +244,88 @@ class InvoiceServiceTest extends TestCase
         $this->service->getPlanPrice($this->plan, 'weekly');
     }
 
+    /** 10. Next billing period (auto-issued invoice) */
+    public function test_generate_for_next_period_creates_unpaid_next_month_invoice(): void
+    {
+        $endsAt = now()->addDays(2)->startOfSecond();
+        $subscription = $this->subscribe('active', ['ends_at' => $endsAt]);
+
+        $invoice = $this->service->generateForNextPeriod($subscription);
+
+        $this->assertNotNull($invoice);
+        $this->assertSame('unpaid', $invoice->status);
+        $this->assertSame('INV-000001', $invoice->invoice_number);
+        $this->assertSame('monthly', $invoice->billing_cycle);
+        $this->assertSame('NPR', $invoice->currency);
+        $this->assertSame(1999.0, (float) $invoice->amount);
+        $this->assertSame($this->school->id, $invoice->school_id);
+        $this->assertSame($subscription->id, $invoice->subscription_id);
+        $this->assertTrue($endsAt->eq($invoice->billing_period_start));
+        $this->assertTrue($endsAt->copy()->addMonth()->eq($invoice->billing_period_end));
+        $this->assertTrue($invoice->issued_at->isToday());
+        $this->assertTrue($invoice->due_at->eq($invoice->issued_at->copy()->addDays(7)));
+        $this->assertNull($invoice->paid_at);
+    }
+
+    public function test_generate_for_next_period_uses_yearly_price_and_period(): void
+    {
+        $endsAt = now()->addDays(2)->startOfSecond();
+        $subscription = $this->subscribe('active', [
+            'billing_cycle' => 'yearly',
+            'ends_at' => $endsAt,
+        ]);
+
+        $invoice = $this->service->generateForNextPeriod($subscription);
+
+        $this->assertNotNull($invoice);
+        $this->assertSame('yearly', $invoice->billing_cycle);
+        $this->assertSame(19999.0, (float) $invoice->amount);
+        $this->assertTrue($endsAt->eq($invoice->billing_period_start));
+        $this->assertTrue($endsAt->copy()->addYear()->eq($invoice->billing_period_end));
+    }
+
+    public function test_generate_for_next_period_does_not_invoice_non_active_subscriptions(): void
+    {
+        $this->assertNull($this->service->generateForNextPeriod($this->subscribe('trialing')));
+        $this->assertNull($this->service->generateForNextPeriod($this->subscribe('expired')));
+        $this->assertNull($this->service->generateForNextPeriod($this->subscribe('cancelled')));
+
+        $this->assertSame(0, Invoice::count());
+    }
+
+    public function test_generate_for_next_period_requires_active_plan(): void
+    {
+        $this->plan->update(['is_active' => false]);
+
+        $this->assertNull($this->service->generateForNextPeriod($this->subscribe('active')));
+        $this->assertSame(0, Invoice::count());
+    }
+
+    public function test_generate_for_next_period_does_not_replace_current_period_invoice(): void
+    {
+        $subscription = $this->subscribe('active', ['ends_at' => now()->addDays(2)]);
+        $current = $this->service->generateForSubscription($subscription);
+
+        $next = $this->service->generateForNextPeriod($subscription);
+
+        $this->assertSame('INV-000001', $current->invoice_number);
+        $this->assertSame('INV-000002', $next->invoice_number);
+        $this->assertSame(2, Invoice::count());
+        $this->assertTrue($current->billing_period_end->eq($subscription->ends_at));
+        $this->assertTrue($next->billing_period_start->eq($subscription->ends_at));
+    }
+
+    public function test_generate_for_next_period_twice_does_not_duplicate(): void
+    {
+        $subscription = $this->subscribe('active', ['ends_at' => now()->addDays(2)]);
+
+        $first = $this->service->generateForNextPeriod($subscription);
+        $second = $this->service->generateForNextPeriod($subscription->fresh());
+
+        $this->assertSame($first->id, $second->id);
+        $this->assertSame(1, Invoice::count());
+    }
+
     /**
      * Create a plan with sensible defaults.
      */

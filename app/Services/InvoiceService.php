@@ -63,17 +63,93 @@ class InvoiceService
     }
 
     /**
+     * Generate an invoice for the subscription's next billing period ahead of
+     * expiry (e.g. two days before the current period ends).
+     *
+     * Invoices are only created for `active` subscriptions (no invoice for
+     * trials) and never twice for the same period. Returns the existing
+     * invoice when one already covers the period.
+     */
+    public function generateForNextPeriod(Subscription $subscription): ?Invoice
+    {
+        if ($subscription->status !== 'active') {
+            return null;
+        }
+
+        $plan = $subscription->plan;
+
+        if ($plan === null || ! $plan->is_active) {
+            return null;
+        }
+
+        $existing = $this->findForNextPeriod($subscription);
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $issuedAt = now();
+
+        $periodStart = $subscription->ends_at ?? now();
+        $periodEnd = $subscription->billing_cycle === 'yearly'
+            ? $periodStart->copy()->addYear()
+            : $periodStart->copy()->addMonth();
+
+        return DB::transaction(function () use ($subscription, $plan, $periodStart, $periodEnd, $issuedAt) {
+            return Invoice::create([
+                'invoice_number' => $this->generateInvoiceNumber(),
+                'school_id' => $subscription->school_id,
+                'subscription_id' => $subscription->id,
+                'plan_id' => $plan->id,
+                'billing_cycle' => $subscription->billing_cycle,
+                'amount' => $this->getPlanPrice($plan, $subscription->billing_cycle),
+                'currency' => self::CURRENCY,
+                'billing_period_start' => $periodStart,
+                'billing_period_end' => $periodEnd,
+                'issued_at' => $issuedAt,
+                'due_at' => $issuedAt->copy()->addDays(self::DUE_DAYS),
+                'status' => 'unpaid',
+            ]);
+        });
+    }
+
+    /**
      * Find the invoice already covering this subscription's billing period,
      * if any. Guards against duplicate invoices per period.
      */
     public function findForPeriod(Subscription $subscription): ?Invoice
     {
+        return $this->findForPeriodBetween($subscription, $subscription->starts_at, $subscription->ends_at);
+    }
+
+    /**
+     * Find the invoice already covering the subscription's next billing period,
+     * if any. Guards against duplicate next-period invoices.
+     */
+    public function findForNextPeriod(Subscription $subscription): ?Invoice
+    {
+        $periodStart = $subscription->ends_at ?? now();
+        $periodEnd = $subscription->billing_cycle === 'yearly'
+            ? $periodStart->copy()->addYear()
+            : $periodStart->copy()->addMonth();
+
+        return $this->findForPeriodBetween($subscription, $periodStart, $periodEnd);
+    }
+
+    /**
+     * Find the invoice covering a specific billing period for a subscription.
+     */
+    private function findForPeriodBetween(
+        Subscription $subscription,
+        $periodStart,
+        $periodEnd
+    ): ?Invoice {
         $query = Invoice::query()
             ->where('subscription_id', $subscription->id);
 
-        if ($subscription->starts_at !== null && $subscription->ends_at !== null) {
-            $query->where('billing_period_start', $subscription->starts_at)
-                ->where('billing_period_end', $subscription->ends_at);
+        if ($periodStart !== null && $periodEnd !== null) {
+            $query->where('billing_period_start', $periodStart)
+                ->where('billing_period_end', $periodEnd);
         } else {
             $query->whereNotNull('billing_period_start')
                 ->whereNotNull('billing_period_end');
