@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\Plan;
+use App\Models\SchoolAdmin;
 use App\Models\Subscription;
+use App\Notifications\InvoiceNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -41,7 +43,7 @@ class InvoiceService
 
         $issuedAt = now();
 
-        return DB::transaction(function () use ($subscription, $plan, $issuedAt) {
+        $invoice = DB::transaction(function () use ($subscription, $plan, $issuedAt) {
             $periodStart = $subscription->starts_at ?? $issuedAt;
             $periodEnd = $subscription->ends_at;
 
@@ -60,6 +62,10 @@ class InvoiceService
                 'status' => 'unpaid',
             ]);
         });
+
+        $this->notifySchoolAdmins($invoice);
+
+        return $invoice;
     }
 
     /**
@@ -95,7 +101,7 @@ class InvoiceService
             ? $periodStart->copy()->addYear()
             : $periodStart->copy()->addMonth();
 
-        return DB::transaction(function () use ($subscription, $plan, $periodStart, $periodEnd, $issuedAt) {
+        $invoice = DB::transaction(function () use ($subscription, $plan, $periodStart, $periodEnd, $issuedAt) {
             return Invoice::create([
                 'invoice_number' => $this->generateInvoiceNumber(),
                 'school_id' => $subscription->school_id,
@@ -111,6 +117,10 @@ class InvoiceService
                 'status' => 'unpaid',
             ]);
         });
+
+        $this->notifySchoolAdmins($invoice);
+
+        return $invoice;
     }
 
     /**
@@ -232,5 +242,22 @@ class InvoiceService
         $next = (int) Invoice::withTrashed()->max('id') + 1;
 
         return 'INV-'.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Notify the school's admins (including the principal) that an invoice has
+     * been issued for their school.
+     */
+    private function notifySchoolAdmins(Invoice $invoice): void
+    {
+        $admins = SchoolAdmin::where('school_id', $invoice->school_id)
+            ->with('user')
+            ->get();
+
+        foreach ($admins as $admin) {
+            if ($admin->user) {
+                $admin->user->notify(new InvoiceNotification($invoice));
+            }
+        }
     }
 }
