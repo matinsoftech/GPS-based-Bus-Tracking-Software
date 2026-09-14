@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Plan extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -38,6 +39,7 @@ class Plan extends Model
 
             'features' => 'array',
             'is_active' => 'boolean',
+            'deleted_at' => 'datetime',
         ];
     }
 
