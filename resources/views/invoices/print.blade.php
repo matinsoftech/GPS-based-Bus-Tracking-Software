@@ -12,6 +12,7 @@
     <style>
         @@media print {
             @page {
+                size: A4;
                 margin: 1.5cm;
             }
 
@@ -120,7 +121,7 @@
         </table>
 
         <p class="mt-8 border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
-            This invoice was generated automatically for the {{ $invoice->school->name }} subscription (#{{ $invoice->subscription->id }}).
+            This invoice was generated for the {{ $invoice->school->name }} subscription (#{{ $invoice->subscription->id }}).
         </p>
     </div>
 </body>
