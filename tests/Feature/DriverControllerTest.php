@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Bus;
 use App\Models\Driver;
+use App\Models\Route;
 use App\Models\School;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
@@ -179,5 +180,310 @@ class DriverControllerTest extends TestCase
         $response->assertSessionHasErrors(['email', 'password']);
         $this->assertDatabaseMissing('drivers', ['employee_id' => 'DR002']);
         $this->assertDatabaseMissing('users', ['email' => '']);
+    }
+
+    public function test_store_requires_school_id_for_super_admin(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('Super Admin');
+
+        $response = $this->actingAs($user)->post(route('drivers.store'), [
+            'employee_id' => 'DR003',
+            'first_name' => 'Ramesh',
+            'last_name' => 'Sharma',
+            'gender' => 'Male',
+            'date_of_birth' => '1990-01-01',
+            'phone' => '9800000001',
+            'email' => 'ramesh3@example.com',
+            'password' => 'password123',
+            'address' => 'Kathmandu',
+            'license_number' => 'LIC-003',
+            'license_type' => 'Bus',
+            'license_issue_date' => '2020-01-01',
+            'license_expiry_date' => '2030-01-01',
+            'joining_date' => '2024-01-01',
+            'status' => 'Active',
+        ]);
+
+        $response->assertSessionHasErrors(['school_id']);
+        $this->assertDatabaseMissing('drivers', ['employee_id' => 'DR003']);
+        $this->assertDatabaseMissing('users', ['email' => 'ramesh3@example.com']);
+    }
+
+    public function test_super_admin_cannot_assign_bus_from_another_school(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('Super Admin');
+
+        $school = School::create([
+            'name' => 'Bright Future School',
+            'code' => 'SCH001',
+            'email' => 'admin@brightfuture.com',
+            'phone' => '9800000000',
+            'address' => 'Kathmandu',
+            'principal_name' => 'Principal Name',
+            'status' => 'active',
+        ]);
+
+        $otherSchool = School::create([
+            'name' => 'Other School',
+            'code' => 'SCH002',
+            'email' => 'admin@other.com',
+            'phone' => '9800000001',
+            'address' => 'Lalitpur',
+            'principal_name' => 'Principal Other',
+            'status' => 'active',
+        ]);
+
+        $foreignBus = Bus::create([
+            'school_id' => $otherSchool->id,
+            'bus_number' => 'BUS-OTHER-1',
+            'registration_number' => 'BA 1-02-001',
+            'capacity' => 40,
+            'status' => 'Active',
+        ]);
+
+        $response = $this->actingAs($user)->post(route('drivers.store'), [
+            'employee_id' => 'DR004',
+            'first_name' => 'Ramesh',
+            'last_name' => 'Sharma',
+            'gender' => 'Male',
+            'date_of_birth' => '1990-01-01',
+            'phone' => '9800000001',
+            'email' => 'ramesh4@example.com',
+            'password' => 'password123',
+            'address' => 'Kathmandu',
+            'license_number' => 'LIC-004',
+            'license_type' => 'Bus',
+            'license_issue_date' => '2020-01-01',
+            'license_expiry_date' => '2030-01-01',
+            'joining_date' => '2024-01-01',
+            'status' => 'Active',
+            'school_id' => $school->id,
+            'bus_ids' => [$foreignBus->id],
+        ]);
+
+        $response->assertSessionHasErrors('error');
+        $this->assertDatabaseMissing('drivers', ['employee_id' => 'DR004']);
+    }
+
+    public function test_super_admin_cannot_assign_route_from_another_school(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('Super Admin');
+
+        $school = School::create([
+            'name' => 'Bright Future School',
+            'code' => 'SCH001',
+            'email' => 'admin@brightfuture.com',
+            'phone' => '9800000000',
+            'address' => 'Kathmandu',
+            'principal_name' => 'Principal Name',
+            'status' => 'active',
+        ]);
+
+        $otherSchool = School::create([
+            'name' => 'Other School',
+            'code' => 'SCH002',
+            'email' => 'admin@other.com',
+            'phone' => '9800000001',
+            'address' => 'Lalitpur',
+            'principal_name' => 'Principal Other',
+            'status' => 'active',
+        ]);
+
+        $foreignRoute = Route::create([
+            'school_id' => $otherSchool->id,
+            'name' => 'Foreign Route',
+            'route_code' => 'RT-OTHER-1',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('drivers.store'), [
+            'employee_id' => 'DR005',
+            'first_name' => 'Ramesh',
+            'last_name' => 'Sharma',
+            'gender' => 'Male',
+            'date_of_birth' => '1990-01-01',
+            'phone' => '9800000001',
+            'email' => 'ramesh5@example.com',
+            'password' => 'password123',
+            'address' => 'Kathmandu',
+            'license_number' => 'LIC-005',
+            'license_type' => 'Bus',
+            'license_issue_date' => '2020-01-01',
+            'license_expiry_date' => '2030-01-01',
+            'joining_date' => '2024-01-01',
+            'status' => 'Active',
+            'school_id' => $school->id,
+            'route_ids' => [$foreignRoute->id],
+        ]);
+
+        $response->assertSessionHasErrors('error');
+        $this->assertDatabaseMissing('drivers', ['employee_id' => 'DR005']);
+    }
+
+    public function test_super_admin_can_assign_bus_and_route_from_selected_school(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('Super Admin');
+
+        $school = School::create([
+            'name' => 'Bright Future School',
+            'code' => 'SCH001',
+            'email' => 'admin@brightfuture.com',
+            'phone' => '9800000000',
+            'address' => 'Kathmandu',
+            'principal_name' => 'Principal Name',
+            'status' => 'active',
+        ]);
+
+        $this->activateSubscription($school);
+
+        $bus = Bus::create([
+            'school_id' => $school->id,
+            'bus_number' => 'BUS-1',
+            'registration_number' => 'BA 1-01-001',
+            'capacity' => 40,
+            'status' => 'Active',
+        ]);
+
+        $route = Route::create([
+            'school_id' => $school->id,
+            'name' => 'Route 1',
+            'route_code' => 'RT-1',
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('drivers.store'), [
+            'employee_id' => 'DR006',
+            'first_name' => 'Ramesh',
+            'last_name' => 'Sharma',
+            'gender' => 'Male',
+            'date_of_birth' => '1990-01-01',
+            'phone' => '9800000001',
+            'email' => 'ramesh6@example.com',
+            'password' => 'password123',
+            'address' => 'Kathmandu',
+            'license_number' => 'LIC-006',
+            'license_type' => 'Bus',
+            'license_issue_date' => '2020-01-01',
+            'license_expiry_date' => '2030-01-01',
+            'joining_date' => '2024-01-01',
+            'status' => 'Active',
+            'school_id' => $school->id,
+            'bus_ids' => [$bus->id],
+            'route_ids' => [$route->id],
+        ]);
+
+        $response->assertRedirect(route('drivers.index'));
+
+        $driver = Driver::where('employee_id', 'DR006')->first();
+        $this->assertNotNull($driver);
+        $this->assertDatabaseHas('bus_driver', [
+            'driver_id' => $driver->id,
+            'bus_id' => $bus->id,
+        ]);
+        $this->assertDatabaseHas('driver_route', [
+            'driver_id' => $driver->id,
+            'route_id' => $route->id,
+        ]);
+    }
+
+    public function test_update_rejects_bus_from_another_school(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('Super Admin');
+
+        $school = School::create([
+            'name' => 'Bright Future School',
+            'code' => 'SCH001',
+            'email' => 'admin@brightfuture.com',
+            'phone' => '9800000000',
+            'address' => 'Kathmandu',
+            'principal_name' => 'Principal Name',
+            'status' => 'active',
+        ]);
+
+        $otherSchool = School::create([
+            'name' => 'Other School',
+            'code' => 'SCH002',
+            'email' => 'admin@other.com',
+            'phone' => '9800000001',
+            'address' => 'Lalitpur',
+            'principal_name' => 'Principal Other',
+            'status' => 'active',
+        ]);
+
+        $driverUser = User::factory()->create();
+        $driverUser->assignRole('Driver');
+
+        $driver = Driver::create([
+            'school_id' => $school->id,
+            'user_id' => $driverUser->id,
+            'employee_id' => 'DR007',
+            'first_name' => 'Ramesh',
+            'last_name' => 'Sharma',
+            'gender' => 'Male',
+            'date_of_birth' => '1990-01-01',
+            'phone' => '9800000001',
+            'address' => 'Kathmandu',
+            'license_number' => 'LIC-007',
+            'license_type' => 'Bus',
+            'license_issue_date' => '2020-01-01',
+            'license_expiry_date' => '2030-01-01',
+            'joining_date' => '2024-01-01',
+            'status' => 'Active',
+            'created_by' => $user->id,
+        ]);
+
+        $foreignBus = Bus::create([
+            'school_id' => $otherSchool->id,
+            'bus_number' => 'BUS-OTHER-2',
+            'registration_number' => 'BA 2-02-001',
+            'capacity' => 40,
+            'status' => 'Active',
+        ]);
+
+        $response = $this->actingAs($user)->put(route('drivers.update', $driver), [
+            'employee_id' => 'DR007',
+            'first_name' => 'Ramesh',
+            'last_name' => 'Sharma',
+            'gender' => 'Male',
+            'date_of_birth' => '1990-01-01',
+            'phone' => '9800000001',
+            'email' => $driverUser->email,
+            'password' => '',
+            'address' => 'Kathmandu',
+            'license_number' => 'LIC-007',
+            'license_type' => 'Bus',
+            'license_issue_date' => '2020-01-01',
+            'license_expiry_date' => '2030-01-01',
+            'joining_date' => '2024-01-01',
+            'status' => 'Active',
+            'school_id' => $school->id,
+            'bus_ids' => [$foreignBus->id],
+            'route_ids' => [],
+        ]);
+
+        $response->assertSessionHasErrors('error');
+        $this->assertDatabaseMissing('bus_driver', [
+            'driver_id' => $driver->id,
+            'bus_id' => $foreignBus->id,
+        ]);
     }
 }
