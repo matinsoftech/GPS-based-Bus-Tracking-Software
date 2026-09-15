@@ -225,31 +225,21 @@ class ParentProfileController extends Controller
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email,'.$parentProfile->user_id,
             'password' => 'nullable|min:8',
-            'school_id' => 'required|exists:schools,id',
             'phone' => 'required|max:20',
             'alternate_phone' => 'nullable|max:20',
             'address' => 'required',
             'occupation' => 'nullable|max:255',
         ];
 
-        if ($this->isSchoolLevelAdmin($user)) {
-            $rules['school_id'] = [
-                'nullable',
-                'exists:schools,id',
-            ];
-        }
-
         $validated = $request->validate($rules);
 
-        if ($this->isSchoolLevelAdmin($user)) {
-            $schoolId = $this->getUserSchoolId($user);
+        /*
+        |--------------------------------------------------------------------------
+        | School cannot be changed through edit; keep the original assignment
+        |--------------------------------------------------------------------------
+        */
 
-            if ($schoolId) {
-                $validated['school_id'] = $schoolId;
-            } else {
-                $validated['school_id'] = $parentProfile->school_id;
-            }
-        }
+        $validated['school_id'] = $parentProfile->school_id;
 
         try {
             DB::transaction(function () use ($validated, $parentProfile) {

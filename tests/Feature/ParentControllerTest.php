@@ -289,4 +289,32 @@ class ParentControllerTest extends TestCase
             'is_active' => true,
         ]);
     }
+
+    public function test_super_admin_cannot_change_parent_school_through_edit(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $school = $this->createSchool('Sunrise Academy', 'SCH-A');
+        $otherSchool = $this->createSchool('Moonlight School', 'SCH-B');
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('Super Admin');
+
+        $parent = $this->createParent('Parent A', 'parenta@example.com', $school);
+
+        $response = $this->actingAs($superAdmin)->put(route('parents.update', $parent), [
+            'name' => 'Parent A',
+            'email' => 'parenta@example.com',
+            'school_id' => $otherSchool->id,
+            'phone' => '9800000000',
+            'address' => 'Kathmandu',
+            'occupation' => 'Engineer',
+        ]);
+
+        $response->assertRedirect(route('parents.index'));
+
+        $parent->refresh();
+        $this->assertSame($school->id, $parent->school_id);
+        $this->assertSame($school->id, $parent->user->school_id);
+    }
 }

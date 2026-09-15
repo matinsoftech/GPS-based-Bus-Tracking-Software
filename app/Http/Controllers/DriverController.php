@@ -60,6 +60,7 @@ class DriverController extends Controller
 
                 $q->where('employee_id', 'like', "%{$search}%")
                     ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%")
                     ->orWhere('license_number', 'like', "%{$search}%");
@@ -210,7 +211,7 @@ class DriverController extends Controller
         if (! $this->isSchoolLevelAdmin($user)) {
 
             $rules['school_id'] = [
-                'nullable',
+                'required',
                 'exists:schools,id',
             ];
         }
@@ -246,6 +247,14 @@ class DriverController extends Controller
                     ->withErrors(['school_id' => 'Please create a school before adding a driver.'])
                     ->withInput();
             }
+        }
+
+        if ($error = $this->assertAssignmentsBelongToSchool(
+            (int) $validated['school_id'],
+            $validated['bus_ids'] ?? null,
+            $validated['route_ids'] ?? null,
+        )) {
+            return back()->withInput()->withErrors(['error' => $error]);
         }
 
         if ($error = app(\App\Services\PlanLimitService::class)->assertCreatable('drivers', (int) $validated['school_id'])) {
@@ -288,6 +297,7 @@ class DriverController extends Controller
                     'email' => $validated['email'],
                     'password' => $validated['password'],
                     'school_id' => $validated['school_id'],
+                    'profile_photo' => $validated['profile_photo'] ?? null,
                 ]);
 
                 $user->assignRole('Driver');
@@ -338,20 +348,18 @@ class DriverController extends Controller
     {
         $this->authorizeDriver($driver);
 
-        $driver->load(['buses', 'routes']);
+        $driver->load(['buses', 'routes', 'school']);
 
         $user = Auth::user();
-
-        $schoolIdForAssets = $driver->school_id;
-
-        $buses = Bus::where('school_id', $schoolIdForAssets)->orderBy('bus_number')->get();
-        $routes = Route::where('school_id', $schoolIdForAssets)->orderBy('name')->get();
 
         if ($this->isSchoolLevelAdmin($user)) {
             $schoolId = $this->getUserSchoolId($user);
 
             if ($schoolId) {
                 $school = School::findOrFail($schoolId);
+
+                $buses = Bus::where('school_id', $schoolId)->orderBy('bus_number')->get();
+                $routes = Route::where('school_id', $schoolId)->orderBy('name')->get();
 
                 return view('drivers.edit', compact(
                     'driver',
@@ -362,6 +370,10 @@ class DriverController extends Controller
             }
         }
 
+        // Super Admin can reassign the driver across schools, so expose every
+        // bus/route and let the client filter them by the selected school.
+        $buses = Bus::orderBy('bus_number')->get();
+        $routes = Route::orderBy('name')->get();
         $schools = School::orderBy('name')->get();
 
         return view('drivers.edit', compact(
@@ -463,36 +475,22 @@ class DriverController extends Controller
             'route_ids.*' => 'exists:routes,id',
         ];
 
-        if (! $this->isSchoolLevelAdmin($user)) {
-
-            $rules['school_id'] = [
-                'required',
-                'exists:schools,id',
-            ];
-        }
-
         $validated = $request->validate($rules);
 
         /*
         |--------------------------------------------------------------------------
-        | Principal cannot move driver to another school
+        | School cannot be changed through edit; keep the original assignment
         |--------------------------------------------------------------------------
         */
 
-        if ($this->isSchoolLevelAdmin($user)) {
-            $schoolId = $this->getUserSchoolId($user);
+        $validated['school_id'] = $driver->school_id;
 
-            if ($schoolId) {
-                $validated['school_id'] = $schoolId;
-            } elseif (! empty($request->input('school_id'))) {
-                $validated['school_id'] = $request->input('school_id');
-            } elseif ($driver->school_id) {
-                $validated['school_id'] = $driver->school_id;
-            } else {
-                $validated['school_id'] = School::query()->value('id') ?? 1;
-            }
-        } elseif (! empty($request->input('school_id'))) {
-            $validated['school_id'] = $request->input('school_id');
+        if ($error = $this->assertAssignmentsBelongToSchool(
+            (int) ($validated['school_id'] ?? $driver->school_id ?? 0),
+            $validated['bus_ids'] ?? null,
+            $validated['route_ids'] ?? null,
+        )) {
+            return back()->withInput()->withErrors(['error' => $error]);
         }
 
         /*
@@ -532,6 +530,7 @@ class DriverController extends Controller
                         'email' => $validated['email'],
                         'password' => $validated['password'],
                         'school_id' => $validated['school_id'],
+                        'profile_photo' => $validated['profile_photo'] ?? null,
                     ]);
 
                     $user->assignRole('Driver');
@@ -543,6 +542,7 @@ class DriverController extends Controller
                         'email' => $validated['email'],
                         'password' => $validated['password'] ?? $driver->user->password,
                         'school_id' => $validated['school_id'],
+                        'profile_photo' => $validated['profile_photo'] ?? $driver->user->profile_photo,
                     ]);
                 }
 
@@ -640,5 +640,38 @@ class DriverController extends Controller
             ->first();
 
         return $school?->id;
+    }
+
+    private function assertAssignmentsBelongToSchool(int $schoolId, mixed $busIds, mixed $routeIds): ?string
+    {
+        $errors = [];
+
+        if ($schoolId && is_array($busIds) && $busIds !== []) {
+            $validIds = Bus::where('school_id', $schoolId)
+                ->whereIn('id', $busIds)
+                ->pluck('id')
+                ->all();
+
+            $invalidIds = array_values(array_diff($busIds, $validIds));
+
+            if ($invalidIds !== []) {
+                $errors[] = 'Selected buses do not belong to the chosen school (IDs: '.implode(', ', $invalidIds).').';
+            }
+        }
+
+        if ($schoolId && is_array($routeIds) && $routeIds !== []) {
+            $validIds = Route::where('school_id', $schoolId)
+                ->whereIn('id', $routeIds)
+                ->pluck('id')
+                ->all();
+
+            $invalidIds = array_values(array_diff($routeIds, $validIds));
+
+            if ($invalidIds !== []) {
+                $errors[] = 'Selected routes do not belong to the chosen school (IDs: '.implode(', ', $invalidIds).').';
+            }
+        }
+
+        return $errors === [] ? null : implode(' ', $errors);
     }
 }

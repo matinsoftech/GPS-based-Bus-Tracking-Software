@@ -19,7 +19,20 @@
         @endif
 
         <form action="{{ route('drivers.store') }}" method="POST" enctype="multipart/form-data"
-            class="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            class="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
+            x-data="{
+                schoolId: @js((string) (old('school_id') ?? $school->id ?? '')),
+                buses: @js($buses->map(fn ($bus) => ['id' => $bus->id, 'bus_number' => $bus->bus_number, 'registration_number' => $bus->registration_number, 'school_id' => $bus->school_id])->values()),
+                routes: @js($routes->map(fn ($route) => ['id' => $route->id, 'name' => $route->name, 'route_type_label' => $route->route_type_label, 'school_id' => $route->school_id])->values()),
+                selectedBusIds: @js(collect(old('bus_ids', []))->map(fn ($id) => (int) $id)->values()),
+                selectedRouteIds: @js(collect(old('route_ids', []))->map(fn ($id) => (int) $id)->values()),
+                get filteredBuses() {
+                    return this.buses.filter(bus => String(bus.school_id) === String(this.schoolId));
+                },
+                get filteredRoutes() {
+                    return this.routes.filter(route => String(route.school_id) === String(this.schoolId));
+                }
+            }">
             @csrf
 
             <div>
@@ -59,6 +72,18 @@
                 </h2>
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div class="md:col-span-2">
+                        <x-label for="profile_photo" value="Profile Photo" />
+                        <input type="file" id="profile_photo" name="profile_photo" accept="image/*"
+                            class="block w-full rounded-lg border border-gray-300 bg-white text-sm text-gray-900 file:mr-4 file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:file:bg-gray-700 dark:file:text-gray-200">
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Optional. JPG, PNG, or GIF.
+                        </p>
+                        @error('profile_photo')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <div>
                         <x-label for="first_name" value="First Name" required />
                         <input type="text" id="first_name" name="first_name" value="{{ old('first_name') }}" required
@@ -245,10 +270,10 @@
                         </div>
                     @else
                         <div>
-                            <x-label for="school_id" value="School" />
-                            <select id="school_id" name="school_id"
+                            <x-label for="school_id" value="School" required />
+                            <select id="school_id" name="school_id" required x-model="schoolId"
                                 class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-                                <option value="">Select School (optional)</option>
+                                <option value="">Select School</option>
                                 @foreach ($schools as $school)
                                     <option value="{{ $school->id }}" @selected(old('school_id') == $school->id)>
                                         {{ $school->name }}</option>
@@ -301,23 +326,27 @@
                     Assigned Buses
                 </h2>
 
-                @if ($buses->isNotEmpty())
+                @if ($buses->isNotEmpty() || $routes->isNotEmpty())
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-                        @foreach ($buses as $bus)
+                        <template x-for="bus in filteredBuses" :key="bus.id">
                             <label
-                                class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/[0.03] cursor-pointer transition">
-                                <input type="checkbox" name="bus_ids[]" value="{{ $bus->id }}"
-                                    @checked(in_array($bus->id, old('bus_ids', [])))
+                                class="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 transition hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/[0.03]">
+                                <input type="checkbox" name="bus_ids[]" :value="bus.id" x-model="selectedBusIds"
                                     class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500">
                                 <div class="min-w-0 flex-1">
-                                    <span
-                                        class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $bus->bus_number }}</span>
-                                    <span
-                                        class="block text-xs text-gray-500 dark:text-gray-400">{{ $bus->registration_number }}</span>
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                                        x-text="bus.bus_number"></span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400"
+                                        x-text="bus.registration_number"></span>
                                 </div>
                             </label>
-                        @endforeach
+                        </template>
                     </div>
+
+                    <template x-if="filteredBuses.length === 0">
+                        <p class="text-sm text-gray-500 dark:text-gray-400"
+                            x-text="schoolId ? 'No buses available for this school.' : 'Select a school first to see available buses.'"></p>
+                    </template>
                 @else
                     <p class="text-sm text-gray-500 dark:text-gray-400">No buses available. Create buses first.</p>
                 @endif
@@ -335,25 +364,29 @@
                     Assigned Routes
                 </h2>
 
-                @if ($routes->isNotEmpty())
+                @if ($routes->isNotEmpty() || $buses->isNotEmpty())
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-                        @foreach ($routes as $route)
+                        <template x-for="route in filteredRoutes" :key="route.id">
                             <label
-                                class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/[0.03] cursor-pointer transition">
-                                <input type="checkbox" name="route_ids[]" value="{{ $route->id }}"
-                                    @checked(in_array($route->id, old('route_ids', [])))
+                                class="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 transition hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/[0.03]">
+                                <input type="checkbox" name="route_ids[]" :value="route.id" x-model="selectedRouteIds"
                                     class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500">
                                 <div class="min-w-0 flex-1">
-                                    <span
-                                        class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $route->name }}</span>
-                                    @if ($route->route_type)
-                                        <span
-                                            class="block text-xs text-gray-500 dark:text-gray-400">{{ $route->route_type_label }}</span>
-                                    @endif
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                                        x-text="route.name"></span>
+                                    <template x-if="route.route_type_label">
+                                        <span class="block text-xs text-gray-500 dark:text-gray-400"
+                                            x-text="route.route_type_label"></span>
+                                    </template>
                                 </div>
                             </label>
-                        @endforeach
+                        </template>
                     </div>
+
+                    <template x-if="filteredRoutes.length === 0">
+                        <p class="text-sm text-gray-500 dark:text-gray-400"
+                            x-text="schoolId ? 'No routes available for this school.' : 'Select a school first to see available routes.'"></p>
+                    </template>
                 @else
                     <p class="text-sm text-gray-500 dark:text-gray-400">No routes available. Create routes first.</p>
                 @endif

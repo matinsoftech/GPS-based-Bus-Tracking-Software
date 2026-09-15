@@ -195,4 +195,55 @@ class BusControllerTest extends TestCase
         $this->assertSame('Maintenance', $bus->status);
         $this->assertTrue($bus->drivers->contains('id', $driver->id));
     }
+
+    public function test_super_admin_cannot_change_bus_school_through_edit(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('Super Admin');
+
+        $school = School::create([
+            'name' => 'Green Valley High School',
+            'code' => 'SCH003',
+            'email' => 'admin@greenvalley.com',
+            'phone' => '9800000000',
+            'address' => 'Kathmandu',
+            'principal_name' => 'Principal Name',
+            'status' => 'active',
+        ]);
+
+        $otherSchool = School::create([
+            'name' => 'Other School',
+            'code' => 'SCH004',
+            'email' => 'admin@other.com',
+            'phone' => '9800000001',
+            'address' => 'Lalitpur',
+            'principal_name' => 'Principal Other',
+            'status' => 'active',
+        ]);
+
+        $bus = Bus::create([
+            'school_id' => $school->id,
+            'bus_number' => 'BUS-011',
+            'registration_number' => 'BA 1 KHA 1112',
+            'capacity' => 40,
+            'status' => 'Active',
+        ]);
+
+        $response = $this->actingAs($superAdmin)->put(route('buses.update', $bus), [
+            'bus_number' => 'BUS-011',
+            'registration_number' => 'BA 1 KHA 1112',
+            'capacity' => 45,
+            'status' => 'Active',
+            'school_id' => $otherSchool->id,
+            'driver_ids' => [],
+        ]);
+
+        $response->assertRedirect(route('buses.index'));
+
+        $bus->refresh();
+        $this->assertSame(45, $bus->capacity);
+        $this->assertSame($school->id, $bus->school_id);
+    }
 }

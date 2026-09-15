@@ -149,38 +149,18 @@
                 </h2>
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    @if (isset($school) && $school)
-                        <div>
+                    <div>
                             <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School</label>
                             <input
                                 type="text"
-                                value="{{ $school->name }}"
+                                value="{{ $route->school->name ?? 'School not assigned' }}"
                                 readonly
                                 class="w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-400"
                             >
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                The route is assigned to your school.
+                                School cannot be changed after the route is created.
                             </p>
                         </div>
-                    @else
-                        <div>
-                            <x-label for="school_id" value="School" required />
-                            <select
-                                id="school_id"
-                                name="school_id"
-                                required
-                                class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                            >
-                                <option value="" disabled>Select School</option>
-                                @foreach ($schools as $school)
-                                    <option value="{{ $school->id }}" @selected(old('school_id', $route->school_id) == $school->id)>{{ $school->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('school_id')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    @endif
 
                     <div class="md:col-span-2">
                         <label for="is_active" class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">

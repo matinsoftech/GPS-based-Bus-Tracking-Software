@@ -134,7 +134,9 @@ class DriverBusController extends Controller
             ], 403);
         }
 
-        $stops = $route->stops()->get();
+        $stops = $route->stops()
+            ->with(['students' => fn ($query) => $query->with('parent.user')->orderBy('first_name')])
+            ->get();
 
         return response()->json([
             'message' => 'Route stops data.',
