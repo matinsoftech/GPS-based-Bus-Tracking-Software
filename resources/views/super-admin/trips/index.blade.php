@@ -122,17 +122,23 @@
                     </select>
                 </div>
 
-                <div class="flex gap-2 items-center">
-                    <button type="submit"
-                        class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
-                        Filter
-                    </button>
-                    @if ($trips->total() > 0 || request()->query())
-                        <a href="{{ route('trips.index') }}"
-                            class="rounded-lg px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                            Reset
-                        </a>
-                    @endif
+                <div class="flex items-end">
+                    <div>
+                        <span class="mb-2 block text-sm font-medium text-transparent select-none"
+                            aria-hidden="true">Actions</span>
+                        <div class="flex gap-2">
+                            <button type="submit"
+                                class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                                Filter
+                            </button>
+                            @if ($trips->total() > 0 || request()->query())
+                                <a href="{{ route('trips.index') }}"
+                                    class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                                    Reset
+                                </a>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </div>
         </form>
