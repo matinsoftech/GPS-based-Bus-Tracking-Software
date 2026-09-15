@@ -153,6 +153,84 @@ class DriverAttendanceTest extends TestCase
             ->assertJsonValidationErrors('route_id');
     }
 
+    public function test_index_search_filters_students_by_name(): void
+    {
+        $this->makeStudent(['first_name' => 'Sita', 'last_name' => 'Sharma', 'roll_no' => '1']);
+        $this->makeStudent(['first_name' => 'Rita', 'last_name' => 'Sharma', 'roll_no' => '2']);
+        $this->makeStudent(['first_name' => 'Sita', 'last_name' => 'Rai', 'roll_no' => '3']);
+
+        Sanctum::actingAs($this->driverUser);
+
+        $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id.'&q=rita')
+            ->assertOk()
+            ->assertJsonPath('data.total_students', 1)
+            ->assertJsonPath('data.students.0.full_name', 'Rita Sharma');
+
+        $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id.'&q=sharma')
+            ->assertOk()
+            ->assertJsonPath('data.total_students', 2);
+    }
+
+    public function test_index_search_filters_by_admission_no(): void
+    {
+        $student = $this->makeStudent();
+        $this->makeStudent();
+
+        Sanctum::actingAs($this->driverUser);
+
+        $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id.'&q='.substr($student->admission_no, 4))
+            ->assertOk()
+            ->assertJsonPath('data.total_students', 1)
+            ->assertJsonPath('data.students.0.admission_no', $student->admission_no);
+    }
+
+    public function test_index_search_matches_full_name(): void
+    {
+        $this->makeStudent(['first_name' => 'Rita', 'last_name' => 'Sharma', 'roll_no' => '1']);
+        $this->makeStudent(['first_name' => 'Sita', 'last_name' => 'Rai', 'roll_no' => '2']);
+
+        Sanctum::actingAs($this->driverUser);
+
+        $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id.'&q=rita+sharma')
+            ->assertOk()
+            ->assertJsonPath('data.total_students', 1)
+            ->assertJsonPath('data.students.0.full_name', 'Rita Sharma');
+    }
+
+    public function test_index_search_returns_empty_when_no_match(): void
+    {
+        $this->makeStudent();
+
+        Sanctum::actingAs($this->driverUser);
+
+        $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id.'&q=zzz')
+            ->assertOk()
+            ->assertJsonPath('data.total_students', 0)
+            ->assertJsonCount(0, 'data.students');
+    }
+
+    public function test_index_search_is_scoped_to_the_requested_route(): void
+    {
+        $otherRoute = Route::create([
+            'name' => 'Route API-SEARCH',
+            'route_code' => 'RT-DAT-SEARCH',
+            'school_id' => $this->school->id,
+            'start_location' => 'Start',
+            'end_location' => 'End',
+            'is_active' => true,
+        ]);
+        $otherRoute->drivers()->attach($this->driver->id);
+
+        $this->makeStudent(['first_name' => 'Sita', 'last_name' => 'Sharma', 'route_ids' => [$otherRoute->id]]);
+
+        Sanctum::actingAs($this->driverUser);
+
+        $this->getJson('/api/v1/driver/attendances?route_id='.$this->route->id.'&q=sita')
+            ->assertOk()
+            ->assertJsonPath('data.total_students', 0)
+            ->assertJsonCount(0, 'data.students');
+    }
+
     public function test_cannot_view_another_drivers_bus(): void
     {
         $otherDriverUser = User::factory()->create();

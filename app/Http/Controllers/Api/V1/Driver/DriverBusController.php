@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Driver;
 use App\Http\Controllers\Controller;
 use App\Models\Bus;
 use App\Models\Route;
+use App\Models\RouteStop;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
@@ -135,7 +136,7 @@ class DriverBusController extends Controller
         }
 
         $stops = $route->stops()
-            ->with(['students' => fn ($query) => $query->with('parent.user')->orderBy('first_name')])
+            // ->with(['students' => fn ($query) => $query->with('parent.user')->orderBy('first_name')])
             ->get();
 
         return response()->json([
@@ -178,6 +179,50 @@ class DriverBusController extends Controller
             'data' => [
                 'route_id' => $route->id,
                 'route_name' => $route->name,
+                'students' => $students,
+            ],
+        ]);
+    }
+
+    public function stopStudents(Request $request, $stopId)
+    {
+        $driver = $request->user()->driver;
+
+        if (! $driver) {
+            return response()->json([
+                'message' => 'Driver profile not found.',
+            ], 404);
+        }
+
+        $stop = RouteStop::where('id', $stopId)->first();
+
+        if (! $stop) {
+            return response()->json([
+                'message' => 'Stop not found.',
+            ], 404);
+        }
+
+        $hasAccess = $driver->routes()
+            ->where('routes.id', $stop->route_id)
+            ->exists();
+
+        if (! $hasAccess) {
+            return response()->json([
+                'message' => 'You are not assigned to this route.',
+            ], 403);
+        }
+
+        $students = $stop->students()
+            ->with('parent.user')
+            ->orderBy('first_name')
+            ->get();
+
+        return response()->json([
+            'message' => 'Stop students data.',
+            'data' => [
+                'stop_id' => $stop->id,
+                'stop_name' => $stop->name,
+                'route_id' => $stop->route_id,
                 'students' => $students,
             ],
         ]);

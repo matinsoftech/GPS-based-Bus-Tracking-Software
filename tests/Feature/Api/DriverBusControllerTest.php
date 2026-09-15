@@ -114,16 +114,10 @@ class DriverBusControllerTest extends TestCase
         ]);
     }
 
-    public function test_stops_include_assigned_students_for_each_stop(): void
+    public function test_stops_returns_stops_in_order(): void
     {
-        $stopOne = $this->makeStop('Maitighar', 1, '07:10');
-        $stopTwo = $this->makeStop('Gaushala', 2, '07:25');
-
-        $studentB = $this->makeStudent('Bibek', 'Shrestha');
-        $studentA = $this->makeStudent('Anita', 'Shrestha');
-
-        $stopOne->students()->attach([$studentB->id, $studentA->id]);
-        $stopTwo->students()->attach($studentA->id);
+        $this->makeStop('Maitighar', 1, '07:10');
+        $this->makeStop('Gaushala', 2, '07:25');
 
         Sanctum::actingAs($this->driverUser);
 
@@ -145,27 +139,12 @@ class DriverBusControllerTest extends TestCase
                             'id',
                             'name',
                             'stop_order',
-                            'students' => [
-                                '*' => [
-                                    'id',
-                                    'first_name',
-                                    'last_name',
-                                    'parent' => [
-                                        'user',
-                                    ],
-                                ],
-                            ],
                         ],
                     ],
                 ],
             ]);
 
-        $stops = $response->json('data.stops');
-        $maitighar = collect($stops)->firstWhere('id', $stopOne->id);
-        $gaushala = collect($stops)->firstWhere('id', $stopTwo->id);
-
-        $this->assertSame(['Anita', 'Bibek'], array_column($maitighar['students'], 'first_name'));
-        $this->assertCount(1, $gaushala['students']);
+        $this->assertSame(['Maitighar', 'Gaushala'], array_column($response->json('data.stops'), 'name'));
     }
 
     public function test_stops_response_is_forbidden_for_unassigned_route(): void
@@ -194,6 +173,109 @@ class DriverBusControllerTest extends TestCase
         Sanctum::actingAs($parentUser);
 
         $this->getJson('/api/v1/driver/routes/'.$this->route->id.'/stops')
+            ->assertNotFound()
+            ->assertJsonPath('message', 'Driver profile not found.');
+    }
+
+    public function test_stop_students_returns_assigned_students_for_stop(): void
+    {
+        $stop = $this->makeStop('Maitighar', 1, '07:10');
+
+        $studentB = $this->makeStudent('Bibek', 'Shrestha');
+        $studentA = $this->makeStudent('Anita', 'Shrestha');
+
+        $stop->students()->attach([$studentB->id, $studentA->id]);
+
+        Sanctum::actingAs($this->driverUser);
+
+        $response = $this->getJson('/api/v1/driver/stops/'.$stop->id.'/students');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('message', 'Stop students data.')
+            ->assertJsonPath('data.stop_id', $stop->id)
+            ->assertJsonPath('data.stop_name', 'Maitighar')
+            ->assertJsonPath('data.route_id', $this->route->id)
+            ->assertJsonStructure([
+                'message',
+                'data' => [
+                    'stop_id',
+                    'stop_name',
+                    'route_id',
+                    'students' => [
+                        '*' => [
+                            'id',
+                            'first_name',
+                            'last_name',
+                            'parent' => [
+                                'user',
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+
+        $this->assertSame(['Anita', 'Bibek'], array_column($response->json('data.students'), 'first_name'));
+    }
+
+    public function test_stop_students_returns_empty_list_when_no_students(): void
+    {
+        $stop = $this->makeStop('Gaushala', 1, '07:25');
+
+        Sanctum::actingAs($this->driverUser);
+
+        $response = $this->getJson('/api/v1/driver/stops/'.$stop->id.'/students');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.stop_id', $stop->id)
+            ->assertJsonCount(0, 'data.students');
+    }
+
+    public function test_stop_students_returns_404_for_missing_stop(): void
+    {
+        Sanctum::actingAs($this->driverUser);
+
+        $this->getJson('/api/v1/driver/stops/999999/students')
+            ->assertNotFound()
+            ->assertJsonPath('message', 'Stop not found.');
+    }
+
+    public function test_stop_students_is_forbidden_for_stop_on_unassigned_route(): void
+    {
+        $otherRoute = Route::create([
+            'school_id' => $this->school->id,
+            'name' => 'Route B',
+            'route_code' => 'RB',
+            'route_type' => Route::ROUTE_TYPE_SCHOOL_TO_HOME,
+            'start_location' => 'School',
+            'end_location' => 'Kathmandu',
+            'is_active' => true,
+        ]);
+
+        $otherStop = RouteStop::create([
+            'route_id' => $otherRoute->id,
+            'name' => 'Outer Stop',
+            'latitude' => 27.7,
+            'longitude' => 85.3,
+            'stop_order' => 1,
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($this->driverUser);
+
+        $this->getJson('/api/v1/driver/stops/'.$otherStop->id.'/students')
+            ->assertForbidden()
+            ->assertJsonPath('message', 'You are not assigned to this route.');
+    }
+
+    public function test_stop_students_requires_driver_profile(): void
+    {
+        $parentUser = User::factory()->create();
+
+        Sanctum::actingAs($parentUser);
+
+        $this->getJson('/api/v1/driver/stops/1/students')
             ->assertNotFound()
             ->assertJsonPath('message', 'Driver profile not found.');
     }

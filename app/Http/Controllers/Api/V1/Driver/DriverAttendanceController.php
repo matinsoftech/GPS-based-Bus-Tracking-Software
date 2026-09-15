@@ -24,6 +24,7 @@ class DriverAttendanceController extends Controller
 
         $validated = $request->validate([
             'route_id' => ['required', 'integer'],
+            'q' => ['nullable', 'string', 'max:255'],
         ]);
 
         $route = $driver->routes()
@@ -38,6 +39,15 @@ class DriverAttendanceController extends Controller
 
         $students = $route->students()
             ->with('parent.user')
+            ->when($request->filled('q'), fn ($query) => $query
+                ->where(fn ($builder) => $builder
+                    ->where('admission_no', 'like', '%'.$request->string('q').'%')
+                    ->orWhere('first_name', 'like', '%'.$request->string('q').'%')
+                    ->orWhere('last_name', 'like', '%'.$request->string('q').'%')
+                    ->orWhere('grade', 'like', '%'.$request->string('q').'%')
+                    ->orWhereHas('parent.user', fn ($query) => $query
+                        ->where('name', 'like', '%'.$request->string('q').'%'))
+                    ->orWhereRaw('CONCAT(first_name, \' \', last_name) LIKE ?', ['%'.$request->string('q').'%'])))
             ->orderBy('grade')
             ->orderBy('roll_no')
             ->get();
