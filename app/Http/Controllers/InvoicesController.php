@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Models\School;
 use App\Models\Subscription;
 use App\Services\InvoiceService;
 use App\Services\SchoolContextService;
@@ -19,7 +20,7 @@ class InvoicesController extends Controller
 
     public function index(Request $request)
     {
-        $filters = $request->only(['school', 'status', 'billing_cycle', 'date_from', 'date_to']);
+        $filters = $request->only(['school', 'school_id', 'status', 'billing_cycle', 'date_from', 'date_to']);
 
         $school = $this->context->resolveSchool(auth()->user());
         $isSuperAdmin = auth()->user()->hasRole('Super Admin');
@@ -32,7 +33,9 @@ class InvoicesController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('invoices.index', compact('invoices', 'filters'));
+        $schools = School::orderBy('name')->get();
+
+        return view('invoices.index', compact('invoices', 'filters', 'schools'));
     }
 
     public function show(Invoice $invoice)

@@ -40,6 +40,12 @@ class DriverController extends Controller
             }
         }
 
+        $selectedSchool = ! $this->isSchoolLevelAdmin($user) ? $request->school_id : null;
+
+        if ($selectedSchool) {
+            $query->where('school_id', $selectedSchool);
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Search
@@ -75,7 +81,11 @@ class DriverController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('drivers.index', compact('drivers'));
+        $schools = ! $this->isSchoolLevelAdmin($user)
+            ? School::orderBy('name')->get()
+            : collect();
+
+        return view('drivers.index', compact('drivers', 'schools', 'selectedSchool'));
     }
 
     /**

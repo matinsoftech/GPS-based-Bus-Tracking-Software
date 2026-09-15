@@ -19,11 +19,15 @@ class SchoolAdminController extends Controller
         $this->guardOwnSchool();
 
         $search = $request->search;
+        $selectedSchool = $this->isSuperAdmin() ? $request->school_id : null;
 
         $schoolAdmins = SchoolAdmin::query()
             ->with(['user', 'school'])
             ->when(! $this->isSuperAdmin(), function ($query) {
                 $query->where('school_id', $this->ownSchoolId());
+            })
+            ->when($selectedSchool, function ($query) use ($selectedSchool) {
+                $query->where('school_id', $selectedSchool);
             })
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
@@ -42,7 +46,11 @@ class SchoolAdminController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('school-admins.index', compact('schoolAdmins', 'search'));
+        $schools = $this->isSuperAdmin()
+            ? School::orderBy('name')->get()
+            : collect();
+
+        return view('school-admins.index', compact('schoolAdmins', 'search', 'schools', 'selectedSchool'));
     }
 
     /**

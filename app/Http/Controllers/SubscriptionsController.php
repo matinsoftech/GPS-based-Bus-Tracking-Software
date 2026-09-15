@@ -21,9 +21,13 @@ class SubscriptionsController extends Controller
     public function index(Request $request)
     {
         $search = $request->search;
+        $selectedSchool = $request->school_id;
 
         $subscriptions = Subscription::query()
             ->with(['school', 'plan'])
+            ->when($selectedSchool, function ($query) use ($selectedSchool) {
+                $query->where('school_id', $selectedSchool);
+            })
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('school', fn ($q) => $q->where('name', 'like', "%{$search}%"))
                     ->orWhereHas('plan', fn ($q) => $q->where('name', 'like', "%{$search}%"));
@@ -32,7 +36,9 @@ class SubscriptionsController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('subscriptions.index', compact('subscriptions', 'search'));
+        $schools = School::orderBy('name')->get();
+
+        return view('subscriptions.index', compact('subscriptions', 'search', 'schools', 'selectedSchool'));
     }
 
     public function create(Request $request)

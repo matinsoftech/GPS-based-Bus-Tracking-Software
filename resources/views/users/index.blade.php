@@ -39,6 +39,16 @@
             <input type="text" name="search" value="{{ $search }}" placeholder="Search by name or email..."
                 class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:w-80">
 
+                 <select name="school_id"
+                class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:w-auto">
+                <option value="">All Schools</option>
+                @foreach ($schools as $school)
+                    <option value="{{ $school->id }}" @selected($selectedSchool == $school->id)>
+                        {{ $school->name }}
+                    </option>
+                @endforeach
+            </select>
+
             <select name="role"
                 class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:w-auto">
                 <option value="">All Roles</option>
@@ -48,6 +58,8 @@
                     </option>
                 @endforeach
             </select>
+
+           
 
             <div class="flex gap-2">
                 <button type="submit"
@@ -73,6 +85,7 @@
                             <th class="px-5 py-3 font-medium">Name</th>
                             <th class="px-5 py-3 font-medium">Email</th>
                             <th class="px-5 py-3 font-medium">Role</th>
+                            <th class="px-5 py-3 font-medium">School</th>
                             <th class="px-5 py-3 font-medium">Status</th>
                             <th class="px-5 py-3 font-medium">Created Date</th>
                             <th class="px-5 py-3 text-right font-medium">Actions</th>
@@ -112,6 +125,13 @@
                                     @endforelse
                                 </td>
                                 <td class="px-5 py-3">
+                                    @if ($user->school)
+                                        <span class="text-sm text-gray-700 dark:text-gray-200">{{ $user->school->name }}</span>
+                                    @else
+                                        <span class="text-gray-400 dark:text-gray-500">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-5 py-3">
                                     @if ($user->status === 'active')
                                         <span
                                             class="inline-flex rounded-full bg-success-50 px-2 py-0.5 text-xs font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500">
@@ -145,7 +165,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
+                                <td colspan="8" class="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
                                     No users found.
                                 </td>
                             </tr>
@@ -204,6 +224,10 @@
                                     <span class="text-xs text-gray-400 dark:text-gray-500">—</span>
                                 @endforelse
                             </div>
+
+                            @if ($user->school)
+                                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ $user->school->name }}</p>
+                            @endif
 
                             <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
                                 Created {{ $user->created_at->format('M d, Y') }}

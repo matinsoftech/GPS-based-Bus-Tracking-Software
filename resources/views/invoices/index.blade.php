@@ -23,8 +23,17 @@
 
         <form action="{{ route('invoices.index') }}" method="GET" class="mb-4 space-y-3">
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <input type="text" name="school" value="{{ $filters['school'] ?? '' }}" placeholder="Search by school..."
-                    class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                @if (auth()->user()->hasRole('Super Admin'))
+                    <select name="school_id"
+                        class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                        <option value="">All Schools</option>
+                        @foreach ($schools as $school)
+                            <option value="{{ $school->id }}" @selected(($filters['school_id'] ?? '') == $school->id)>
+                                {{ $school->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                @endif
                 <select name="status"
                     class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                     <option value="">All statuses</option>

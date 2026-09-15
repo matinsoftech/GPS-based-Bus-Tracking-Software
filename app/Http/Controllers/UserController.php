@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\School;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,31 +24,32 @@ class UserController extends Controller
     {
         $search = $request->search;
         $selectedRole = $request->role;
+        $selectedSchool = $request->school_id;
 
         $users = User::query()
-            ->with('roles')
+            ->with('roles', 'school')
             ->when($search, function ($query) use ($search) {
-                // Search across name OR email without leaking the OR into
-                // other query constraints (wrapped in a nested group).
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
             ->when($selectedRole, function ($query) use ($selectedRole) {
-                // Filter by role name through the many-to-many relationship.
                 $query->whereHas('roles', function ($query) use ($selectedRole) {
                     $query->where('name', $selectedRole);
                 });
+            })
+            ->when($selectedSchool, function ($query) use ($selectedSchool) {
+                $query->where('school_id', $selectedSchool);
             })
             ->latest()
             ->paginate(10)
             ->withQueryString();
 
-        // Full role list used to build the filter dropdown.
         $roles = Role::orderBy('name')->get();
+        $schools = School::orderBy('name')->get();
 
-        return view('users.index', compact('users', 'roles', 'search', 'selectedRole'));
+        return view('users.index', compact('users', 'roles', 'search', 'selectedRole', 'schools', 'selectedSchool'));
     }
 
     /**
