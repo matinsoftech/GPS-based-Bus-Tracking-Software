@@ -11,12 +11,18 @@ use App\Models\RouteStop;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
+use App\Models\Trip;
+use App\Notifications\TripEndedNotification;
 use App\Services\FleetMapService;
+use App\Traits\NotifiesRouteParticipants;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SuperAdminDashboardController extends Controller
 {
+    use NotifiesRouteParticipants;
+
     public function __construct(private readonly FleetMapService $fleetMap) {}
 
     /**
@@ -141,5 +147,62 @@ class SuperAdminDashboardController extends Controller
     public function fleetData()
     {
         return response()->json($this->fleetMap->forSchool(null));
+    }
+
+    /**
+     * Show trip history across all schools with an optional school filter.
+     */
+    public function trips(Request $request)
+    {
+        $query = Trip::with(['bus', 'route', 'driver', 'school'])
+            ->orderByDesc('started_at');
+
+        if ($request->filled('school_id')) {
+            $query->where('school_id', $request->integer('school_id'));
+        }
+
+        $trips = $query->paginate(10)->withQueryString();
+
+        $schools = School::orderBy('name')->get();
+        $selectedSchool = $request->query('school_id');
+
+        return view('super-admin.trips.index', compact('trips', 'schools', 'selectedSchool'));
+    }
+
+    /**
+     * End an in-progress trip from the super admin trip list.
+     */
+    public function endTrip(Trip $trip)
+    {
+        if (! $trip->isInProgress()) {
+            return redirect()->route('trips.index')
+                ->with('warning', 'That trip is no longer active.');
+        }
+
+        $trip = DB::transaction(function () use ($trip) {
+            $trip->update([
+                'status' => Trip::STATUS_COMPLETED,
+                'ended_at' => now(),
+            ]);
+
+            return $trip->fresh(['bus', 'route', 'school']);
+        });
+
+        $notification = new TripEndedNotification($trip);
+
+        $this->notifyRouteParticipants($trip, $notification);
+
+        $admins = SchoolAdmin::where('school_id', $trip->school_id)
+            ->with('user')
+            ->get();
+
+        foreach ($admins as $admin) {
+            if ($admin->user) {
+                $admin->user->notify($notification);
+            }
+        }
+
+        return redirect()->route('trips.index')
+            ->with('success', "Trip ended ({$trip->trip_type_label}). Parents have been notified.");
     }
 }

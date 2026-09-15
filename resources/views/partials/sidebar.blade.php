@@ -103,7 +103,15 @@
                     'permission' => 'bus.view',
                     'dropdown' => null,
                 ],
-                // ['key' => 'trip-management', 'label' => 'Trip', 'route' => 'dashboard', 'active' => 'trip-management', 'icon' => 'heroicon-o-clipboard-document-list', 'permission' => null, 'dropdown' => null],
+                [
+                    'key' => 'trip-management',
+                    'label' => 'Trip',
+                    'route' => 'trips.index',
+                    'active' => 'trip-management',
+                    'icon' => 'heroicon-o-clipboard-document-list',
+                    'permission' => 'trip.view',
+                    'dropdown' => null,
+                ],
             ],
         ],
         [

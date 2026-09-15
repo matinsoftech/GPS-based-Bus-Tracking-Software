@@ -77,6 +77,22 @@ Route::middleware(['auth', 'subscription'])->group(function () {
         ])
         ->name('dashboard.fleet-data');
 
+    Route::get('/systemadmin/trips', [SuperAdminDashboardController::class, 'trips'])
+        ->middleware([
+            'verified',
+            'permission:trip.view',
+            'role:Super Admin',
+        ])
+        ->name('trips.index');
+
+    Route::post('/systemadmin/trips/{trip}/end', [SuperAdminDashboardController::class, 'endTrip'])
+        ->middleware([
+            'verified',
+            'permission:trip.end',
+            'role:Super Admin',
+        ])
+        ->name('trips.end');
+
     /*
     |--------------------------------------------------------------------------
     | Vehicle Tracking (NazarTrack All Vehicles)
