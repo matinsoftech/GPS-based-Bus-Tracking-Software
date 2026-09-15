@@ -24,6 +24,95 @@
             </div>
         @endif
 
+        @if ($errors->any())
+            <div
+                class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+                <ul class="list-inside list-disc">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form action="{{ route('driver.trips.index') }}" method="GET" class="mb-4">
+            <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+                <div class="w-full sm:w-auto sm:flex-1">
+                    <label for="search"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input type="text" id="search" name="search" value="{{ request('search') }}"
+                        placeholder="Search trips by bus, route or driver..."
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                </div>
+
+                <div>
+                    <label for="from"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">From</label>
+                    <input type="date" id="from" name="from" value="{{ request('from') }}"
+                        onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                </div>
+                <div>
+                    <label for="to" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">To</label>
+                    <input type="date" id="to" name="to" value="{{ request('to') }}"
+                        onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                </div>
+
+                <div>
+                    <label for="bus_id"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Bus</label>
+                    <select name="bus_id" id="bus_id"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                        <option value="">All Buses</option>
+                        @foreach ($buses as $filterBus)
+                            <option value="{{ $filterBus->id }}" @selected((string) request('bus_id') === (string) $filterBus->id)>
+                                {{ $filterBus->bus_number }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="route_id"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route</label>
+                    <select name="route_id" id="route_id"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                        <option value="">All Routes</option>
+                        @foreach ($routes as $filterRoute)
+                            <option value="{{ $filterRoute->id }}" @selected((string) request('route_id') === (string) $filterRoute->id)>
+                                {{ $filterRoute->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="status"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <select name="status" id="status"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                        <option value="">All Statuses</option>
+                        <option value="in_progress" @selected(request('status') === 'in_progress')>In Progress</option>
+                        <option value="completed" @selected(request('status') === 'completed')>Completed</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-2 items-center">
+                    <button type="submit"
+                        class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                        Filter
+                    </button>
+                    @if ($trips->total() > 0 || request()->query())
+                        <a href="{{ route('driver.trips.index') }}"
+                            class="rounded-lg px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            Reset
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </form>
+
         {{-- Desktop / tablet: table view --}}
         <div
             class="hidden overflow-hidden rounded-2xl border border-gray-200 bg-white md:block dark:border-gray-800 dark:bg-white/[0.03]">

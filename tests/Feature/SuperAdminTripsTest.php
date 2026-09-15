@@ -157,7 +157,103 @@ class SuperAdminTripsTest extends TestCase
         $response->assertForbidden();
     }
 
-    private function makeTrip(School $school, ?ParentProfile $parent = null): Trip
+    public function test_super_admin_can_filter_trips_by_status_bus_driver_route_and_date_range(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('Super Admin');
+
+        $schoolA = $this->createSchool('Sunrise Academy', 'SCH-A');
+
+        $tripA = $this->makeTrip($schoolA, null, [
+            'status' => Trip::STATUS_COMPLETED,
+            'started_at' => now()->subDays(5)->setTime(8, 0, 0),
+            'ended_at' => now()->subDays(5)->setTime(9, 0, 0),
+        ]);
+        $tripB = $this->makeTrip($schoolA, null, [
+            'status' => Trip::STATUS_IN_PROGRESS,
+            'started_at' => now()->subDay()->setTime(8, 0, 0),
+        ]);
+
+        $response = $this->actingAs($superAdmin)->get(route('trips.index', ['status' => 'completed']));
+        $response->assertOk()
+            ->assertSee($tripA->bus->bus_number);
+        $this->assertSame(1, substr_count($response->getContent(), $tripB->bus->bus_number));
+
+        $response = $this->actingAs($superAdmin)->get(route('trips.index', ['bus_id' => $tripA->bus_id]));
+        $response->assertOk()
+            ->assertSee($tripA->bus->bus_number);
+        $this->assertSame(1, substr_count($response->getContent(), $tripB->bus->bus_number));
+
+        $response = $this->actingAs($superAdmin)->get(route('trips.index', ['driver_id' => $tripA->driver_id]));
+        $response->assertOk()
+            ->assertSee($tripA->bus->bus_number);
+        $this->assertSame(1, substr_count($response->getContent(), $tripB->bus->bus_number));
+
+        $response = $this->actingAs($superAdmin)->get(route('trips.index', ['route_id' => $tripA->route_id]));
+        $response->assertOk()
+            ->assertSee($tripA->bus->bus_number);
+        $this->assertSame(1, substr_count($response->getContent(), $tripB->bus->bus_number));
+
+        $params = ['from' => now()->subDays(6)->toDateString(), 'to' => now()->subDays(2)->toDateString()];
+        $response = $this->actingAs($superAdmin)->get(route('trips.index', $params));
+        $response->assertOk()
+            ->assertSee($tripA->bus->bus_number);
+        $this->assertSame(1, substr_count($response->getContent(), $tripB->bus->bus_number));
+    }
+
+    public function test_trip_filters_reject_invalid_values(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('Super Admin');
+
+        $this->actingAs($superAdmin)->get(route('trips.index', ['status' => 'cancelled']))
+            ->assertSessionHasErrors('status');
+
+        $this->actingAs($superAdmin)->get(route('trips.index', ['from' => '2026-09-10', 'to' => '2026-09-01']))
+            ->assertSessionHasErrors('to');
+    }
+
+    public function test_super_admin_can_search_trips_by_keyword(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('Super Admin');
+
+        $schoolA = $this->createSchool('Sunrise Academy', 'SCH-A');
+
+        $tripA = $this->makeTrip($schoolA, null, [
+            'status' => Trip::STATUS_COMPLETED,
+            'started_at' => now()->subDays(5)->setTime(8, 0, 0),
+            'ended_at' => now()->subDays(5)->setTime(9, 0, 0),
+        ]);
+        $tripB = $this->makeTrip($schoolA, null, [
+            'status' => Trip::STATUS_IN_PROGRESS,
+            'started_at' => now()->subDay()->setTime(8, 0, 0),
+        ]);
+
+        $response = $this->actingAs($superAdmin)->get(route('trips.index', ['search' => $tripA->bus->bus_number]));
+        $response->assertOk()
+            ->assertSee($tripA->bus->bus_number);
+        $this->assertSame(1, substr_count($response->getContent(), $tripB->bus->bus_number));
+
+        $response = $this->actingAs($superAdmin)->get(route('trips.index', ['search' => $tripB->route->route_code]));
+        $response->assertOk()
+            ->assertSee($tripB->bus->bus_number)
+            ->assertSee($tripB->route->route_code);
+        $this->assertSame(1, substr_count($response->getContent(), $tripA->bus->bus_number));
+
+        $response = $this->actingAs($superAdmin)->get(route('trips.index', ['search' => 'SCH-A']));
+        $response->assertOk()
+            ->assertSee($tripA->bus->bus_number)
+            ->assertSee($tripB->bus->bus_number);
+    }
+
+    private function makeTrip(School $school, ?ParentProfile $parent = null, array $overrides = []): Trip
     {
         $driver = $this->createDriver($school);
         $bus = $this->createBus($school);
@@ -167,7 +263,7 @@ class SuperAdminTripsTest extends TestCase
             $this->createStudent($school, $parent, $route);
         }
 
-        return Trip::create([
+        return Trip::create(array_merge([
             'bus_id' => $bus->id,
             'driver_id' => $driver->id,
             'route_id' => $route->id,
@@ -175,7 +271,7 @@ class SuperAdminTripsTest extends TestCase
             'trip_type' => Trip::TYPE_HOME_TO_SCHOOL,
             'status' => Trip::STATUS_IN_PROGRESS,
             'started_at' => now()->subHour(),
-        ]);
+        ], $overrides));
     }
 
     private function createSchool(string $name, string $code): School
