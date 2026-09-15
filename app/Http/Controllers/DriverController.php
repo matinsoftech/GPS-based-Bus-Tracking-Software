@@ -60,6 +60,7 @@ class DriverController extends Controller
 
                 $q->where('employee_id', 'like', "%{$search}%")
                     ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%")
                     ->orWhere('license_number', 'like', "%{$search}%");
@@ -288,6 +289,7 @@ class DriverController extends Controller
                     'email' => $validated['email'],
                     'password' => $validated['password'],
                     'school_id' => $validated['school_id'],
+                    'profile_photo' => $validated['profile_photo'] ?? null,
                 ]);
 
                 $user->assignRole('Driver');
@@ -532,6 +534,7 @@ class DriverController extends Controller
                         'email' => $validated['email'],
                         'password' => $validated['password'],
                         'school_id' => $validated['school_id'],
+                        'profile_photo' => $validated['profile_photo'] ?? null,
                     ]);
 
                     $user->assignRole('Driver');
@@ -543,6 +546,7 @@ class DriverController extends Controller
                         'email' => $validated['email'],
                         'password' => $validated['password'] ?? $driver->user->password,
                         'school_id' => $validated['school_id'],
+                        'profile_photo' => $validated['profile_photo'] ?? $driver->user->profile_photo,
                     ]);
                 }
 
