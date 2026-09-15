@@ -26,14 +26,36 @@
         @endif
 
         <form action="{{ route('drivers.index') }}" method="GET" class="mb-4">
-            <div class="flex flex-col gap-2 sm:flex-row">
+            <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search drivers..."
-                    class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:w-80">
+
+                @if (auth()->user()->hasRole('Super Admin'))
+                    <select name="school_id"
+                        class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:w-auto">
+                        <option value="">All Schools</option>
+                        @foreach ($schools as $school)
+                            <option value="{{ $school->id }}" @selected($selectedSchool == $school->id)>
+                                {{ $school->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                @endif
+
+                <select name="status"
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:w-auto">
+                    <option value="">All Statuses</option>
+                    @foreach (['Active', 'Inactive', 'Suspended'] as $status)
+                        <option value="{{ $status }}" @selected(request('status') === $status)>
+                            {{ $status }}
+                        </option>
+                    @endforeach
+                </select>
 
                 <div class="flex gap-2">
                     <button type="submit"
                         class="flex-1 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 sm:flex-none">
-                        Search
+                        Filter
                     </button>
 
                     <a href="{{ route('drivers.index') }}"

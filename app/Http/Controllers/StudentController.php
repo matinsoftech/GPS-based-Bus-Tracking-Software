@@ -34,6 +34,12 @@ class StudentController extends Controller
             }
         }
 
+        $selectedSchool = ! $this->isSchoolLevelAdmin($user) ? $request->school_id : null;
+
+        if ($selectedSchool) {
+            $query->where('school_id', $selectedSchool);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
 
@@ -53,7 +59,11 @@ class StudentController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('students.index', compact('students'));
+        $schools = ! $this->isSchoolLevelAdmin($user)
+            ? School::orderBy('name')->get()
+            : collect();
+
+        return view('students.index', compact('students', 'schools', 'selectedSchool'));
     }
 
     /**

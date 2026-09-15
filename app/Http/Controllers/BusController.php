@@ -36,6 +36,12 @@ class BusController extends Controller
             }
         }
 
+        $selectedSchool = ! $this->isSchoolLevelAdmin($user) ? $request->school_id : null;
+
+        if ($selectedSchool) {
+            $query->where('school_id', $selectedSchool);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
 
@@ -52,7 +58,11 @@ class BusController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('buses.index', compact('buses'));
+        $schools = ! $this->isSchoolLevelAdmin($user)
+            ? School::orderBy('name')->get()
+            : collect();
+
+        return view('buses.index', compact('buses', 'schools', 'selectedSchool'));
     }
 
     /**

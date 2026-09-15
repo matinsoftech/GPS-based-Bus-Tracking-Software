@@ -94,7 +94,7 @@
                     <div>
                         <x-label for="date_of_birth" value="Date of Birth" required />
                         <input type="date" id="date_of_birth" name="date_of_birth"
-                            value="{{ old('date_of_birth') }}" max="{{ now()->subYears(18)->format('Y-m-d') }}"
+                            value="{{ old('date_of_birth') }}" max="{{ now()->subYears(15)->format('Y-m-d') }}"
                             required onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
                             class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white [&::-webkit-calendar-picker-indicator]:cursor-pointer dark:[&::-webkit-calendar-picker-indicator]:invert">
                         @error('date_of_birth')

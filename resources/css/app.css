@@ -293,6 +293,12 @@ layer(base);
   }
 }
 
+/* Match the native date/time picker to the dark theme */
+.dark input[type="date"],
+.dark input[type="time"] {
+  color-scheme: dark;
+}
+
 .sidebar:hover {
   width: 290px;
 }

@@ -37,8 +37,12 @@ class ParentProfileController extends Controller
         }
 
         $search = $request->search;
+        $selectedSchool = ! $this->isSchoolLevelAdmin($user) ? $request->school_id : null;
 
         $parents = $query
+            ->when($selectedSchool, function ($query) use ($selectedSchool) {
+                $query->where('school_id', $selectedSchool);
+            })
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('user', function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")
@@ -51,7 +55,11 @@ class ParentProfileController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('parents.index', compact('parents', 'search'));
+        $schools = ! $this->isSchoolLevelAdmin($user)
+            ? School::orderBy('name')->get()
+            : collect();
+
+        return view('parents.index', compact('parents', 'search', 'schools', 'selectedSchool'));
     }
 
     /**

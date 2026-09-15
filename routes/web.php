@@ -451,13 +451,8 @@ Route::middleware(['auth', 'subscription'])->group(function () {
         ->middleware('permission:route.update')
         ->name('routes.edit');
 
-    Route::put('/routes/{route}', [RouteController::class, 'update'])
-        ->middleware('permission:route.update')
-        ->name('routes.update');
-
-    Route::delete('/routes/{route}', [RouteController::class, 'destroy'])
-        ->middleware('permission:route.delete')
-        ->name('routes.destroy');
+    Route::put('/routes/{route}', [RouteController::class, 'update'])->middleware('permission:route.update')->name('routes.update');
+    Route::delete('/routes/{route}', [RouteController::class, 'destroy'])->middleware('permission:route.delete')->name('routes.destroy');
 
     /*
     |--------------------------------------------------------------------------
@@ -777,4 +772,4 @@ Route::get('/gps-test', function (NazarTrackService $gps) {
     return $gps->findDeviceByImei('868720060002890');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

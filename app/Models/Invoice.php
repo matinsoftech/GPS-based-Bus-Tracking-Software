@@ -85,6 +85,9 @@ class Invoice extends Model
             ->when($filters['school'] ?? null, function (Builder $query, string $school) {
                 $query->whereHas('school', fn ($q) => $q->where('name', 'like', "%{$school}%"));
             })
+            ->when($filters['school_id'] ?? null, function (Builder $query, $schoolId) {
+                $query->where('school_id', $schoolId);
+            })
             ->when($filters['status'] ?? null, function (Builder $query, string $status) {
                 if ($status === 'overdue') {
                     $query->where('status', 'unpaid')

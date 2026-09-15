@@ -29,6 +29,7 @@
                         id="from"
                         name="from"
                         value="{{ $from->toDateString() }}"
+                        onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
                         class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                     >
                 </div>
@@ -39,6 +40,7 @@
                         id="to"
                         name="to"
                         value="{{ $to->toDateString() }}"
+                        onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
                         class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                     >
                 </div>

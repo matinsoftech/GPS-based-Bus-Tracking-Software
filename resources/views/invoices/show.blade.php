@@ -16,7 +16,8 @@
                     class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                     Print
                 </a>
-                @if (auth()->user()->hasRole('Super Admin') && ($invoice->statusLabel() === 'unpaid' || $invoice->statusLabel() === 'overdue'))
+                @if (auth()->user()->hasRole('Super Admin') &&
+                        ($invoice->statusLabel() === 'unpaid' || $invoice->statusLabel() === 'overdue'))
                     <form action="{{ route('invoices.mark-paid', $invoice) }}" method="POST">
                         @csrf
                         <button type="submit"
@@ -36,7 +37,8 @@
         </div>
 
         @if (session('success'))
-            <div class="mb-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+            <div
+                class="mb-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
                 {{ session('success') }}
             </div>
         @endif
@@ -60,17 +62,23 @@
             <div class="flex items-start justify-between gap-4 border-b border-gray-100 pb-5 dark:border-gray-800">
                 <div>
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Billed To</p>
-                    <h2 class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $invoice->school->name }}</h2>
+                    <h2 class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $invoice->school->name }}
+                    </h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        {{ $invoice->school->code }}@if ($invoice->school->address) · {{ $invoice->school->address }}@endif
+                        {{ $invoice->school->code }}@if ($invoice->school->address)
+                            · {{ $invoice->school->address }}
+                        @endif
                     </p>
                     @if ($invoice->school->phone || $invoice->school->email)
                         <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-                            {{ $invoice->school->phone }}@if ($invoice->school->email) · {{ $invoice->school->email }}@endif
+                            {{ $invoice->school->phone }}@if ($invoice->school->email)
+                                · {{ $invoice->school->email }}
+                            @endif
                         </p>
                     @endif
                 </div>
-                <span class="rounded-full px-3 py-1 text-xs font-medium {{ $statusColors[$invoice->statusLabel()] ?? $statusColors['void'] }}">
+                <span
+                    class="rounded-full px-3 py-1 text-xs font-medium {{ $statusColors[$invoice->statusLabel()] ?? $statusColors['void'] }}">
                     {{ ucfirst($invoice->statusLabel()) }}
                 </span>
             </div>
@@ -82,7 +90,8 @@
                 </div>
                 <div>
                     <dt class="text-xs font-medium uppercase text-gray-400 dark:text-gray-500">Billing Cycle</dt>
-                    <dd class="mt-1 text-sm font-medium capitalize text-gray-900 dark:text-white">{{ $invoice->billing_cycle }}</dd>
+                    <dd class="mt-1 text-sm font-medium capitalize text-gray-900 dark:text-white">
+                        {{ $invoice->billing_cycle }}</dd>
                 </div>
                 <div>
                     <dt class="text-xs font-medium uppercase text-gray-400 dark:text-gray-500">Amount</dt>
@@ -117,7 +126,8 @@
                 </div>
                 <div>
                     <dt class="text-xs font-medium uppercase text-gray-400 dark:text-gray-500">Issued Date</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $invoice->issued_at->format('M d, Y h:i A') }}</dd>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">
+                        {{ $invoice->issued_at->format('M d, Y h:i A') }}</dd>
                 </div>
                 <div>
                     <dt class="text-xs font-medium uppercase text-gray-400 dark:text-gray-500">Subscription</dt>
