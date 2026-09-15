@@ -20,6 +20,7 @@
                             id="date"
                             name="date"
                             value="{{ $date }}"
+                            onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
                             class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                         >
                         <button

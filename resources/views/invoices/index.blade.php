@@ -54,8 +54,10 @@
                 </select>
                 <div class="flex gap-2">
                     <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}"
+                        onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                     <input type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}"
+                        onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                 </div>
             </div>
