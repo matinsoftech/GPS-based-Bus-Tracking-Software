@@ -160,4 +160,81 @@ class StudentControllerTest extends TestCase
             'admission_no' => 'STD002',
         ]);
     }
+
+    public function test_super_admin_cannot_change_student_school_through_edit(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $school = School::create([
+            'name' => 'Bright Future School',
+            'code' => 'SCH001',
+            'email' => 'admin@brightfuture.com',
+            'phone' => '9800000000',
+            'address' => 'Kathmandu',
+            'principal_name' => 'Principal Name',
+            'status' => 'active',
+        ]);
+
+        $otherSchool = School::create([
+            'name' => 'Other School',
+            'code' => 'SCH002',
+            'email' => 'admin@other.com',
+            'phone' => '9800000001',
+            'address' => 'Lalitpur',
+            'principal_name' => 'Principal Other',
+            'status' => 'active',
+        ]);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('Super Admin');
+
+        $parentUser = User::factory()->create();
+        $parentUser->assignRole('Parent');
+
+        $parent = ParentProfile::create([
+            'user_id' => $parentUser->id,
+            'school_id' => $school->id,
+            'name' => 'Ramesh Shrestha',
+            'phone' => '9800000001',
+            'address' => 'Kathmandu',
+        ]);
+
+        $student = Student::create([
+            'school_id' => $school->id,
+            'parent_id' => $parent->id,
+            'admission_no' => 'STD003',
+            'first_name' => 'Anita',
+            'last_name' => 'Shrestha',
+            'date_of_birth' => '2012-01-01',
+            'gender' => 'Female',
+            'grade' => '7',
+            'section' => 'A',
+            'roll_no' => '01',
+            'pickup_location' => 'Gaushala',
+            'drop_location' => 'Bright Future School',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($superAdmin)->put(route('students.update', $student), [
+            'admission_no' => 'STD003',
+            'parent_id' => $parent->id,
+            'first_name' => 'Anita',
+            'last_name' => 'Shrestha',
+            'date_of_birth' => '2012-01-01',
+            'gender' => 'Female',
+            'grade' => '7',
+            'section' => 'A',
+            'roll_no' => '01',
+            'school_id' => $otherSchool->id,
+            'pickup_location' => 'Gaushala',
+            'drop_location' => 'Bright Future School',
+            'route_ids' => [],
+            'is_active' => 1,
+        ]);
+
+        $response->assertRedirect(route('students.index'));
+
+        $student->refresh();
+        $this->assertSame($school->id, $student->school_id);
+    }
 }

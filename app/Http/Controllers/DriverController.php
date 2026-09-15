@@ -348,7 +348,7 @@ class DriverController extends Controller
     {
         $this->authorizeDriver($driver);
 
-        $driver->load(['buses', 'routes']);
+        $driver->load(['buses', 'routes', 'school']);
 
         $user = Auth::user();
 
@@ -475,37 +475,15 @@ class DriverController extends Controller
             'route_ids.*' => 'exists:routes,id',
         ];
 
-        if (! $this->isSchoolLevelAdmin($user)) {
-
-            $rules['school_id'] = [
-                'required',
-                'exists:schools,id',
-            ];
-        }
-
         $validated = $request->validate($rules);
 
         /*
         |--------------------------------------------------------------------------
-        | Principal cannot move driver to another school
+        | School cannot be changed through edit; keep the original assignment
         |--------------------------------------------------------------------------
         */
 
-        if ($this->isSchoolLevelAdmin($user)) {
-            $schoolId = $this->getUserSchoolId($user);
-
-            if ($schoolId) {
-                $validated['school_id'] = $schoolId;
-            } elseif (! empty($request->input('school_id'))) {
-                $validated['school_id'] = $request->input('school_id');
-            } elseif ($driver->school_id) {
-                $validated['school_id'] = $driver->school_id;
-            } else {
-                $validated['school_id'] = School::query()->value('id') ?? 1;
-            }
-        } elseif (! empty($request->input('school_id'))) {
-            $validated['school_id'] = $request->input('school_id');
-        }
+        $validated['school_id'] = $driver->school_id;
 
         if ($error = $this->assertAssignmentsBelongToSchool(
             (int) ($validated['school_id'] ?? $driver->school_id ?? 0),

@@ -486,4 +486,81 @@ class DriverControllerTest extends TestCase
             'bus_id' => $foreignBus->id,
         ]);
     }
+
+    public function test_super_admin_cannot_change_driver_school_through_edit(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class]);
+
+        $user = User::factory()->create();
+        $user->assignRole('Super Admin');
+
+        $school = School::create([
+            'name' => 'Bright Future School',
+            'code' => 'SCH001',
+            'email' => 'admin@brightfuture.com',
+            'phone' => '9800000000',
+            'address' => 'Kathmandu',
+            'principal_name' => 'Principal Name',
+            'status' => 'active',
+        ]);
+
+        $otherSchool = School::create([
+            'name' => 'Other School',
+            'code' => 'SCH002',
+            'email' => 'admin@other.com',
+            'phone' => '9800000001',
+            'address' => 'Lalitpur',
+            'principal_name' => 'Principal Other',
+            'status' => 'active',
+        ]);
+
+        $driverUser = User::factory()->create();
+        $driverUser->assignRole('Driver');
+
+        $driver = Driver::create([
+            'school_id' => $school->id,
+            'user_id' => $driverUser->id,
+            'employee_id' => 'DR007',
+            'first_name' => 'Ramesh',
+            'last_name' => 'Sharma',
+            'gender' => 'Male',
+            'date_of_birth' => '1990-01-01',
+            'phone' => '9800000001',
+            'address' => 'Kathmandu',
+            'license_number' => 'LIC-007',
+            'license_type' => 'Bus',
+            'license_issue_date' => '2020-01-01',
+            'license_expiry_date' => '2030-01-01',
+            'joining_date' => '2024-01-01',
+            'status' => 'Active',
+            'created_by' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->put(route('drivers.update', $driver), [
+            'employee_id' => 'DR007',
+            'first_name' => 'Ramesh',
+            'last_name' => 'Sharma',
+            'gender' => 'Male',
+            'date_of_birth' => '1990-01-01',
+            'phone' => '9800000001',
+            'email' => $driverUser->email,
+            'password' => '',
+            'address' => 'Kathmandu',
+            'license_number' => 'LIC-007',
+            'license_type' => 'Bus',
+            'license_issue_date' => '2020-01-01',
+            'license_expiry_date' => '2030-01-01',
+            'joining_date' => '2024-01-01',
+            'status' => 'Active',
+            'school_id' => $otherSchool->id,
+            'bus_ids' => [],
+            'route_ids' => [],
+        ]);
+
+        $response->assertRedirect(route('drivers.index'));
+
+        $driver->refresh();
+        $this->assertSame($school->id, $driver->school_id);
+        $this->assertSame($school->id, $driver->user->school_id);
+    }
 }

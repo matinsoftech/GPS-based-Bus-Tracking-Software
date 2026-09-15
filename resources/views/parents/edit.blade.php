@@ -86,37 +86,18 @@
                 </h2>
 
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    @if(auth()->user()->hasAnyRole(['School Admin', 'Principal']))
-                        <div>
+                    <div>
                             <x-label value="School" />
                             <input
                                 type="text"
-                                value="{{ isset($school) && $school ? $school->name : 'School not assigned' }}"
+                                value="{{ $parentProfile->school->name ?? 'School not assigned' }}"
                                 readonly
                                 class="w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-400"
                             >
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                The parent is assigned to your school.
+                                School cannot be changed after the parent is created.
                             </p>
                         </div>
-                    @else
-                        <div>
-                            <x-label for="school_id" value="School" required />
-                            <select
-                                id="school_id"
-                                name="school_id"
-                                required
-                                class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                            >
-                                @foreach ($schools as $school)
-                                    <option value="{{ $school->id }}" @selected(old('school_id', $parentProfile->school_id) == $school->id)>{{ $school->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('school_id')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    @endif
 
                     <div>
                         <x-label for="phone" value="Phone" required />

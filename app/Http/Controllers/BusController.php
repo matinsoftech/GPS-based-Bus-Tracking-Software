@@ -175,23 +175,11 @@ class BusController extends Controller
     {
         $this->authorizeBus($bus);
 
-        $user = Auth::user();
-        $school = null;
-        $schools = School::orderBy('name')->get();
+        $bus->load(['drivers', 'school']);
 
-        if ($this->isSchoolLevelAdmin($user)) {
-            $schoolId = $this->getUserSchoolId($user);
+        $drivers = $this->availableDrivers(null, $bus);
 
-            if ($schoolId) {
-                $school = School::find($schoolId);
-            }
-        }
-
-        $drivers = $this->availableDrivers($school, $bus);
-
-        $bus->load(['drivers']);
-
-        return view('buses.edit', compact('bus', 'school', 'schools', 'drivers'));
+        return view('buses.edit', compact('bus', 'drivers'));
     }
 
     /**
@@ -201,28 +189,17 @@ class BusController extends Controller
     {
         $this->authorizeBus($bus);
 
-        $user = Auth::user();
-
         $rules = $this->validationRules($bus);
-
-        if (! $this->isSchoolLevelAdmin($user)) {
-            $rules['school_id'] = [
-                'required',
-                'exists:schools,id',
-            ];
-        }
 
         $validated = $request->validate($rules);
 
-        if ($this->isSchoolLevelAdmin($user)) {
-            $schoolId = $this->getUserSchoolId($user);
+        /*
+        |--------------------------------------------------------------------------
+        | School cannot be changed through edit; keep the original assignment
+        |--------------------------------------------------------------------------
+        */
 
-            if ($schoolId) {
-                $validated['school_id'] = $schoolId;
-            } else {
-                $validated['school_id'] = $bus->school_id;
-            }
-        }
+        $validated['school_id'] = $bus->school_id;
 
         $driverIds = $validated['driver_ids'] ?? [];
         unset($validated['driver_ids']);

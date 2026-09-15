@@ -134,33 +134,21 @@ class RouteController extends Controller
     /**
      * Show the form for editing the specified route.
      */
-    public function edit(Route $route)
+public function edit(Route $route)
     {
         $this->authorizeRoute($route);
 
-        $user = Auth::user();
-        $school = null;
-        $schools = School::orderBy('name')->get();
+        $route->load(['school']);
 
-        if ($this->isSchoolLevelAdmin($user)) {
-            $schoolId = $this->getUserSchoolId($user);
-
-            if ($schoolId) {
-                $school = School::find($schoolId);
-            }
-        }
-
-        return view('routes.edit', compact('route', 'school', 'schools'));
+        return view('routes.edit', compact('route'));
     }
 
     /**
-     * Update the specified route.
+     * Update the specified resource in storage.
      */
     public function update(Request $request, Route $route)
     {
         $this->authorizeRoute($route);
-
-        $user = Auth::user();
 
         $rules = [
             'name' => 'required|string|max:255',
@@ -173,15 +161,15 @@ class RouteController extends Controller
             'is_active' => 'nullable|boolean',
         ];
 
-        if (! $this->isSchoolLevelAdmin($user)) {
-            $rules['school_id'] = 'required|exists:schools,id';
-        }
-
         $validated = $request->validate($rules);
 
-        if ($this->isSchoolLevelAdmin($user)) {
-            $validated['school_id'] = $this->getUserSchoolId($user);
-        }
+        /*
+        |--------------------------------------------------------------------------
+        | School cannot be changed through edit; keep the original assignment
+        |--------------------------------------------------------------------------
+        */
+
+        $validated['school_id'] = $route->school_id;
 
         $validated['is_active'] = $request->boolean('is_active');
 

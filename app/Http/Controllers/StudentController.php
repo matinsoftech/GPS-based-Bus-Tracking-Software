@@ -216,30 +216,16 @@ class StudentController extends Controller
     {
         $this->authorizeStudent($student);
 
-        $user = Auth::user();
-        $school = null;
-        $schools = School::orderBy('name')->get();
-        $parentsSchoolId = null;
-
-        if ($this->isSchoolLevelAdmin($user)) {
-            $schoolId = $this->getUserSchoolId($user);
-
-            if ($schoolId) {
-                $school = School::find($schoolId);
-                $parentsSchoolId = $schoolId;
-            }
-        }
-
-        $parents = $this->availableParents($parentsSchoolId);
+        $parents = $this->availableParents($student->school_id);
 
         $routes = Route::with('stops')
-            ->when($school, fn ($query) => $query->where('school_id', $school->id))
+            ->where('school_id', $student->school_id)
             ->orderBy('name')
             ->get();
 
         $student->load(['school', 'parent.user', 'routes', 'stops']);
 
-        return view('students.edit', compact('student', 'school', 'schools', 'parents', 'routes'));
+        return view('students.edit', compact('student', 'parents', 'routes'));
     }
 
     /**
@@ -248,8 +234,6 @@ class StudentController extends Controller
     public function update(Request $request, Student $student)
     {
         $this->authorizeStudent($student);
-
-        $user = Auth::user();
 
         $rules = [
             'admission_no' => 'required|unique:students,admission_no,'.$student->id,
@@ -269,30 +253,23 @@ class StudentController extends Controller
             'route_ids.*' => ['integer', 'exists:routes,id'],
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active' => 'nullable|boolean',
+            'parent_id' => [
+                'required',
+                Rule::exists('parent_profiles', 'id')->where('school_id', $student->school_id),
+            ],
         ];
-
-        if ($this->isSchoolLevelAdmin($user)) {
-            $schoolId = $this->getUserSchoolId($user);
-
-            $rules['parent_id'] = [
-                'required',
-                Rule::exists('parent_profiles', 'id')->where('school_id', $schoolId),
-            ];
-        } else {
-            $rules['school_id'] = 'required|exists:schools,id';
-            $rules['parent_id'] = [
-                'required',
-                Rule::exists('parent_profiles', 'id')->where('school_id', $request->input('school_id')),
-            ];
-        }
 
         $validated = $request->validate($rules, [
             'parent_id.exists' => 'The selected parent does not belong to the selected school.',
         ]);
 
-        if ($this->isSchoolLevelAdmin($user)) {
-            $validated['school_id'] = $schoolId;
-        }
+        /*
+        |--------------------------------------------------------------------------
+        | School cannot be changed through edit; keep the original assignment
+        |--------------------------------------------------------------------------
+        */
+
+        $validated['school_id'] = $student->school_id;
 
         $parent = ParentProfile::find($validated['parent_id']);
 
