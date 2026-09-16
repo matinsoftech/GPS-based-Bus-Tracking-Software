@@ -47,6 +47,8 @@ class AttendanceController extends Controller
                     'today' => $today,
                     'groupedBySchool' => false,
                     'routeType' => null,
+                    'schools' => collect(),
+                    'selectedSchoolId' => null,
                 ]);
             }
 
@@ -57,6 +59,15 @@ class AttendanceController extends Controller
 
         if (in_array($routeType, ['home_to_school', 'school_to_home'])) {
             $query->where('route_type', $routeType);
+        }
+
+        $selectedSchoolId = $request->query('school_id');
+
+        $groupedBySchool = $user->hasRole('Super Admin');
+
+        if ($selectedSchoolId && $user->hasRole('Super Admin')) {
+            $query->where('school_id', $selectedSchoolId);
+            $groupedBySchool = false;
         }
 
         $routes = $query->orderBy('name')->get();
@@ -75,9 +86,9 @@ class AttendanceController extends Controller
                 'dropped_home' => $group->where('trip', Attendance::TRIP_SCHOOL_TO_HOME)->whereNotNull('check_out_at')->pluck('student_id')->unique()->count(),
             ]);
 
-        $groupedBySchool = $user->hasRole('Super Admin');
+        $schools = School::orderBy('name')->get();
 
-        return view('attendance.index', compact('routes', 'checkedIn', 'today', 'groupedBySchool', 'routeType'));
+        return view('attendance.index', compact('routes', 'checkedIn', 'today', 'groupedBySchool', 'routeType', 'schools', 'selectedSchoolId'));
     }
 
     /**
