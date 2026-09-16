@@ -163,9 +163,52 @@ class BusController extends Controller
 
         $bus->load(['school', 'creator', 'drivers', 'gpsDevice']);
 
-        $latestLocation = $this->gpsService->locationPayload($bus);
+        $latestLocation = $this->gpsService->locationPayload($bus)
+            ?? $this->gpsService->lastKnownPayload($bus);
 
-        return view('buses.show', compact('bus', 'latestLocation'));
+        $recentTrips = $bus->trips()
+            ->with(['route.stops', 'driver'])
+            ->orderByDesc('started_at')
+            ->limit(10)
+            ->get();
+
+        $busRoutes = $recentTrips
+            ->pluck('route')
+            ->filter()
+            ->keyBy('id')
+            ->values()
+            ->map(fn ($route) => [
+                'id' => $route->id,
+                'name' => $route->name,
+                'route_code' => $route->route_code,
+                'start_location' => $route->start_location,
+                'end_location' => $route->end_location,
+                'stops' => $route->stops
+                    ->map(fn ($stop) => [
+                        'id' => $stop->id,
+                        'name' => $stop->name,
+                        'latitude' => $stop->latitude,
+                        'longitude' => $stop->longitude,
+                        'stop_order' => $stop->stop_order,
+                    ])
+                    ->values()
+                    ->all(),
+            ])
+            ->values();
+
+        $tripRoutes = $recentTrips
+            ->pluck('route')
+            ->filter()
+            ->keyBy('id')
+            ->values();
+
+        $tripDrivers = $recentTrips
+            ->pluck('driver')
+            ->filter()
+            ->keyBy('id')
+            ->values();
+
+        return view('buses.show', compact('bus', 'latestLocation', 'busRoutes', 'recentTrips', 'tripRoutes', 'tripDrivers'));
     }
 
     /**

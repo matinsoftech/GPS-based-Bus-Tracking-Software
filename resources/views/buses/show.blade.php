@@ -122,7 +122,7 @@
                     <dl class="space-y-4 text-sm">
                         <div class="flex justify-between items-start gap-4">
                             <dt class="text-gray-500 dark:text-gray-400">Assigned
-                                Driver{{ $bus->drivers->count() > 1 ? 's' : '' }}</dt>
+                                Driver{{ count($bus->drivers) > 1 ? 's' : '' }}</dt>
                             <dd class="font-semibold text-gray-900 dark:text-white text-right">
                                 @if ($bus->drivers->isNotEmpty())
                                     <div class="flex flex-col items-start gap-1.5">
@@ -141,6 +141,39 @@
                                     </div>
                                 @else
                                     <span class="text-gray-400">— No driver assigned —</span>
+                                @endif
+                            </dd>
+                        </div>
+
+                        <div class="flex justify-between items-start gap-4">
+                            <dt class="text-gray-500 dark:text-gray-400">Route{{ $tripRoutes->count() > 1 ? 's' : '' }}
+                                (Trip)</dt>
+                            <dd class="font-semibold text-gray-900 dark:text-white text-right">
+                                @if ($tripRoutes->isNotEmpty())
+                                    <div class="flex flex-col items-end gap-1.5">
+                                        @foreach ($tripRoutes as $route)
+                                            <a href="{{ route('routes.show', $route) }}"
+                                                class="inline-flex items-center gap-1.5 text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                                                <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <circle cx="9" cy="6" r="2.5"
+                                                        stroke-width="2" />
+                                                    <circle cx="15" cy="18" r="2.5"
+                                                        stroke-width="2" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 8.5V15a2.5 2.5 0 003.5 2.3L16 15.5" />
+                                                </svg>
+                                                {{ $route->name }}
+                                                @if ($route->route_code)
+                                                    <span
+                                                        class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">{{ $route->route_code }}</span>
+                                                @endif
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="text-gray-400">— No trip started yet —</span>
                                 @endif
                             </dd>
                         </div>
@@ -201,8 +234,7 @@
                                 km/h</strong></span>
                         <span class="text-gray-300 dark:text-gray-600">•</span>
                         <span>Coords: <strong id="liveCoordsText"
-                                class="text-brand-600 dark:text-brand-400 font-mono">{{ number_format($lat, 4) }},
-                                {{ number_format($lng, 4) }}</strong></span>
+                                class="text-brand-600 dark:text-brand-400 font-mono">{{ $hasGps ? number_format($lat, 4) . ', ' . number_format($lng, 4) : '—' }}</strong></span>
                     </div>
 
                     @if ($isOnline)
@@ -220,6 +252,47 @@
                     @endif
                 </div>
             </div>
+
+            @php
+                $busMapRoutes = $busRoutes->filter(
+                    fn ($route) => collect($route['stops'])
+                        ->filter(fn ($stop) => $stop['latitude'] && $stop['longitude'])
+                        ->count() >= 2
+                )->values();
+                $busPalette = ['#4F46E5', '#0EA5E9', '#D946EF', '#F97316', '#10B981', '#EF4444'];
+            @endphp
+
+            @if($busMapRoutes->isNotEmpty())
+
+                <div class="mb-4 flex flex-wrap items-center gap-2">
+
+                    @foreach($busMapRoutes as $index => $route)
+
+                        <button
+                            type="button"
+                            data-bus-route-id="{{ $route['id'] }}"
+                            class="bus-route-chip inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-xs ring-2 ring-offset-2 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:ring-offset-gray-900"
+                        >
+                            <span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background: {{ $busPalette[$index % count($busPalette)] }}"></span>
+                            {{ $route['name'] }}
+                        </button>
+
+                    @endforeach
+
+                    <button
+                        type="button"
+                        id="fitBusRoutesBtn"
+                        class="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                    >
+                        <svg class="h-4 w-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                        </svg>
+                        Fit All Routes
+                    </button>
+
+                </div>
+
+            @endif
 
             <!-- Leaflet Map Container -->
             <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-900"
@@ -252,7 +325,142 @@
                         Last Signal: <strong id="lastSignalText">{{ $lastSignalText }}</strong>
                     </div>
                 </div>
+
+                <!-- No GPS Data Overlay -->
+                <div id="busNoGpsOverlay"
+                    class="absolute inset-0 z-[500] flex flex-col items-center justify-center gap-2 bg-gray-900/95 text-center px-6"
+                    style="{{ $hasGps ? 'display:none;' : '' }}">
+                    <svg class="h-10 w-10 text-gray-500" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <p class="text-sm font-semibold text-white">Waiting for GPS data…</p>
+                    <p class="text-xs text-gray-400">Location will appear here once the bus reports its position.</p>
+                </div>
             </div>
+        </div>
+
+        <!-- Trip History Covered by This Bus -->
+        <div
+            class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+
+            <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+
+                <div class="flex flex-wrap items-center justify-between gap-3">
+
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Trip History</h2>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Trips covered by bus
+                                #{{ $bus->bus_number }}</p>
+                        </div>
+                    </div>
+
+                    @if ($recentTrips->isNotEmpty())
+                        <span
+                            class="inline-flex shrink-0 items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                            {{ $recentTrips->count() }} recent trips
+                        </span>
+                    @endif
+
+                </div>
+
+            </div>
+
+            @if ($recentTrips->isEmpty())
+
+                <p class="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No trips recorded yet.
+                </p>
+
+            @else
+
+                <div class="overflow-x-auto">
+
+                    <table class="w-full">
+                        <thead class="border-b border-gray-200 dark:border-gray-800">
+                            <tr class="text-left text-xs font-medium uppercase tracking-wide text-gray-400">
+                                <th class="px-6 py-3">Date</th>
+                                <th class="px-6 py-3">Route</th>
+                                <th class="px-6 py-3">Driver</th>
+                                <th class="px-6 py-3">Type</th>
+                                <th class="px-6 py-3">Status</th>
+                                <th class="px-6 py-3">Duration</th>
+                                <th class="px-6 py-3">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+
+                            @foreach ($recentTrips as $trip)
+
+                                <tr class="text-gray-700 dark:text-gray-200">
+                                    <td class="px-6 py-3 text-sm">
+                                        {{ $trip->started_at?->format('M d, Y') ?? '—' }}
+                                    </td>
+                                    <td class="px-6 py-3 text-sm">
+                                        {{ $trip->route?->name ?? '—' }}
+                                    </td>
+                                    <td class="px-6 py-3 text-sm">
+                                        {{ $trip->driver?->full_name ?? '—' }}
+                                    </td>
+                                    <td class="px-6 py-3 text-sm">
+                                        <span
+                                            class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium
+                                            @if ($trip->trip_type === 'home_to_school')
+                                                bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400
+                                            @else
+                                                bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400
+                                            @endif
+                                        ">
+                                            {{ $trip->trip_type_label }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-3 text-sm">
+                                        @if ($trip->status === 'in_progress')
+
+                                            <span
+                                                class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                                                <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500"></span>
+                                                In Progress
+                                            </span>
+
+                                        @else
+
+                                            <span
+                                                class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                                                Completed
+                                            </span>
+
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-3 text-sm">{{ $trip->durationInMinutes() ?? '—' }} min</td>
+                                    <td class="px-6 py-3 text-sm">
+                                        {{ $trip->started_at?->format('H:i:s') ?? '—' }}
+                                        @if ($trip->ended_at)
+                                            – {{ $trip->ended_at->format('H:i:s') }}
+                                        @endif
+                                    </td>
+                                </tr>
+
+                            @endforeach
+
+                        </tbody>
+                    </table>
+
+                </div>
+
+            @endif
+
         </div>
 
     </div>
@@ -273,9 +481,16 @@
     let lastSignalText = @json($lastSignalText);
 
     const busNumber = @json($bus->bus_number);
-    const driverName = @json($bus->drivers->first()?->full_name ?? '—');
+    const driverName = @json($tripDrivers->first()?->full_name ?? '—');
     const routeName = 'Dynamic (via active trip)';
     const gpsEndpoint = @json(route('bus_location.latest', ['bus_id' => $bus->id]));
+
+    let hasLiveBusMarker = {{ $hasGps ? 'true' : 'false' }};
+    let busMarkerIcon = null;
+
+    const BUS_ROUTE_PALETTE = @json($busPalette);
+    const busRoutesData = @json($busMapRoutes);
+    let busRouteLayers = {};
 
     function busMarkerHtml() {
         return `
@@ -291,6 +506,50 @@
                 </svg>
             </div>
         `;
+    }
+
+    function getBusMarkerIcon() {
+        if (!busMarkerIcon) {
+            busMarkerIcon = L.divIcon({
+                className: '',
+                html: busMarkerHtml(),
+                iconSize: [44, 44],
+                iconAnchor: [22, 22],
+            });
+        }
+        return busMarkerIcon;
+    }
+
+    function hideNoGpsOverlay() {
+        const overlay = document.getElementById('busNoGpsOverlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    function ensureBusMarker() {
+        if (busLocationMarker) return;
+
+        busLocationMarker = L.marker([busLat, busLng], {
+            icon: getBusMarkerIcon(),
+            zIndexOffset: 1000
+        }).addTo(busMap);
+
+        const html = `
+            <div style="font-family:inherit;min-width:180px;padding:2px;">
+                <div style="font-weight:700;font-size:14px;color:#111827;">🚍 Bus #${busNumber}</div>
+                <div style="font-size:12px;color:#4B5563;margin-top:3px;">Route: <strong>${routeName}</strong></div>
+                <div style="font-size:12px;color:#4B5563;">Driver: <strong>${driverName}</strong></div>
+                <div style="font-size:12px;color:#4B5563;">Speed: <strong>${Math.round(speedVal)} km/h</strong></div>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Recorded: ${lastSignalText}</div>
+            </div>
+        `;
+
+        busLocationMarker.bindTooltip(html, {
+            direction: 'top',
+            offset: [0, -10],
+            opacity: 1,
+        });
+
+        hideNoGpsOverlay();
     }
 
     function formatGpsTime(value) {
@@ -319,7 +578,10 @@
             busLocationMarker.setLatLng([busLat, busLng]);
             const inner = document.getElementById('busLocationMarkerInner');
             if (inner) inner.style.transform = 'rotate(' + course + 'deg)';
+        } else {
+            ensureBusMarker();
         }
+        hasLiveBusMarker = true;
 
         const speedEl = document.getElementById('liveSpeedText');
         if (speedEl) speedEl.innerText = Math.round(speedVal);
@@ -400,45 +662,137 @@
             updateWhenIdle: true
         }).setView([busLat, busLng], 15);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            subdomains: 'abcd',
-            attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(busMap);
 
-        const icon = L.divIcon({
-            className: '',
-            html: busMarkerHtml(),
-            iconSize: [44, 44],
-            iconAnchor: [22, 22],
-        });
-
-        busLocationMarker = L.marker([busLat, busLng], {
-            icon,
-            zIndexOffset: 1000
-        }).addTo(busMap);
-
-        const busDetailsHtml = `
-            <div style="font-family:inherit;min-width:180px;padding:2px;">
-                <div style="font-weight:700;font-size:14px;color:#111827;">🚍 Bus #${busNumber}</div>
-                <div style="font-size:12px;color:#4B5563;margin-top:3px;">Route: <strong>Assigned via active trip</strong></div>
-                <div style="font-size:12px;color:#4B5563;">Driver: <strong>${driverName}</strong></div>
-                <div style="font-size:12px;color:#4B5563;">Speed: <strong>${Math.round(speedVal)} km/h</strong></div>
-                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Recorded: ${lastSignalText}</div>
-            </div>
-        `;
-
-        busLocationMarker.bindTooltip(busDetailsHtml, {
-            direction: 'top',
-            offset: [0, -10],
-            opacity: 1,
-        });
+        if (hasLiveBusMarker) {
+            ensureBusMarker();
+        }
 
         startLivePolling();
+        initBusRouteLayers();
     });
 
+    async function initBusRouteLayers() {
+        if (busRoutesData.length === 0 || typeof busMap === 'undefined') return;
+
+        let rendered = 0;
+        const drawPromises = [];
+
+        busRoutesData.forEach((route, index) => {
+            const stops = (route.stops || []).filter(
+                s => s.latitude && s.longitude && Number(s.latitude) !== 0 && Number(s.longitude) !== 0
+            );
+
+            if (stops.length < 2) return;
+
+            const color = BUS_ROUTE_PALETTE[index % BUS_ROUTE_PALETTE.length];
+            const group = L.featureGroup().addTo(busMap);
+
+            stops.forEach(stop => {
+                const latlng = [Number(stop.latitude), Number(stop.longitude)];
+                const icon = L.divIcon({
+                    className: '',
+                    html: `<div style="background:${color};color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);">${stop.stop_order}</div>`,
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11],
+                });
+
+                L.marker(latlng, { icon })
+                    .addTo(group)
+                    .bindTooltip(`<b>Stop ${stop.stop_order}:</b> ${stop.name}`);
+            });
+
+            drawPromises.push(drawBusRoutePath(stops, color, group));
+
+            busRouteLayers[route.id] = { group, color, visible: true };
+            rendered++;
+        });
+
+        await Promise.all(drawPromises);
+
+        if (rendered > 0) {
+            bindBusRouteChips();
+
+            if (busLocationMarker) {
+                recenterMapOnBus();
+            } else {
+                fitBusVisibleRoutes();
+            }
+        }
+    }
+
+    async function drawBusRoutePath(stops, color, group) {
+        const waypoints = stops.map(s => [Number(s.latitude), Number(s.longitude)]);
+        let latlngs = null;
+
+        try {
+            const coordStr = waypoints.map(latlng => `${latlng[1]},${latlng[0]}`).join(';');
+            const url = `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.code === 'Ok' && data.routes && data.routes[0] && data.routes[0].geometry) {
+                latlngs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            }
+        } catch (err) {
+            console.warn('OSRM routing request failed, falling back to straight line:', err);
+        }
+
+        if (!latlngs) latlngs = waypoints;
+
+        L.polyline(latlngs, { color, weight: 7, opacity: 0.18, lineCap: 'round' }).addTo(group);
+        L.polyline(latlngs, { color, weight: 3, opacity: 0.8, lineCap: 'round' }).addTo(group);
+    }
+
+    function fitBusVisibleRoutes() {
+        if (!busMap) return;
+
+        const bounds = L.latLngBounds([]);
+
+        Object.values(busRouteLayers).forEach(layer => {
+            if (layer.visible && layer.group.getLayers().length > 0) {
+                bounds.extend(layer.group.getBounds());
+            }
+        });
+
+        if (bounds.isValid()) {
+            busMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+        }
+    }
+
+    function focusBusRoute(routeId, btn) {
+        const layer = busRouteLayers[routeId];
+        if (!layer) return;
+
+        if (!layer.visible) {
+            layer.group.addTo(busMap);
+            layer.visible = true;
+            btn.classList.add('ring-2', 'ring-offset-2');
+        }
+
+        if (layer.group.getLayers().length > 0) {
+            busMap.flyToBounds(layer.group.getBounds(), {
+                padding: [50, 50],
+                maxZoom: 16,
+                duration: 0.8,
+            });
+        }
+    }
+
+    function bindBusRouteChips() {
+        document.querySelectorAll('.bus-route-chip').forEach(btn => {
+            btn.addEventListener('click', () => focusBusRoute(btn.dataset.busRouteId, btn));
+        });
+
+        const fitAllBtn = document.getElementById('fitBusRoutesBtn');
+        if (fitAllBtn) fitAllBtn.addEventListener('click', fitBusVisibleRoutes);
+    }
+
     function recenterMapOnBus() {
-        if (busMap) {
+        if (busMap && busLocationMarker) {
             busMap.flyTo([busLat, busLng], 16, {
                 duration: 0.8
             });
