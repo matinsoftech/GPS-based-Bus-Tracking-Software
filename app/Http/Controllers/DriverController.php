@@ -336,9 +336,31 @@ class DriverController extends Controller
         $driver->load([
             'school',
             'creator',
+            'buses',
+            'routes.stops',
         ]);
 
-        return view('drivers.show', compact('driver'));
+        $assignedRoutes = $driver->routes
+            ->map(fn ($route) => [
+                'id' => $route->id,
+                'name' => $route->name,
+                'route_code' => $route->route_code,
+                'start_location' => $route->start_location,
+                'end_location' => $route->end_location,
+                'stops' => $route->stops
+                    ->map(fn ($stop) => [
+                        'id' => $stop->id,
+                        'name' => $stop->name,
+                        'latitude' => $stop->latitude,
+                        'longitude' => $stop->longitude,
+                        'stop_order' => $stop->stop_order,
+                    ])
+                    ->values()
+                    ->all(),
+            ])
+            ->values();
+
+        return view('drivers.show', compact('driver', 'assignedRoutes'));
     }
 
     /**
