@@ -68,6 +68,15 @@
                     'dropdown' => null,
                 ],
                 [
+                    'key' => 'student-management',
+                    'label' => 'Student',
+                    'route' => 'students.index',
+                    'active' => 'student-management',
+                    'icon' => 'heroicon-o-academic-cap',
+                    'permission' => 'student.view',
+                    'dropdown' => null,
+                ],
+                [
                     'key' => 'parent-management',
                     'label' => 'Parent',
                     'route' => 'parents.index',
