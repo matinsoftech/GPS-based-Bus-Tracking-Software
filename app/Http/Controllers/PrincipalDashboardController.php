@@ -115,6 +115,16 @@ class PrincipalDashboardController extends Controller
         $user = Auth::user();
         $schoolId = $this->context->resolveSchool($user)?->id;
 
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'bus_id' => ['nullable', 'integer'],
+            'driver_id' => ['nullable', 'integer'],
+            'route_id' => ['nullable', 'integer'],
+            'status' => ['nullable', 'in:in_progress,completed'],
+        ]);
+
         $query = Trip::with(['bus', 'route', 'driver', 'school'])
             ->orderByDesc('started_at');
 
@@ -122,9 +132,53 @@ class PrincipalDashboardController extends Controller
             $query->where('school_id', $schoolId);
         }
 
+        $query
+            ->when(filled($validated['search'] ?? null), fn ($q) => $this->applyTripSearch($q, $validated['search']))
+            ->when(filled($validated['bus_id'] ?? null), fn ($q) => $q->where('bus_id', $validated['bus_id']))
+            ->when(filled($validated['driver_id'] ?? null), fn ($q) => $q->where('driver_id', $validated['driver_id']))
+            ->when(filled($validated['route_id'] ?? null), fn ($q) => $q->where('route_id', $validated['route_id']))
+            ->when(filled($validated['status'] ?? null), fn ($q) => $q->where('status', $validated['status']))
+            ->when(filled($validated['from'] ?? null), fn ($q) => $q->whereDate('started_at', '>=', \Illuminate\Support\Carbon::parse($validated['from'])->startOfDay()))
+            ->when(filled($validated['to'] ?? null), fn ($q) => $q->whereDate('started_at', '<=', \Illuminate\Support\Carbon::parse($validated['to'])->endOfDay()));
+
         $trips = $query->paginate(20)->withQueryString();
 
-        return view('principal.trips.index', compact('trips'));
+        $buses = Bus::when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->orderBy('bus_number')
+            ->get();
+        $drivers = Driver::with('user')
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->orderBy('first_name')
+            ->get();
+        $routes = Route::when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->orderBy('name')
+            ->get();
+
+        return view('principal.trips.index', compact('trips', 'buses', 'drivers', 'routes'));
+    }
+
+    /**
+     * Apply a keyword search across the trip's bus, route, driver and school.
+     */
+    private function applyTripSearch($query, string $term)
+    {
+        $needle = '%'.$term.'%';
+
+        return $query->where(function ($query) use ($needle) {
+            $query->whereHas('bus', fn ($q) => $q
+                ->where('bus_number', 'like', $needle)
+                ->orWhere('registration_number', 'like', $needle))
+                ->orWhereHas('route', fn ($q) => $q
+                    ->where('name', 'like', $needle)
+                    ->orWhere('route_code', 'like', $needle))
+                ->orWhereHas('driver', fn ($q) => $q
+                    ->where('first_name', 'like', $needle)
+                    ->orWhere('last_name', 'like', $needle)
+                    ->orWhere('employee_id', 'like', $needle))
+                ->orWhereHas('school', fn ($q) => $q
+                    ->where('name', 'like', $needle)
+                    ->orWhere('code', 'like', $needle));
+        });
     }
 
     /**

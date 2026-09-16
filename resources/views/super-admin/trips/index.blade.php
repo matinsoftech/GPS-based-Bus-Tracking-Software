@@ -1,14 +1,10 @@
-<x-app-layout page="trips">
+<x-app-layout page="trip-management">
     <div class="mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
-        <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="mb-6 flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">My Trips</h1>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">View and manage your trip history</p>
+                <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Trip History</h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">View all trips across all schools</p>
             </div>
-            <a href="{{ route('driver.trips.create') }}"
-                class="inline-flex w-full items-center justify-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto">
-                Start New Trip
-            </a>
         </div>
 
         @if (session('success'))
@@ -35,14 +31,28 @@
             </div>
         @endif
 
-        <form action="{{ route('driver.trips.index') }}" method="GET" class="mb-4">
+        <form action="{{ route('trips.index') }}" method="GET" class="mb-4">
             <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
                 <div class="w-full sm:w-auto sm:flex-1">
                     <label for="search"
                         class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
                     <input type="text" id="search" name="search" value="{{ request('search') }}"
-                        placeholder="Search trips by bus, route or driver..."
+                        placeholder="Search trips by bus, route, driver or school..."
                         class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                </div>
+
+                <div>
+                    <label for="school_id"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School</label>
+                    <select name="school_id" id="school_id"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                        <option value="">All Schools</option>
+                        @foreach ($schools as $school)
+                            <option value="{{ $school->id }}" @selected((string) $schoolId === (string) $school->id)>
+                                {{ $school->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div>
@@ -65,9 +75,23 @@
                     <select name="bus_id" id="bus_id"
                         class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                         <option value="">All Buses</option>
-                        @foreach ($buses as $filterBus)
-                            <option value="{{ $filterBus->id }}" @selected((string) request('bus_id') === (string) $filterBus->id)>
-                                {{ $filterBus->bus_number }}
+                        @foreach ($buses as $bus)
+                            <option value="{{ $bus->id }}" @selected((string) request('bus_id') === (string) $bus->id)>
+                                {{ $bus->bus_number }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="driver_id"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Driver</label>
+                    <select name="driver_id" id="driver_id"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                        <option value="">All Drivers</option>
+                        @foreach ($drivers as $filterDriver)
+                            <option value="{{ $filterDriver->id }}" @selected((string) request('driver_id') === (string) $filterDriver->id)>
+                                {{ $filterDriver->full_name }}
                             </option>
                         @endforeach
                     </select>
@@ -108,7 +132,7 @@
                                 Filter
                             </button>
                             @if ($trips->total() > 0 || request()->query())
-                                <a href="{{ route('driver.trips.index') }}"
+                                <a href="{{ route('trips.index') }}"
                                     class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                     Reset
                                 </a>
@@ -129,6 +153,8 @@
                             <th class="px-5 py-3 text-left font-medium">Date</th>
                             <th class="px-5 py-3 text-left font-medium">Bus</th>
                             <th class="px-5 py-3 text-left font-medium">Route</th>
+                            <th class="px-5 py-3 text-left font-medium">Driver</th>
+                            <th class="px-5 py-3 text-left font-medium">School</th>
                             <th class="px-5 py-3 text-left font-medium">Type</th>
                             <th class="px-5 py-3 text-left font-medium">Status</th>
                             <th class="px-5 py-3 text-left font-medium">Duration</th>
@@ -139,9 +165,11 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse ($trips as $trip)
                             <tr class="text-gray-700 dark:text-gray-200">
-                                <td class="px-5 py-3">{{ $trip->started_at?->format('M d, Y') ?? '—' }}</td>
-                                <td class="px-5 py-3">{{ $trip->bus?->bus_number ?? '—' }}</td>
+                                <td class="px-5 py-3">{{ $trip->started_at->format('M d, Y') }}</td>
+                                <td class="px-5 py-3">{{ $trip->bus->bus_number }}</td>
                                 <td class="px-5 py-3">{{ $trip->route?->name ?? '—' }}</td>
+                                <td class="px-5 py-3">{{ $trip->driver?->full_name ?? '—' }}</td>
+                                <td class="px-5 py-3">{{ $trip->school?->name ?? '—' }}</td>
                                 <td class="px-5 py-3">
                                     <span
                                         class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
@@ -171,11 +199,8 @@
                                 <td class="px-5 py-3">{{ $trip->started_at->format('H:i:s') }}</td>
                                 <td class="px-5 py-3">
                                     @if ($trip->status === 'in_progress')
-                                        <form action="{{ route('driver.trips.toggle') }}" method="POST" class="inline">
+                                        <form action="{{ route('trips.end', $trip) }}" method="POST" class="inline">
                                             @csrf
-                                            <input type="hidden" name="bus_id" value="{{ $trip->bus_id }}">
-                                            <input type="hidden" name="route_id" value="{{ $trip->route_id }}">
-                                            <input type="hidden" name="trip_id" value="{{ $trip->id }}">
                                             <button type="submit"
                                                 class="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600"
                                                 onclick="return confirm('End this trip?')">
@@ -183,14 +208,13 @@
                                             </button>
                                         </form>
                                     @else
-                                        <span
-                                            class="text-gray-700 dark:text-gray-200">{{ $trip->ended_at?->format('H:i:s') ?? '—' }}</span>
+                                        {{ $trip->ended_at ? $trip->ended_at->format('H:i:s') : '—' }}
                                     @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8"
+                                <td colspan="10"
                                     class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                                     No trips recorded yet.
                                 </td>
@@ -214,9 +238,11 @@
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
                             <p class="font-medium text-gray-900 dark:text-white">
-                                {{ $trip->started_at?->format('M d, Y') ?? '—' }}</p>
-                            <p class="truncate text-xs text-gray-500 dark:text-gray-400">
-                                {{ $trip->bus?->bus_number ?? '—' }} · {{ $trip->route?->name ?? '—' }}</p>
+                                {{ $trip->started_at->format('M d, Y') }}</p>
+                            <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ $trip->bus->bus_number }} ·
+                                {{ $trip->route?->name ?? '—' }}</p>
+                            <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ $trip->school?->name ?? '—' }}
+                            </p>
                         </div>
                         @if ($trip->status === 'in_progress')
                             <span
@@ -245,6 +271,10 @@
 
                     <dl class="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
                         <div>
+                            <dt class="text-gray-400 dark:text-gray-500">Driver</dt>
+                            <dd class="text-gray-700 dark:text-gray-200">{{ $trip->driver?->full_name ?? '—' }}</dd>
+                        </div>
+                        <div>
                             <dt class="text-gray-400 dark:text-gray-500">Duration</dt>
                             <dd class="text-gray-700 dark:text-gray-200">{{ $trip->durationInMinutes() ?? '—' }} min
                             </dd>
@@ -253,22 +283,17 @@
                             <dt class="text-gray-400 dark:text-gray-500">Started</dt>
                             <dd class="text-gray-700 dark:text-gray-200">{{ $trip->started_at->format('H:i:s') }}</dd>
                         </div>
-                        @if ($trip->status !== 'in_progress')
-                            <div>
-                                <dt class="text-gray-400 dark:text-gray-500">Ended</dt>
-                                <dd class="text-gray-700 dark:text-gray-200">
-                                    {{ $trip->ended_at?->format('H:i:s') ?? '—' }}</dd>
-                            </div>
-                        @endif
+                        <div>
+                            <dt class="text-gray-400 dark:text-gray-500">Ended</dt>
+                            <dd class="text-gray-700 dark:text-gray-200">
+                                {{ $trip->ended_at ? $trip->ended_at->format('H:i:s') : '—' }}</dd>
+                        </div>
                     </dl>
 
                     @if ($trip->status === 'in_progress')
-                        <form action="{{ route('driver.trips.toggle') }}" method="POST"
+                        <form action="{{ route('trips.end', $trip) }}" method="POST"
                             class="mt-4 border-t border-gray-100 pt-3 dark:border-gray-800">
                             @csrf
-                            <input type="hidden" name="bus_id" value="{{ $trip->bus_id }}">
-                            <input type="hidden" name="route_id" value="{{ $trip->route_id }}">
-                            <input type="hidden" name="trip_id" value="{{ $trip->id }}">
                             <button type="submit"
                                 class="w-full rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600"
                                 onclick="return confirm('End this trip?')">

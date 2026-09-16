@@ -11,12 +11,19 @@ use App\Models\RouteStop;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
+use App\Models\Trip;
+use App\Notifications\TripEndedNotification;
 use App\Services\FleetMapService;
+use App\Traits\NotifiesRouteParticipants;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SuperAdminDashboardController extends Controller
 {
+    use NotifiesRouteParticipants;
+
     public function __construct(private readonly FleetMapService $fleetMap) {}
 
     /**
@@ -141,5 +148,124 @@ class SuperAdminDashboardController extends Controller
     public function fleetData()
     {
         return response()->json($this->fleetMap->forSchool(null));
+    }
+
+    /**
+     * Show trip history across all schools with filters.
+     */
+    public function trips(Request $request)
+    {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'school_id' => ['nullable', 'integer'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'bus_id' => ['nullable', 'integer'],
+            'driver_id' => ['nullable', 'integer'],
+            'route_id' => ['nullable', 'integer'],
+            'status' => ['nullable', 'in:in_progress,completed'],
+        ]);
+
+        $query = Trip::with(['bus', 'route', 'driver', 'school'])
+            ->orderByDesc('started_at');
+
+        if (filled($validated['school_id'] ?? null)) {
+            $query->where('school_id', $validated['school_id']);
+        }
+
+        $query
+            ->when(filled($validated['search'] ?? null), fn ($q) => $this->applyTripSearch($q, $validated['search']))
+            ->when(filled($validated['bus_id'] ?? null), fn ($q) => $q->where('bus_id', $validated['bus_id']))
+            ->when(filled($validated['driver_id'] ?? null), fn ($q) => $q->where('driver_id', $validated['driver_id']))
+            ->when(filled($validated['route_id'] ?? null), fn ($q) => $q->where('route_id', $validated['route_id']))
+            ->when(filled($validated['status'] ?? null), fn ($q) => $q->where('status', $validated['status']))
+            ->when(filled($validated['from'] ?? null), fn ($q) => $q->whereDate('started_at', '>=', Carbon::parse($validated['from'])->startOfDay()))
+            ->when(filled($validated['to'] ?? null), fn ($q) => $q->whereDate('started_at', '<=', Carbon::parse($validated['to'])->endOfDay()));
+
+        $trips = $query->paginate(10)->withQueryString();
+
+        $schoolId = $request->integer('school_id') ?: null;
+
+        $schools = School::orderBy('name')->get();
+        $buses = Bus::when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->orderBy('bus_number')
+            ->get();
+        $drivers = Driver::with('user')
+            ->when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->orderBy('first_name')
+            ->get();
+        $routes = Route::when($schoolId, fn ($q) => $q->where('school_id', $schoolId))
+            ->orderBy('name')
+            ->get();
+
+        return view('super-admin.trips.index', compact(
+            'trips',
+            'schools',
+            'buses',
+            'drivers',
+            'routes',
+            'schoolId',
+        ));
+    }
+
+    /**
+     * End an in-progress trip from the super admin trip list.
+     */
+    public function endTrip(Trip $trip)
+    {
+        if (! $trip->isInProgress()) {
+            return redirect()->route('trips.index')
+                ->with('warning', 'That trip is no longer active.');
+        }
+
+        $trip = DB::transaction(function () use ($trip) {
+            $trip->update([
+                'status' => Trip::STATUS_COMPLETED,
+                'ended_at' => now(),
+            ]);
+
+            return $trip->fresh(['bus', 'route', 'school']);
+        });
+
+        $notification = new TripEndedNotification($trip);
+
+        $this->notifyRouteParticipants($trip, $notification);
+
+        $admins = SchoolAdmin::where('school_id', $trip->school_id)
+            ->with('user')
+            ->get();
+
+        foreach ($admins as $admin) {
+            if ($admin->user) {
+                $admin->user->notify($notification);
+            }
+        }
+
+        return redirect()->route('trips.index')
+            ->with('success', "Trip ended ({$trip->trip_type_label}). Parents have been notified.");
+    }
+
+    /**
+     * Apply a keyword search across the trip's bus, route, driver and school.
+     */
+    private function applyTripSearch($query, string $term)
+    {
+        $needle = '%'.$term.'%';
+
+        return $query->where(function ($query) use ($needle) {
+            $query->whereHas('bus', fn ($q) => $q
+                ->where('bus_number', 'like', $needle)
+                ->orWhere('registration_number', 'like', $needle))
+                ->orWhereHas('route', fn ($q) => $q
+                    ->where('name', 'like', $needle)
+                    ->orWhere('route_code', 'like', $needle))
+                ->orWhereHas('driver', fn ($q) => $q
+                    ->where('first_name', 'like', $needle)
+                    ->orWhere('last_name', 'like', $needle)
+                    ->orWhere('employee_id', 'like', $needle))
+                ->orWhereHas('school', fn ($q) => $q
+                    ->where('name', 'like', $needle)
+                    ->orWhere('code', 'like', $needle));
+        });
     }
 }

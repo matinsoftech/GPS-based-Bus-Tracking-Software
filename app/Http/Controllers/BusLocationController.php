@@ -212,7 +212,8 @@ class BusLocationController extends Controller
      */
     private function latestLocationForBus(?Bus $bus): ?array
     {
-        return $this->gpsService->locationPayload($bus);
+        return $this->gpsService->locationPayload($bus)
+            ?? $this->gpsService->lastKnownPayload($bus);
     }
 
     /**

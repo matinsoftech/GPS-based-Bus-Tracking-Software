@@ -77,6 +77,22 @@ Route::middleware(['auth', 'subscription'])->group(function () {
         ])
         ->name('dashboard.fleet-data');
 
+    Route::get('/systemadmin/trips', [SuperAdminDashboardController::class, 'trips'])
+        ->middleware([
+            'verified',
+            'permission:trip.view',
+            'role:Super Admin',
+        ])
+        ->name('trips.index');
+
+    Route::post('/systemadmin/trips/{trip}/end', [SuperAdminDashboardController::class, 'endTrip'])
+        ->middleware([
+            'verified',
+            'permission:trip.end',
+            'role:Super Admin',
+        ])
+        ->name('trips.end');
+
     /*
     |--------------------------------------------------------------------------
     | Vehicle Tracking (NazarTrack All Vehicles)
@@ -241,6 +257,10 @@ Route::middleware(['auth', 'subscription'])->group(function () {
     Route::get('/drivers/{driver}', [DriverController::class, 'show'])
         ->middleware('permission:driver.view')
         ->name('drivers.show');
+
+    Route::get('/drivers/{driver}/trips', [DriverController::class, 'trips'])
+        ->middleware('permission:driver.view')
+        ->name('drivers.trips');
 
     Route::get('/drivers/{driver}/edit', [DriverController::class, 'edit'])
         ->middleware('permission:driver.update')
@@ -505,6 +525,10 @@ Route::middleware(['auth', 'subscription'])->group(function () {
     Route::get('/buses/{bus}', [BusController::class, 'show'])
         ->middleware('permission:bus.view')
         ->name('buses.show');
+
+    Route::get('/buses/{bus}/trips', [BusController::class, 'trips'])
+        ->middleware('permission:bus.view')
+        ->name('buses.trips');
 
     Route::get('/buses/{bus}/edit', [BusController::class, 'edit'])
         ->middleware('permission:bus.update')
