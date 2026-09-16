@@ -50,6 +50,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/routes/{route}/stops', [DriverBusController::class, 'stops']);
             Route::get('/routes/{route}/students', [DriverBusController::class, 'students']);
             Route::get('/stops/{stop}/students', [DriverBusController::class, 'stopStudents']);
+            Route::get('/students/{student}', [DriverBusController::class, 'showStudent']);
             Route::get('/live-tracking', [DriverLiveTrackingController::class, 'index']);
 
             Route::get('/trips', [DriverTripController::class, 'index'])->middleware('permission:trip.view');

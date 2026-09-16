@@ -48,8 +48,8 @@ class ParentChildController extends Controller
                     'section' => $student->section,
                     'roll_no' => $student->roll_no,
                     'photo' => $student->photo ? asset('storage/'.$student->photo) : null,
-                    'pickup_location' => $student->pickup_location,
-                    'drop_location' => $student->drop_location,
+                    // 'pickup_location' => $student->pickup_location,
+                    // 'drop_location' => $student->drop_location,
                     'is_active' => $student->is_active,
                     'routes' => $student->routes->map(fn ($route) => [
                         'id' => $route->id,
@@ -57,6 +57,13 @@ class ParentChildController extends Controller
                         'route_code' => $route->route_code,
                         'route_type' => $route->route_type,
                         'is_active' => $route->is_active,
+                        'stops' => $student->stops->where('route_id', $route->id)->values()->map(fn ($stop) => [
+                        'id' => $stop->id,
+                        'name' => $stop->name,
+                        'stop_order' => $stop->stop_order,
+                        'latitude' => $stop->latitude,
+                        'longitude' => $stop->longitude,
+                    ])->values(),
                     ])->values(),
                     'today_attendance' => $this->todayAttendanceFor(
                         $todayRecords->get($student->id.'-'.Attendance::TRIP_HOME_TO_SCHOOL),
@@ -85,7 +92,7 @@ class ParentChildController extends Controller
             ], 403);
         }
 
-        $student->load(['school', 'routes']);
+        $student->load(['school', 'routes', 'stops']);
 
         $todayRecords = Attendance::query()
             ->where('student_id', $student->id)
@@ -108,12 +115,12 @@ class ParentChildController extends Controller
                     'roll_no' => $student->roll_no,
                     'date_of_birth' => $student->date_of_birth?->toDateString(),
                     'photo' => $student->photo ? asset('storage/'.$student->photo) : null,
-                    'pickup_location' => $student->pickup_location,
-                    'drop_location' => $student->drop_location,
-                    'pickup_latitude' => $student->pickup_latitude,
-                    'pickup_longitude' => $student->pickup_longitude,
-                    'drop_latitude' => $student->drop_latitude,
-                    'drop_longitude' => $student->drop_longitude,
+                    // 'pickup_location' => $student->pickup_location,
+                    // 'drop_location' => $student->drop_location,
+                    // 'pickup_latitude' => $student->pickup_latitude,
+                    // 'pickup_longitude' => $student->pickup_longitude,
+                    // 'drop_latitude' => $student->drop_latitude,
+                    // 'drop_longitude' => $student->drop_longitude,
                     'is_active' => $student->is_active,
                     'school' => $student->school ? [
                         'id' => $student->school->id,
@@ -129,6 +136,13 @@ class ParentChildController extends Controller
                     'start_location' => $route->start_location,
                     'end_location' => $route->end_location,
                     'is_active' => $route->is_active,
+                    'stops' => $student->stops->where('route_id', $route->id)->values()->map(fn ($stop) => [
+                        'id' => $stop->id,
+                        'name' => $stop->name,
+                        'stop_order' => $stop->stop_order,
+                        'latitude' => $stop->latitude,
+                        'longitude' => $stop->longitude,
+                    ])->values(),
                 ])->values(),
                 'today_attendance' => $this->todayAttendanceFor(
                     $todayRecords->get(Attendance::TRIP_HOME_TO_SCHOOL),
