@@ -805,60 +805,49 @@
 
                 </div>
 
-            </div>
+                <div class="border-t border-gray-200 px-6 py-4 dark:border-gray-800">
 
-
-            {{-- RECORD INFORMATION --}}
-            <div
-                class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
-            >
-
-                <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
-
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400">
                         Record Information
-                    </h2>
+                    </p>
 
-                </div>
+                    <div class="mt-3 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
 
+                        <div>
 
-                <div class="grid grid-cols-1 gap-x-6 gap-y-5 p-6 sm:grid-cols-2">
+                            <p class="text-xs text-gray-400">
+                                Created By
+                            </p>
 
-                    <div>
+                            <p class="mt-0.5 text-sm font-medium text-gray-900 dark:text-white">
+                                {{ $driver->creator->name ?? '—' }}
+                            </p>
 
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">
-                            Created By
-                        </p>
+                        </div>
 
-                        <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">
-                            {{ $driver->creator->name ?? '—' }}
-                        </p>
+                        <div>
 
-                    </div>
+                            <p class="text-xs text-gray-400">
+                                Created On
+                            </p>
 
+                            <p class="mt-0.5 text-sm font-medium text-gray-900 dark:text-white">
+                                {{ $driver->created_at?->format('M d, Y h:i A') ?? '—' }}
+                            </p>
 
-                    <div>
+                        </div>
 
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">
-                            Created On
-                        </p>
+                        <div>
 
-                        <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">
-                            {{ $driver->created_at?->format('M d, Y h:i A') ?? '—' }}
-                        </p>
+                            <p class="text-xs text-gray-400">
+                                Last Updated
+                            </p>
 
-                    </div>
+                            <p class="mt-0.5 text-sm font-medium text-gray-900 dark:text-white">
+                                {{ $driver->updated_at?->format('M d, Y h:i A') ?? '—' }}
+                            </p>
 
-
-                    <div>
-
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">
-                            Last Updated
-                        </p>
-
-                        <p class="mt-1 text-sm font-medium text-gray-900 dark:text-white">
-                            {{ $driver->updated_at?->format('M d, Y h:i A') ?? '—' }}
-                        </p>
+                        </div>
 
                     </div>
 
@@ -867,6 +856,130 @@
             </div>
 
         </div>
+
+    </div>
+
+
+    {{-- TRIP HISTORY --}}
+    <div class="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+
+        <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+
+            <div class="flex flex-wrap items-center justify-between gap-3">
+
+                <div class="flex items-center gap-3">
+
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+
+                    </div>
+
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            Trip History
+                        </h2>
+
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Recent trips by {{ $driver->first_name }}
+                        </p>
+                    </div>
+
+                </div>
+
+                @if($recentTrips->isNotEmpty())
+
+                    <span class="inline-flex shrink-0 items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                        {{ $recentTrips->count() }} recent trips
+                    </span>
+
+                @endif
+
+            </div>
+
+        </div>
+
+        @if($recentTrips->isEmpty())
+
+            <p class="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                No trips recorded yet.
+            </p>
+
+        @else
+
+            <div class="overflow-x-auto">
+
+                <table class="w-full">
+                    <thead class="border-b border-gray-200 dark:border-gray-800">
+                        <tr class="text-left text-xs font-medium uppercase tracking-wide text-gray-400">
+                            <th class="px-6 py-3">Date</th>
+                            <th class="px-6 py-3">Route</th>
+                            <th class="px-6 py-3">Bus</th>
+                            <th class="px-6 py-3">Type</th>
+                            <th class="px-6 py-3">Status</th>
+                            <th class="px-6 py-3">Duration</th>
+                            <th class="px-6 py-3">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+
+                        @foreach($recentTrips as $trip)
+
+                            <tr class="text-gray-700 dark:text-gray-200">
+                                <td class="px-6 py-3 text-sm">
+                                    {{ $trip->started_at?->format('M d, Y') ?? '—' }}
+                                </td>
+                                <td class="px-6 py-3 text-sm">
+                                    {{ $trip->route?->name ?? '—' }}
+                                </td>
+                                <td class="px-6 py-3 text-sm">{{ $trip->bus?->bus_number ?? '—' }}</td>
+                                <td class="px-6 py-3 text-sm">
+                                    <span
+                                        class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium
+                                        @if($trip->trip_type === 'home_to_school')
+                                            bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400
+                                        @else
+                                            bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400
+                                        @endif
+                                    ">
+                                        {{ $trip->trip_type_label }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-3 text-sm">
+                                    @if($trip->status === 'in_progress')
+
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                                            <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500"></span>
+                                            In Progress
+                                        </span>
+
+                                    @else
+
+                                        <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                                            Completed
+                                        </span>
+
+                                    @endif
+                                </td>
+                                <td class="px-6 py-3 text-sm">{{ $trip->durationInMinutes() ?? '—' }} min</td>
+                                <td class="px-6 py-3 text-sm">
+                                    {{ $trip->started_at?->format('H:i:s') ?? '—' }}
+                                    @if($trip->ended_at)
+                                        – {{ $trip->ended_at->format('H:i:s') }}
+                                    @endif
+                                </td>
+                            </tr>
+
+                        @endforeach
+
+                    </tbody>
+                </table>
+
+            </div>
+
+        @endif
 
     </div>
 

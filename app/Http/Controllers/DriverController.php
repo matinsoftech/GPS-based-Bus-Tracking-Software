@@ -360,7 +360,13 @@ class DriverController extends Controller
             ])
             ->values();
 
-        return view('drivers.show', compact('driver', 'assignedRoutes'));
+        $recentTrips = $driver->trips()
+            ->with(['bus', 'route'])
+            ->orderByDesc('started_at')
+            ->limit(10)
+            ->get();
+
+        return view('drivers.show', compact('driver', 'assignedRoutes', 'recentTrips'));
     }
 
     /**
