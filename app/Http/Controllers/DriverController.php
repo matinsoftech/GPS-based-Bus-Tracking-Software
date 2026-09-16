@@ -360,13 +360,76 @@ class DriverController extends Controller
             ])
             ->values();
 
-        $recentTrips = $driver->trips()
-            ->with(['bus', 'route'])
-            ->orderByDesc('started_at')
-            ->limit(10)
-            ->get();
+        return view('drivers.show', compact('driver', 'assignedRoutes'));
+    }
 
-        return view('drivers.show', compact('driver', 'assignedRoutes', 'recentTrips'));
+    /**
+     * Show the trip history of a single driver with filters.
+     */
+    public function trips(Driver $driver, Request $request)
+    {
+        $this->authorizeDriver($driver);
+
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'bus_id' => ['nullable', 'integer'],
+            'route_id' => ['nullable', 'integer'],
+            'trip_type' => ['nullable', Rule::in(array_keys(\App\Models\Trip::types()))],
+            'status' => ['nullable', Rule::in(array_keys(\App\Models\Trip::statuses()))],
+        ]);
+
+        $trips = $driver->trips()
+            ->with(['bus', 'route', 'school'])
+            ->when(filled($validated['search'] ?? null), fn ($q) => $this->applyTripSearch($q, $validated['search']))
+            ->when(filled($validated['bus_id'] ?? null), fn ($q) => $q->where('bus_id', $validated['bus_id']))
+            ->when(filled($validated['route_id'] ?? null), fn ($q) => $q->where('route_id', $validated['route_id']))
+            ->when(filled($validated['trip_type'] ?? null), fn ($q) => $q->where('trip_type', $validated['trip_type']))
+            ->when(filled($validated['status'] ?? null), fn ($q) => $q->where('status', $validated['status']))
+            ->when(filled($validated['from'] ?? null), fn ($q) => $q->whereDate('started_at', '>=', \Illuminate\Support\Carbon::parse($validated['from'])->startOfDay()))
+            ->when(filled($validated['to'] ?? null), fn ($q) => $q->whereDate('started_at', '<=', \Illuminate\Support\Carbon::parse($validated['to'])->endOfDay()))
+            ->orderByDesc('started_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        $buses = $driver->trips()
+            ->with('bus')
+            ->get()
+            ->pluck('bus')
+            ->filter()
+            ->keyBy('id')
+            ->values();
+
+        $routes = $driver->trips()
+            ->with('route')
+            ->get()
+            ->pluck('route')
+            ->filter()
+            ->keyBy('id')
+            ->values();
+
+        return view('drivers.trips', compact('driver', 'trips', 'buses', 'routes'));
+    }
+
+    /**
+     * Apply a keyword search across a trip's bus, route and school.
+     */
+    private function applyTripSearch($query, string $term)
+    {
+        $needle = '%'.$term.'%';
+
+        return $query->where(function ($query) use ($needle) {
+            $query->whereHas('bus', fn ($q) => $q
+                ->where('bus_number', 'like', $needle)
+                ->orWhere('registration_number', 'like', $needle))
+                ->orWhereHas('route', fn ($q) => $q
+                    ->where('name', 'like', $needle)
+                    ->orWhere('route_code', 'like', $needle))
+                ->orWhereHas('school', fn ($q) => $q
+                    ->where('name', 'like', $needle)
+                    ->orWhere('code', 'like', $needle));
+        });
     }
 
     /**

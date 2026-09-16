@@ -6,6 +6,7 @@ use App\Models\Bus;
 use App\Models\Driver;
 use App\Models\School;
 use App\Models\SchoolAdmin;
+use App\Models\Trip;
 use App\Models\User;
 use App\Services\NazarTrackService;
 use Illuminate\Database\Eloquent\Collection;
@@ -166,13 +167,13 @@ class BusController extends Controller
         $latestLocation = $this->gpsService->locationPayload($bus)
             ?? $this->gpsService->lastKnownPayload($bus);
 
-        $recentTrips = $bus->trips()
+        $tripRecords = $bus->trips()
             ->with(['route.stops', 'driver'])
             ->orderByDesc('started_at')
             ->limit(10)
             ->get();
 
-        $busRoutes = $recentTrips
+        $busRoutes = $tripRecords
             ->pluck('route')
             ->filter()
             ->keyBy('id')
@@ -196,19 +197,89 @@ class BusController extends Controller
             ])
             ->values();
 
-        $tripRoutes = $recentTrips
+        $tripRoutes = $tripRecords
             ->pluck('route')
             ->filter()
             ->keyBy('id')
             ->values();
 
-        $tripDrivers = $recentTrips
+        $tripDrivers = $tripRecords
             ->pluck('driver')
             ->filter()
             ->keyBy('id')
             ->values();
 
-        return view('buses.show', compact('bus', 'latestLocation', 'busRoutes', 'recentTrips', 'tripRoutes', 'tripDrivers'));
+        return view('buses.show', compact('bus', 'latestLocation', 'busRoutes', 'tripRoutes', 'tripDrivers'));
+    }
+
+    /**
+     * Show the trip history of a single bus with filters.
+     */
+    public function trips(Bus $bus, Request $request)
+    {
+        $this->authorizeBus($bus);
+
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'route_id' => ['nullable', 'integer'],
+            'driver_id' => ['nullable', 'integer'],
+            'trip_type' => ['nullable', Rule::in(array_keys(Trip::types()))],
+            'status' => ['nullable', Rule::in(array_keys(Trip::statuses()))],
+        ]);
+
+        $trips = $bus->trips()
+            ->with(['route', 'driver', 'school'])
+            ->when(filled($validated['search'] ?? null), fn ($q) => $this->applyTripSearch($q, $validated['search']))
+            ->when(filled($validated['route_id'] ?? null), fn ($q) => $q->where('route_id', $validated['route_id']))
+            ->when(filled($validated['driver_id'] ?? null), fn ($q) => $q->where('driver_id', $validated['driver_id']))
+            ->when(filled($validated['trip_type'] ?? null), fn ($q) => $q->where('trip_type', $validated['trip_type']))
+            ->when(filled($validated['status'] ?? null), fn ($q) => $q->where('status', $validated['status']))
+            ->when(filled($validated['from'] ?? null), fn ($q) => $q->whereDate('started_at', '>=', \Illuminate\Support\Carbon::parse($validated['from'])->startOfDay()))
+            ->when(filled($validated['to'] ?? null), fn ($q) => $q->whereDate('started_at', '<=', \Illuminate\Support\Carbon::parse($validated['to'])->endOfDay()))
+            ->orderByDesc('started_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        $routes = $bus->trips()
+            ->with('route')
+            ->get()
+            ->pluck('route')
+            ->filter()
+            ->keyBy('id')
+            ->values();
+
+        $drivers = $bus->trips()
+            ->with('driver')
+            ->get()
+            ->pluck('driver')
+            ->filter()
+            ->keyBy('id')
+            ->values();
+
+        return view('buses.trips', compact('bus', 'trips', 'routes', 'drivers'));
+    }
+
+    /**
+     * Apply a keyword search across a trip's route and driver.
+     */
+    private function applyTripSearch($query, string $term)
+    {
+        $needle = '%'.$term.'%';
+
+        return $query->where(function ($query) use ($needle) {
+            $query->whereHas('route', fn ($q) => $q
+                ->where('name', 'like', $needle)
+                ->orWhere('route_code', 'like', $needle))
+                ->orWhereHas('driver', fn ($q) => $q
+                    ->where('first_name', 'like', $needle)
+                    ->orWhere('last_name', 'like', $needle)
+                    ->orWhere('employee_id', 'like', $needle))
+                ->orWhereHas('school', fn ($q) => $q
+                    ->where('name', 'like', $needle)
+                    ->orWhere('code', 'like', $needle));
+        });
     }
 
     /**

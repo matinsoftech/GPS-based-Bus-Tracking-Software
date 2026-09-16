@@ -258,6 +258,10 @@ Route::middleware(['auth', 'subscription'])->group(function () {
         ->middleware('permission:driver.view')
         ->name('drivers.show');
 
+    Route::get('/drivers/{driver}/trips', [DriverController::class, 'trips'])
+        ->middleware('permission:driver.view')
+        ->name('drivers.trips');
+
     Route::get('/drivers/{driver}/edit', [DriverController::class, 'edit'])
         ->middleware('permission:driver.update')
         ->name('drivers.edit');
@@ -521,6 +525,10 @@ Route::middleware(['auth', 'subscription'])->group(function () {
     Route::get('/buses/{bus}', [BusController::class, 'show'])
         ->middleware('permission:bus.view')
         ->name('buses.show');
+
+    Route::get('/buses/{bus}/trips', [BusController::class, 'trips'])
+        ->middleware('permission:bus.view')
+        ->name('buses.trips');
 
     Route::get('/buses/{bus}/edit', [BusController::class, 'edit'])
         ->middleware('permission:bus.update')
