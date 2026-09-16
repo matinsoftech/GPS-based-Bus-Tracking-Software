@@ -30,6 +30,24 @@
                         <option value="school_to_home" @selected($routeType === 'school_to_home')>School to Home</option>
                     </select>
                 </div>
+                @if (auth()->user()->hasRole('Super Admin'))
+                    <div>
+                        <label for="school_id" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">School</label>
+                        <select
+                            id="school_id"
+                            name="school_id"
+                            onchange="this.form.submit()"
+                            class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                        >
+                            <option value="" @selected(empty($selectedSchoolId))>All Schools</option>
+                            @foreach ($schools as $school)
+                                <option value="{{ $school->id }}" @selected((string) $selectedSchoolId === (string) $school->id)>
+                                    {{ $school->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
                 <button
                     type="submit"
                     class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
