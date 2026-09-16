@@ -13,6 +13,7 @@ use App\Traits\NotifiesRouteParticipants;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class DriverTripController extends Controller
 {
@@ -29,8 +30,12 @@ class DriverTripController extends Controller
 
         $validated = $request->validate([
             'bus_id' => ['nullable', 'integer'],
+            'route_id' => ['nullable', 'integer'],
             'status' => ['nullable', 'string', 'in:in_progress,completed'],
+            'trip_type' => ['nullable', Rule::in(array_keys(Trip::types()))],
             'date' => ['nullable', 'date'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
         ]);
 
@@ -52,19 +57,45 @@ class DriverTripController extends Controller
             $query->where('bus_id', $validated['bus_id']);
         }
 
+        if (! empty($validated['route_id'])) {
+            $hasAccess = $driver->routes()
+                ->whereKey($validated['route_id'])
+                ->exists();
+
+            if (! $hasAccess) {
+                return response()->json([
+                    'message' => 'Route not found for this driver.',
+                ], 404);
+            }
+
+            $query->where('route_id', $validated['route_id']);
+        }
+
         if (! empty($validated['status'])) {
             $query->where('status', $validated['status']);
+        }
+
+        if (! empty($validated['trip_type'])) {
+            $query->where('trip_type', $validated['trip_type']);
         }
 
         if (! empty($validated['date'])) {
             $query->whereDate('started_at', $validated['date']);
         }
 
+        if (! empty($validated['from'])) {
+            $query->whereDate('started_at', '>=', $validated['from']);
+        }
+
+        if (! empty($validated['to'])) {
+            $query->whereDate('started_at', '<=', $validated['to']);
+        }
+
         $trips = $query->paginate($validated['per_page'] ?? 20);
 
         return response()->json([
             'message' => 'Driver trips.',
-            'data' => $trips->through(fn (Trip $trip) => $this->tripResponse($trip)),
+            'data' => $trips->through(fn(Trip $trip) => $this->tripResponse($trip)),
             'pagination' => [
                 'current_page' => $trips->currentPage(),
                 'per_page' => $trips->perPage(),
