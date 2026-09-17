@@ -21,12 +21,38 @@
         <form action="{{ route('parent.student.attendance', $student) }}" method="GET" class="mb-6">
             <div class="flex flex-wrap items-end gap-3">
                 <div>
+                    <label for="period" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Period</label>
+                    <select
+                        id="period"
+                        name="period"
+                        class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    >
+                        <option value="" @selected($period === '')>Any Period</option>
+                        <option value="today" @selected($period === 'today')>Today</option>
+                        <option value="yesterday" @selected($period === 'yesterday')>Yesterday</option>
+                        <option value="this_week" @selected($period === 'this_week')>This Week</option>
+                        <option value="this_month" @selected($period === 'this_month')>This Month</option>
+                        <option value="all" @selected($period === 'all')>All Time</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="date" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
+                    <input
+                        type="date"
+                        id="date"
+                        name="date"
+                        value="{{ $singleDate?->toDateString() ?? '' }}"
+                        onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
+                        class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    >
+                </div>
+                <div>
                     <label for="from" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">From</label>
                     <input
                         type="date"
                         id="from"
                         name="from"
-                        value="{{ $from->toDateString() }}"
+                        value="{{ $from?->toDateString() ?? '' }}"
                         onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
                         class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                     >
@@ -37,7 +63,7 @@
                         type="date"
                         id="to"
                         name="to"
-                        value="{{ $to->toDateString() }}"
+                        value="{{ $to?->toDateString() ?? '' }}"
                         onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
                         class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                     >
