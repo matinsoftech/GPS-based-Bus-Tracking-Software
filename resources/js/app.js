@@ -22,3 +22,31 @@ if (year) {
     year.textContent = new Date().getFullYear();
 }
 
+// Persist sidebar scroll position across page navigations
+(() => {
+    const KEY = 'sidebarScrollTop';
+    const scroller = document.getElementById('sidebar-scroll');
+    if (!scroller) return;
+
+    const restore = () => {
+        const saved = parseInt(sessionStorage.getItem(KEY) ?? '', 10);
+        if (Number.isFinite(saved)) scroller.scrollTop = saved;
+    };
+
+    restore();
+
+    let ticking = false;
+    scroller.addEventListener('scroll', () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+            sessionStorage.setItem(KEY, String(scroller.scrollTop));
+            ticking = false;
+        });
+    });
+
+    window.addEventListener('pagehide', () => {
+        sessionStorage.setItem(KEY, String(scroller.scrollTop));
+    });
+})();
+
