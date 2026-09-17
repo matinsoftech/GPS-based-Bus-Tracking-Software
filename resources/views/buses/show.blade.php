@@ -70,82 +70,150 @@
         @endphp
 
         @if ($tab === 'overview')
-        <!-- Card: Vehicle Details -->
-        <div
-            class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
-            <div class="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800 mb-4">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Vehicle Details</h2>
-                @if ($bus->status === 'Active')
-                    <span
-                        class="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-500/10 dark:text-green-400">Active</span>
-                @elseif ($bus->status === 'Maintenance')
-                    <span
-                        class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-400">Maintenance</span>
-                @else
-                    <span
-                        class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 ring-1 ring-inset ring-gray-500/20 dark:bg-gray-800 dark:text-gray-400">Inactive</span>
+        <div class="flex flex-col space-y-6">
+            <!-- Card: Vehicle Details -->
+            <div
+                class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="mb-4 flex items-start justify-between gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+                    <div class="min-w-0">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Vehicle Details</h2>
+                        <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ $bus->bus_number }}</p>
+                    </div>
+                    @if ($bus->status === 'Active')
+                        <span
+                            class="shrink-0 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-500/10 dark:text-green-400">Active</span>
+                    @elseif ($bus->status === 'Maintenance')
+                        <span
+                            class="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-400">Maintenance</span>
+                    @else
+                        <span
+                            class="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/20 dark:bg-gray-800 dark:text-gray-400">Inactive</span>
+                    @endif
+                </div>
+
+                <dl class="grid grid-cols-2 gap-x-4 gap-y-5 text-sm">
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Registration Plate</dt>
+                        <dd class="truncate font-mono font-semibold text-brand-600 dark:text-brand-400">
+                            {{ $bus->registration_number }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Make & Model</dt>
+                        <dd class="truncate font-medium text-gray-900 dark:text-white">
+                            {{ trim(($bus->make ?? '') . ' ' . ($bus->model ?? '')) ?: '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Model Year</dt>
+                        <dd class="truncate font-medium text-gray-900 dark:text-white">{{ $bus->year ?? '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Seating Capacity</dt>
+                        <dd class="truncate font-medium text-gray-900 dark:text-white">{{ $bus->capacity }}
+                            Passengers</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Fuel Type</dt>
+                        <dd class="truncate font-medium text-gray-900 dark:text-white">{{ $bus->fuel_type ?? '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">GPS Device ID</dt>
+                        <dd class="truncate font-mono font-medium text-gray-900 dark:text-white">
+                            {{ $bus->gps_device_id ?? 'Not linked' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Insurance Number</dt>
+                        <dd class="truncate font-medium text-gray-900 dark:text-white">
+                            {{ $bus->insurance_number ?? '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Insurance Expiry Date</dt>
+                        <dd class="truncate font-medium text-gray-900 dark:text-white">
+                            {{ $bus->insurance_expiry_date?->format('M d, Y') ?? '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Last Service Date</dt>
+                        <dd class="truncate font-medium text-gray-900 dark:text-white">
+                            {{ $bus->last_service_date?->format('M d, Y') ?? '—' }}</dd>
+                    </div>
+                </dl>
+
+                @if ($bus->notes)
+                    <dl class="mt-4 border-t border-gray-100 pt-3 text-sm dark:border-gray-800">
+                        <dt class="text-gray-500 dark:text-gray-400">Notes</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->notes }}</dd>
+                    </dl>
                 @endif
             </div>
 
-            <dl class="space-y-3 text-sm">
-                <div class="flex justify-between gap-4">
-                    <dt class="text-gray-500 dark:text-gray-400">Bus Number</dt>
-                    <dd class="font-semibold text-gray-900 dark:text-white">{{ $bus->bus_number }}</dd>
-                </div>
-                <div class="flex justify-between gap-4">
-                    <dt class="text-gray-500 dark:text-gray-400">Registration Plate</dt>
-                    <dd class="font-mono font-semibold text-brand-600 dark:text-brand-400">
-                        {{ $bus->registration_number }}</dd>
-                </div>
-                <div class="flex justify-between gap-4">
-                    <dt class="text-gray-500 dark:text-gray-400">Make & Model</dt>
-                    <dd class="font-medium text-gray-900 dark:text-white">
-                        {{ trim(($bus->make ?? '') . ' ' . ($bus->model ?? '')) ?: '—' }}</dd>
-                </div>
-                <div class="flex justify-between gap-4">
-                    <dt class="text-gray-500 dark:text-gray-400">Model Year</dt>
-                    <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->year ?? '—' }}</dd>
-                </div>
-                <div class="flex justify-between gap-4">
-                    <dt class="text-gray-500 dark:text-gray-400">Seating Capacity</dt>
-                    <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->capacity }} Passengers</dd>
-                </div>
-                <div class="flex justify-between gap-4">
-                    <dt class="text-gray-500 dark:text-gray-400">Fuel Type</dt>
-                    <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->fuel_type ?? '—' }}</dd>
-                </div>
-                <div class="flex justify-between gap-4">
-                    <dt class="text-gray-500 dark:text-gray-400">GPS Device ID</dt>
-                    <dd class="font-mono text-xs font-semibold text-gray-900 dark:text-white">
-                        {{ $bus->gps_device_id ?? 'Not linked' }}</dd>
-                </div>
-                <div class="flex justify-between gap-4">
-                    <dt class="text-gray-500 dark:text-gray-400">Insurance Number</dt>
-                    <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->insurance_number ?? '—' }}</dd>
-                </div>
-                <div class="flex justify-between gap-4">
-                    <dt class="text-gray-500 dark:text-gray-400">Insurance Expiry Date</dt>
-                    <dd class="font-medium text-gray-900 dark:text-white">
-                        {{ $bus->insurance_expiry_date?->format('M d, Y') ?? '—' }}</dd>
-                </div>
-                <div class="flex justify-between gap-4">
-                    <dt class="text-gray-500 dark:text-gray-400">Last Service Date</dt>
-                    <dd class="font-medium text-gray-900 dark:text-white">
-                        {{ $bus->last_service_date?->format('M d, Y') ?? '—' }}</dd>
-                </div>
-                @if ($bus->notes)
-                    <div class="flex justify-between gap-4">
-                        <dt class="text-gray-500 dark:text-gray-400">Notes</dt>
-                        <dd class="font-medium text-gray-900 dark:text-white">{{ $bus->notes }}</dd>
+            <!-- Card: School & GPS Status -->
+            <div
+                class="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="mb-4 flex items-start justify-between gap-2 border-b border-gray-100 pb-3 dark:border-gray-800">
+                    <div class="min-w-0">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">School & GPS Status</h2>
+                        <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ $bus->school->name ?? '—' }}</p>
                     </div>
-                @endif
-            </dl>
+                    @if ($isOnline)
+                        <span
+                            class="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-400">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Online
+                        </span>
+                    @else
+                        <span
+                            class="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/20 dark:bg-gray-800 dark:text-gray-400">
+                            <span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
+                            {{ $hasGps ? 'Offline' : 'No GPS Data' }}
+                        </span>
+                    @endif
+                </div>
 
-            <div class="mt-6 flex items-center justify-between gap-4 border-t border-gray-100 pt-4 dark:border-gray-800">
-                <dt class="text-gray-500 dark:text-gray-400">School</dt>
-                <dd class="font-semibold text-gray-900 dark:text-white">
-                    {{ $bus->school->name ?? '—' }}
-                </dd>
+                <dl class="grid grid-cols-2 gap-x-4 gap-y-5 text-sm">
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">School</dt>
+                        <dd class="truncate">
+                            @if ($bus->school)
+                                <a href="{{ route('schools.show', $bus->school) }}"
+                                    class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $bus->school->name }}</a>
+                            @else
+                                <span class="text-gray-900 dark:text-white">—</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">School Status</dt>
+                        <dd class="truncate">
+                            @if ($bus->school)
+                                @if ($bus->school->status === 'active')
+                                    <span
+                                        class="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</span>
+                                @else
+                                    <span
+                                        class="inline-flex rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">Inactive</span>
+                                @endif
+                            @else
+                                <span class="text-gray-900 dark:text-white">—</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">GPS Status</dt>
+                        <dd class="truncate font-medium text-gray-900 dark:text-white">{{ $statusLabel }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Current Speed</dt>
+                        <dd class="truncate font-medium text-gray-900 dark:text-white">{{ $isOnline ? $speed . ' km/h' : '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Last Signal</dt>
+                        <dd class="truncate font-medium text-gray-900 dark:text-white">{{ $lastSignalText }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">GPS Device</dt>
+                        <dd class="truncate font-mono font-medium text-gray-900 dark:text-white">
+                            {{ $bus->gps_device_id ?? 'Not linked' }}</dd>
+                    </div>
+                </dl>
             </div>
         </div>
         @elseif ($tab === 'driver-assignment')
