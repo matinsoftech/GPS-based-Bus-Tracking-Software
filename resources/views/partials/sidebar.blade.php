@@ -786,7 +786,7 @@
     </div>
     <!-- SIDEBAR HEADER -->
 
-    <div class="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
+    <div id="sidebar-scroll" class="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
         <nav x-data="{ selected: $persist('Dashboard') }">
 
             @foreach ($menu as $group)
