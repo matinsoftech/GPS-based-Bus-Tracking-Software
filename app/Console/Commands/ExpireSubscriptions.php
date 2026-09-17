@@ -17,7 +17,7 @@ class ExpireSubscriptions extends Command
         $expired = 0;
 
         Subscription::query()
-            ->whereIn('status', ['trialing', 'active'])
+            ->whereIn('status', $subscriptions->usableStatuses())
             ->whereNotNull('ends_at')
             ->where('ends_at', '<', now())
             ->chunkById(200, function ($items) use ($subscriptions, &$expired) {
