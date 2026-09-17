@@ -2,9 +2,9 @@
     <div class="mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6 space-y-6">
 
         <!-- Header Bar -->
-        <div class="flex items-center justify-between border-b border-gray-200 pb-5 dark:border-gray-800">
-            <div>
-                <div class="flex items-center gap-3">
+        <div class="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
+            <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-3">
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $bus->bus_number }}</h1>
                     @if ($bus->registration_number)
                         <span
@@ -18,13 +18,13 @@
                 </p>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <a href="{{ route('buses.index') }}"
-                    class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                    class="inline-flex w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 sm:w-auto dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                     Back to Buses
                 </a>
                 <a href="{{ route('buses.edit', $bus) }}"
-                    class="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-brand-600">
+                    class="inline-flex w-full items-center justify-center rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-brand-600 sm:w-auto">
                     Edit Bus
                 </a>
             </div>
