@@ -463,6 +463,10 @@ Route::middleware(['auth', 'subscription'])->group(function () {
         ->middleware('permission:route.create')
         ->name('routes.store');
 
+    Route::get('/routes/{route}/trips', [RouteController::class, 'trips'])
+        ->middleware('permission:route.view')
+        ->name('routes.trips');
+
     Route::get('/routes/{route}', [RouteController::class, 'show'])
         ->middleware('permission:route.view')
         ->name('routes.show');
