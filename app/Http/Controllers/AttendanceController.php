@@ -8,6 +8,7 @@ use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
+use App\Models\Trip;
 use App\Models\User;
 use App\Services\AttendanceNotificationService;
 use Illuminate\Http\Request;
@@ -120,6 +121,8 @@ class AttendanceController extends Controller
                 $trip => $attendanceRecords->where('trip', $trip)->keyBy('student_id'),
             ]);
 
+        $routeTrip = $this->routeTripOnDate($route, Carbon::parse($date));
+
         $studentStages = $students->map(function (Student $student) use ($attendance, $route) {
             $state = $this->stagesForStudent(
                 $attendance[Attendance::TRIP_HOME_TO_SCHOOL][$student->id] ?? null,
@@ -156,7 +159,8 @@ class AttendanceController extends Controller
             'isToday',
             'allCompleted',
             'headers',
-            'totals'
+            'totals',
+            'routeTrip'
         ));
     }
 
@@ -178,6 +182,10 @@ class AttendanceController extends Controller
         }
 
         $date = ! empty($validated['date']) ? Carbon::parse($validated['date']) : now();
+
+        if (! $this->routeTripOnDate($route, $date)) {
+            return back()->withErrors(['trip' => 'Trip has not started yet for this route. Attendance cannot be marked.']);
+        }
 
         if ($date->toDateString() !== now()->toDateString()) {
             return back()->withErrors(['date' => 'Attendance can only be marked for today.']);
@@ -288,6 +296,20 @@ class AttendanceController extends Controller
         $totalRecords = $records->total();
 
         return view('attendance.history', compact('route', 'records', 'from', 'to', 'totalRecords'));
+    }
+
+    /**
+     * The latest trip that actually started for this route on a given date.
+     * A trip counts as started once the driver begins it, regardless of
+     * whether it has finished already.
+     */
+    private function routeTripOnDate(Route $route, Carbon $date): ?Trip
+    {
+        return Trip::query()
+            ->where('route_id', $route->id)
+            ->whereDate('started_at', $date)
+            ->latest('started_at')
+            ->first();
     }
 
     /**

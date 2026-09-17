@@ -16,6 +16,14 @@ class SubscriptionService
     private const USABLE_STATUSES = ['trialing', 'active', 'past_due'];
 
     /**
+     * The statuses that can still grant access and therefore may expire.
+     */
+    public function usableStatuses(): array
+    {
+        return self::USABLE_STATUSES;
+    }
+
+    /**
      * Grace window applied when a past_due subscription is created or edited.
      */
     private const PAST_DUE_GRACE_DAYS = 2;

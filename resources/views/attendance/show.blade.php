@@ -69,6 +69,13 @@
                 </svg>
                 Today's attendance has already been taken. Please try again tomorrow.
             </div>
+        @elseif ($isToday && ! $routeTrip)
+            <div class="mb-6 flex items-center gap-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5 shrink-0">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                The trip has not started yet for this route. Attendance can only be marked once the driver starts the trip.
+            </div>
         @elseif (! $isToday)
             <div class="mb-6 flex items-center gap-3 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5 shrink-0">
@@ -83,7 +90,7 @@
             $completedCount = $studentStages->filter(fn ($entry) => $entry['completed'])->count();
             $totalStudents = $studentStages->count();
             $hasStages = $totalStudents > 0;
-            $canTakeAttendance = $isToday && ! $allCompleted;
+            $canTakeAttendance = $isToday && ! $allCompleted && $routeTrip !== null;
         @endphp
 
         <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">

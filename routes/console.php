@@ -9,7 +9,9 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('gps:process-live-tracking')
-    ->everyMinute()
+    // ->everyMinute()
+    ->everyFiveSeconds()
+    ->runInBackground()
     ->withoutOverlapping();
 
 Schedule::command('subscriptions:expire')

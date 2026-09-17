@@ -1,15 +1,15 @@
-<x-app-layout page="buses">
+<x-app-layout page="route-management">
     <div class="mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
         <div class="mb-6 flex items-center justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Trip History</h1>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Trips covered by bus #{{ $bus->bus_number }}
+                    Trips using route {{ $route->name }} ({{ $route->route_code }})
                 </p>
             </div>
-            <a href="{{ route('buses.show', $bus) }}"
+            <a href="{{ route('routes.show', $route) }}"
                 class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
-                Back to Bus
+                Back to Route
             </a>
         </div>
 
@@ -37,13 +37,13 @@
             </div>
         @endif
 
-        <form action="{{ route('buses.trips', $bus) }}" method="GET" class="mb-4">
+        <form action="{{ route('routes.trips', $route) }}" method="GET" class="mb-4">
             <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
                 <div class="w-full sm:w-auto sm:flex-1">
                     <label for="search"
                         class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
                     <input type="text" id="search" name="search" value="{{ request('search') }}"
-                        placeholder="Search trips by route, driver or school..."
+                        placeholder="Search trips by bus, driver or school..."
                         class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                 </div>
 
@@ -63,14 +63,14 @@
                 </div>
 
                 <div>
-                    <label for="route_id"
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route</label>
-                    <select name="route_id" id="route_id"
+                    <label for="bus_id"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Bus</label>
+                    <select name="bus_id" id="bus_id"
                         class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-                        <option value="">All Routes</option>
-                        @foreach ($routes as $filterRoute)
-                            <option value="{{ $filterRoute->id }}" @selected((string) request('route_id') === (string) $filterRoute->id)>
-                                {{ $filterRoute->name }} — {{ $filterRoute->route_type_label }}
+                        <option value="">All Buses</option>
+                        @foreach ($buses as $bus)
+                            <option value="{{ $bus->id }}" @selected((string) request('bus_id') === (string) $bus->id)>
+                                {{ $bus->bus_number }}
                             </option>
                         @endforeach
                     </select>
@@ -82,9 +82,9 @@
                     <select name="driver_id" id="driver_id"
                         class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                         <option value="">All Drivers</option>
-                        @foreach ($drivers as $filterDriver)
-                            <option value="{{ $filterDriver->id }}" @selected((string) request('driver_id') === (string) $filterDriver->id)>
-                                {{ $filterDriver->full_name }}
+                        @foreach ($drivers as $driver)
+                            <option value="{{ $driver->id }}" @selected((string) request('driver_id') === (string) $driver->id)>
+                                {{ $driver->full_name }}
                             </option>
                         @endforeach
                     </select>
@@ -114,7 +114,7 @@
                                 Filter
                             </button>
                             @if ($trips->total() > 0 || request()->query())
-                                <a href="{{ route('buses.trips', $bus) }}"
+                                <a href="{{ route('routes.trips', $route) }}"
                                     class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
                                     Reset
                                 </a>
@@ -133,7 +133,7 @@
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr class="text-gray-500 dark:text-gray-400">
                             <th class="px-5 py-3 text-left font-medium">Date</th>
-                            <th class="px-5 py-3 text-left font-medium">Route</th>
+                            <th class="px-5 py-3 text-left font-medium">Bus</th>
                             <th class="px-5 py-3 text-left font-medium">Driver</th>
                             <th class="px-5 py-3 text-left font-medium">Status</th>
                             <th class="px-5 py-3 text-left font-medium">Duration</th>
@@ -145,16 +145,7 @@
                         @forelse ($trips as $trip)
                             <tr class="text-gray-700 dark:text-gray-200">
                                 <td class="px-5 py-3">{{ $trip->started_at?->format('M d, Y') ?? '—' }}</td>
-                                <td class="px-5 py-3">
-                                    <div class="flex items-center gap-2">
-                                        <span>{{ $trip->route?->name ?? '—' }}</span>
-                                        @if ($trip->route)
-                                            <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $trip->route->route_type_color_classes }}">
-                                                {{ $trip->route->route_type_label }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </td>
+                                <td class="px-5 py-3">{{ $trip->bus?->bus_number ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ $trip->driver?->full_name ?? '—' }}</td>
                                 <td class="px-5 py-3">
                                     @if ($trip->status === 'in_progress')
@@ -177,7 +168,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7"
+<td colspan="7"
                                     class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                                     No trips recorded yet.
                                 </td>
@@ -203,12 +194,7 @@
                             <p class="font-medium text-gray-900 dark:text-white">
                                 {{ $trip->started_at?->format('M d, Y') ?? '—' }}</p>
                             <p class="truncate text-xs text-gray-500 dark:text-gray-400">
-                                {{ $trip->route?->name ?? '—' }} · {{ $trip->driver?->full_name ?? '—' }}</p>
-                            @if ($trip->route)
-                                <span class="mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium {{ $trip->route->route_type_color_classes }}">
-                                    {{ $trip->route->route_type_label }}
-                                </span>
-                            @endif
+                                {{ $trip->bus?->bus_number ?? '—' }} · {{ $trip->driver?->full_name ?? '—' }}</p>
                         </div>
                         @if ($trip->status === 'in_progress')
                             <span
@@ -243,7 +229,7 @@
             @empty
                 <div
                     class="rounded-2xl border border-gray-200 bg-white px-5 py-10 text-center text-sm text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
-                    No trips recorded yet.
+                    No trips recorded for this route yet.
                 </div>
             @endforelse
 

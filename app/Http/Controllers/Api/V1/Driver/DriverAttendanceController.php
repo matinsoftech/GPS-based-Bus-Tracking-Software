@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Route;
 use App\Models\Student;
+use App\Models\Trip;
 use App\Services\AttendanceNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -256,6 +257,19 @@ class DriverAttendanceController extends Controller
             ], 403);
         }
 
+        $date = now();
+
+        $tripStarted = Trip::query()
+            ->where('route_id', $route->id)
+            ->whereDate('started_at', $date)
+            ->exists();
+
+        if (! $tripStarted) {
+            return response()->json([
+                'message' => 'Trip has not started yet for this route. Attendance cannot be marked.',
+            ], 422);
+        }
+
         $student = Student::where('id', $validated['student_id'])
             ->whereHas('routes', fn ($query) => $query->where('route_id', $route->id))
             ->first();
@@ -265,8 +279,6 @@ class DriverAttendanceController extends Controller
                 'message' => 'Student not found on this route.',
             ], 422);
         }
-
-        $date = now();
 
         $records = Attendance::query()
             ->where('student_id', $student->id)
