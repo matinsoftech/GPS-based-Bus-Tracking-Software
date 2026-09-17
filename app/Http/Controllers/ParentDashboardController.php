@@ -114,23 +114,40 @@ class ParentDashboardController extends Controller
         $validated = $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'date' => ['nullable', 'date'],
+            'period' => ['nullable', 'in:today,yesterday,this_week,this_month,all'],
             'route_id' => ['nullable', 'integer', 'exists:routes,id'],
         ]);
 
-        $from = ! empty($validated['from'])
-            ? Carbon::parse($validated['from'])
-            : now()->subDays(30)->startOfDay();
+        $singleDate = ! empty($validated['date'])
+            ? Carbon::parse($validated['date'])->startOfDay()
+            : null;
 
-        $to = ! empty($validated['to'])
-            ? Carbon::parse($validated['to'])->endOfDay()
-            : now()->endOfDay();
+        $period = $validated['period'] ?? '';
+
+        [$from, $to] = match (true) {
+            $singleDate !== null => [$singleDate->copy()->startOfDay(), $singleDate->copy()->endOfDay()],
+            $period === 'today' => [now()->startOfDay(), now()->endOfDay()],
+            $period === 'yesterday' => [now()->subDay()->startOfDay(), now()->subDay()->endOfDay()],
+            $period === 'this_week' => [now()->startOfWeek(), now()->endOfWeek()],
+            $period === 'this_month' => [now()->startOfMonth(), now()->endOfMonth()],
+            $period === 'all' => [null, null],
+            default => [
+                ! empty($validated['from'])
+                    ? Carbon::parse($validated['from'])
+                    : now()->subDays(30)->startOfDay(),
+                ! empty($validated['to'])
+                    ? Carbon::parse($validated['to'])->endOfDay()
+                    : now()->endOfDay(),
+            ],
+        };
 
         $routeId = $validated['route_id'] ?? null;
 
         $records = Attendance::query()
             ->with(['route', 'markedBy'])
             ->where('student_id', $student->id)
-            ->whereBetween('date', [$from, $to])
+            ->when($from && $to, fn ($query) => $query->whereBetween('date', [$from, $to]))
             ->when($routeId, fn ($query) => $query->where('route_id', $routeId))
             ->orderByDesc('date')
             ->orderByDesc('created_at')
@@ -138,6 +155,8 @@ class ParentDashboardController extends Controller
 
         $totalRecords = $records->count();
 
-        return view('parents.student-attendance', compact('student', 'records', 'totalRecords', 'from', 'to', 'routeId', 'routes'));
+        $routes = $student->routes;
+
+        return view('parents.student-attendance', compact('student', 'records', 'totalRecords', 'from', 'to', 'routeId', 'routes', 'singleDate', 'period'));
     }
 }
