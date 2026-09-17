@@ -114,7 +114,7 @@ class ParentDashboardController extends Controller
         $validated = $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
-            'trip' => ['nullable', 'in:home_to_school,school_to_home'],
+            'route_id' => ['nullable', 'integer', 'exists:routes,id'],
         ]);
 
         $from = ! empty($validated['from'])
@@ -125,19 +125,19 @@ class ParentDashboardController extends Controller
             ? Carbon::parse($validated['to'])->endOfDay()
             : now()->endOfDay();
 
-        $trip = $validated['trip'] ?? '';
+        $routeId = $validated['route_id'] ?? null;
 
         $records = Attendance::query()
             ->with(['route', 'markedBy'])
             ->where('student_id', $student->id)
             ->whereBetween('date', [$from, $to])
-            ->when($trip !== '', fn ($query) => $query->where('trip', $trip))
+            ->when($routeId, fn ($query) => $query->where('route_id', $routeId))
             ->orderByDesc('date')
             ->orderByDesc('created_at')
             ->get();
 
         $totalRecords = $records->count();
 
-        return view('parents.student-attendance', compact('student', 'records', 'totalRecords', 'from', 'to', 'trip'));
+        return view('parents.student-attendance', compact('student', 'records', 'totalRecords', 'from', 'to', 'routeId', 'routes'));
     }
 }

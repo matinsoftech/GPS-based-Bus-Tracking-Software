@@ -43,15 +43,17 @@
                     >
                 </div>
                 <div>
-                    <label for="trip" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Trip</label>
+                    <label for="route_id" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route</label>
                     <select
-                        id="trip"
-                        name="trip"
+                        id="route_id"
+                        name="route_id"
                         class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                     >
-                        <option value="" @selected($trip === '')>All Trips</option>
-                        @foreach (\App\Models\Attendance::trips() as $key => $label)
-                            <option value="{{ $key }}" @selected($trip === $key)>{{ $label }}</option>
+                        <option value="" @selected(!$routeId)>All Routes</option>
+                        @foreach ($routes as $filterRoute)
+                            <option value="{{ $filterRoute->id }}" @selected((int) $routeId === (int) $filterRoute->id)>
+                                {{ $filterRoute->name }} — {{ $filterRoute->route_type_label }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -83,7 +85,6 @@
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr class="text-gray-500 dark:text-gray-400">
                             <th class="px-5 py-3 font-medium">Date</th>
-                            {{-- <th class="px-5 py-3 font-medium">Trip</th> --}}
                             <th class="px-5 py-3 font-medium">Check In</th>
                             <th class="px-5 py-3 font-medium">Check Out</th>
                             <th class="px-5 py-3 font-medium">Route</th>
@@ -94,18 +95,6 @@
                         @forelse ($records as $record)
                             <tr class="text-gray-700 dark:text-gray-200">
                                 <td class="px-5 py-3 whitespace-nowrap">{{ $record->date->format('M d, Y') }}</td>
-                                {{-- <td class="px-5 py-3 whitespace-nowrap">
-                                    <div class="flex flex-col items-start gap-1">
-                                        @if ($record->route?->route_type)
-                                            <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $record->route->route_type_color_classes }}">
-                                                {{ $record->route->route_type_label }}
-                                            </span>
-                                        @endif
-                                        <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                                            {{ $record->tripLabel() }}
-                                        </span>
-                                    </div>
-                                </td> --}}
                                 <td class="px-5 py-3 whitespace-nowrap">
                                     @if ($record->check_in_at)
                                         <span class="text-xs font-medium text-green-700 dark:text-green-400">
