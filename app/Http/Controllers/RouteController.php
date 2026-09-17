@@ -124,13 +124,38 @@ class RouteController extends Controller
     /**
      * Display the specified route.
      */
-    public function show(Route $route)
+    public function show(Route $route, Request $request)
     {
         $this->authorizeRoute($route);
 
-        $route->load(['school', 'activeTrip.bus.drivers']);
+        $tab = $request->query('tab', 'overview');
 
-        return view('routes.show', compact('route'));
+        $allowedTabs = ['overview', 'stops', 'map', 'trips'];
+
+        if (! in_array($tab, $allowedTabs, true)) {
+            $tab = 'overview';
+        }
+
+        $route->load(['school', 'activeTrip.bus.drivers', 'stops']);
+
+        $tripCount = $route->trips()
+            ->whereNotNull('started_at')
+            ->whereIn('status', [\App\Models\Trip::STATUS_IN_PROGRESS, \App\Models\Trip::STATUS_COMPLETED])
+            ->count();
+
+        $trips = null;
+
+        if ($tab === 'trips') {
+            $trips = $route->trips()
+                ->with(['bus', 'driver', 'school'])
+                ->whereNotNull('started_at')
+                ->whereIn('status', [\App\Models\Trip::STATUS_IN_PROGRESS, \App\Models\Trip::STATUS_COMPLETED])
+                ->orderByDesc('started_at')
+                ->paginate(10)
+                ->withQueryString();
+        }
+
+        return view('routes.show', compact('route', 'tab', 'tripCount', 'trips'));
     }
 
     /**
