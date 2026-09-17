@@ -84,21 +84,7 @@
                         <option value="">All Routes</option>
                         @foreach ($routes as $filterRoute)
                             <option value="{{ $filterRoute->id }}" @selected((string) request('route_id') === (string) $filterRoute->id)>
-                                {{ $filterRoute->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label for="trip_type"
-                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
-                    <select name="trip_type" id="trip_type"
-                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
-                        <option value="">All Types</option>
-                        @foreach (\App\Models\Trip::types() as $typeKey => $typeLabel)
-                            <option value="{{ $typeKey }}" @selected(request('trip_type') === $typeKey)>
-                                {{ $typeLabel }}
+                                {{ $filterRoute->name }} — {{ $filterRoute->route_type_label }}
                             </option>
                         @endforeach
                     </select>
@@ -149,7 +135,6 @@
                             <th class="px-5 py-3 text-left font-medium">Date</th>
                             <th class="px-5 py-3 text-left font-medium">Bus</th>
                             <th class="px-5 py-3 text-left font-medium">Route</th>
-                            <th class="px-5 py-3 text-left font-medium">Type</th>
                             <th class="px-5 py-3 text-left font-medium">Status</th>
                             <th class="px-5 py-3 text-left font-medium">Duration</th>
                             <th class="px-5 py-3 text-left font-medium">Started</th>
@@ -160,17 +145,16 @@
                         @forelse ($trips as $trip)
                             <tr class="text-gray-700 dark:text-gray-200">
                                 <td class="px-5 py-3">{{ $trip->started_at?->format('M d, Y') ?? '—' }}</td>
-                                <td class="px-5 py-3">{{ $trip->bus?->bus_number ?? '—' }}</td>
-                                <td class="px-5 py-3">{{ $trip->route?->name ?? '—' }}</td>
+<td class="px-5 py-3">{{ $trip->bus?->bus_number ?? '—' }}</td>
                                 <td class="px-5 py-3">
-                                    <span
-                                        class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
-                                        @if ($trip->trip_type === 'home_to_school') bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400
-                                        @else
-                                            bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 @endif
-                                    ">
-                                        {{ $trip->trip_type_label }}
-                                    </span>
+                                    <div class="flex items-center gap-2">
+                                        <span>{{ $trip->route?->name ?? '—' }}</span>
+                                        @if ($trip->route)
+                                            <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $trip->route->route_type_color_classes }}">
+                                                {{ $trip->route->route_type_label }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-5 py-3">
                                     @if ($trip->status === 'in_progress')
@@ -193,7 +177,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8"
+                                <td colspan="7"
                                     class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
                                     No trips recorded yet.
                                 </td>
@@ -220,6 +204,11 @@
                                 {{ $trip->started_at?->format('M d, Y') ?? '—' }}</p>
                             <p class="truncate text-xs text-gray-500 dark:text-gray-400">
                                 {{ $trip->bus?->bus_number ?? '—' }} · {{ $trip->route?->name ?? '—' }}</p>
+                            @if ($trip->route)
+                                <span class="mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium {{ $trip->route->route_type_color_classes }}">
+                                    {{ $trip->route->route_type_label }}
+                                </span>
+                            @endif
                         </div>
                         @if ($trip->status === 'in_progress')
                             <span
@@ -233,17 +222,6 @@
                                 Completed
                             </span>
                         @endif
-                    </div>
-
-                    <div class="mt-2">
-                        <span
-                            class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
-                            @if ($trip->trip_type === 'home_to_school') bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400
-                            @else
-                                bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 @endif
-                        ">
-                            {{ $trip->trip_type_label }}
-                        </span>
                     </div>
 
                     <dl class="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
