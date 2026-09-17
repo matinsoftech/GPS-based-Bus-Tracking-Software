@@ -6,11 +6,14 @@ use App\Http\Requests\StoreSchoolRequest;
 use App\Http\Requests\UpdateSchoolRequest;
 use App\Models\Bus;
 use App\Models\Driver;
+use App\Models\GpsDevice;
 use App\Models\ParentProfile;
 use App\Models\Plan;
 use App\Models\Route;
+use App\Models\RouteStop;
 use App\Models\School;
 use App\Models\SchoolAdmin;
+use App\Models\Student;
 use Illuminate\Http\Request;
 
 class SchoolController extends Controller
@@ -67,8 +70,28 @@ class SchoolController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(School $school)
+    public function show(Request $request, School $school)
     {
+        $tab = $request->query('tab', 'overview');
+
+        $allowedTabs = [
+            'overview',
+            'principal',
+            'students',
+            'drivers',
+            'parents',
+            'buses',
+            'routes',
+            'subscriptions',
+            'invoices',
+            'gps-devices',
+            'route-stops',
+        ];
+
+        if (! in_array($tab, $allowedTabs, true)) {
+            $tab = 'overview';
+        }
+
         $totalStudents = $school->students()->count();
         $activeStudents = $school->students()->where('is_active', true)->count();
 
@@ -90,12 +113,100 @@ class SchoolController extends Controller
 
         $totalParents = ParentProfile::where('school_id', $school->id)->count();
         $totalSchoolAdmins = SchoolAdmin::where('school_id', $school->id)->count();
+        $totalSubscriptions = $school->subscriptions()->count();
+        $totalInvoices = $school->invoices()->count();
+        $totalGpsDevices = GpsDevice::where('school_id', $school->id)->count();
 
         $activeSubscription = $school->activeSubscription;
         $activePlans = Plan::where('is_active', true)->orderBy('name')->get();
 
-        return view('schools.show', compact(
+        $tabData = [];
+
+        switch ($tab) {
+            case 'students':
+                $tabData['students'] = Student::with(['parent.user', 'school'])
+                    ->where('school_id', $school->id)
+                    ->latest()
+                    ->paginate(15)
+                    ->withQueryString();
+                break;
+
+            case 'drivers':
+                $tabData['drivers'] = Driver::with('user')
+                    ->where('school_id', $school->id)
+                    ->latest()
+                    ->paginate(15)
+                    ->withQueryString();
+                break;
+
+            case 'parents':
+                $tabData['parents'] = ParentProfile::with(['user', 'children'])
+                    ->where('school_id', $school->id)
+                    ->latest()
+                    ->paginate(15)
+                    ->withQueryString();
+                break;
+
+            case 'buses':
+                $tabData['buses'] = Bus::with(['drivers', 'gpsDevice'])
+                    ->where('school_id', $school->id)
+                    ->latest()
+                    ->paginate(15)
+                    ->withQueryString();
+                break;
+
+            case 'principal':
+                $tabData['schoolAdmins'] = SchoolAdmin::with('user')
+                    ->where('school_id', $school->id)
+                    ->latest()
+                    ->paginate(15)
+                    ->withQueryString();
+                break;
+
+            case 'routes':
+                $tabData['routes'] = Route::withCount('stops')
+                    ->where('school_id', $school->id)
+                    ->latest()
+                    ->paginate(15)
+                    ->withQueryString();
+                break;
+
+            case 'subscriptions':
+                $tabData['subscriptions'] = $school->subscriptions()
+                    ->with('plan')
+                    ->latest()
+                    ->paginate(15)
+                    ->withQueryString();
+                break;
+
+            case 'invoices':
+                $tabData['invoices'] = $school->invoices()
+                    ->with('plan')
+                    ->latest()
+                    ->paginate(15)
+                    ->withQueryString();
+                break;
+
+            case 'gps-devices':
+                $tabData['gpsDevices'] = GpsDevice::with('bus')
+                    ->where('school_id', $school->id)
+                    ->latest()
+                    ->paginate(15)
+                    ->withQueryString();
+                break;
+
+            case 'route-stops':
+                $tabData['routeStops'] = RouteStop::with('route')
+                    ->whereHas('route', fn ($query) => $query->where('school_id', $school->id))
+                    ->latest()
+                    ->paginate(15)
+                    ->withQueryString();
+                break;
+        }
+
+        return view('schools.show', array_merge($tabData, compact(
             'school',
+            'tab',
             'totalStudents',
             'activeStudents',
             'totalDrivers',
@@ -109,9 +220,12 @@ class SchoolController extends Controller
             'totalStops',
             'totalParents',
             'totalSchoolAdmins',
+            'totalSubscriptions',
+            'totalInvoices',
+            'totalGpsDevices',
             'activeSubscription',
             'activePlans',
-        ));
+        )));
     }
 
     /**
