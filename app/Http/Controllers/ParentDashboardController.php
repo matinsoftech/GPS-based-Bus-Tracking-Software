@@ -134,11 +134,11 @@ class ParentDashboardController extends Controller
             $period === 'all' => [null, null],
             default => [
                 ! empty($validated['from'])
-                    ? Carbon::parse($validated['from'])
-                    : now()->subDays(30)->startOfDay(),
+                    ? Carbon::parse($validated['from'])->startOfDay()
+                    : null,
                 ! empty($validated['to'])
                     ? Carbon::parse($validated['to'])->endOfDay()
-                    : now()->endOfDay(),
+                    : null,
             ],
         };
 
@@ -147,7 +147,8 @@ class ParentDashboardController extends Controller
         $records = Attendance::query()
             ->with(['route', 'markedBy'])
             ->where('student_id', $student->id)
-            ->when($from && $to, fn ($query) => $query->whereBetween('date', [$from, $to]))
+            ->when($from, fn ($query) => $query->whereDate('date', '>=', $from))
+            ->when($to, fn ($query) => $query->whereDate('date', '<=', $to))
             ->when($routeId, fn ($query) => $query->where('route_id', $routeId))
             ->orderByDesc('date')
             ->orderByDesc('created_at')

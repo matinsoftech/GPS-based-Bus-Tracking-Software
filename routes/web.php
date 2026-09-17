@@ -433,6 +433,10 @@ Route::middleware(['auth', 'subscription'])->group(function () {
         ->middleware('permission:student.view')
         ->name('students.show');
 
+    Route::get('/students/{student}/attendance', [StudentController::class, 'attendance'])
+        ->middleware('permission:student.view')
+        ->name('students.attendance');
+
     Route::get('/students/{student}/edit', [StudentController::class, 'edit'])
         ->middleware('permission:student.update')
         ->name('students.edit');
