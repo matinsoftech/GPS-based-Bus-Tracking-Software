@@ -270,7 +270,11 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse ($schoolAdmins as $admin)
                             <tr class="text-gray-700 dark:text-gray-200">
-                                <td class="px-5 py-3 font-medium text-gray-900 dark:text-white">{{ $admin->name ?: $admin->user?->name }}</td>
+                                <td class="px-5 py-3">
+                                    <a href="{{ route('school-admins.show', $admin) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                                        {{ $admin->name ?: $admin->user?->name }}
+                                    </a>
+                                </td>
                                 <td class="px-5 py-3">{{ $admin->user?->email ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ $admin->designation ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ $admin->phone ?? '—' }}</td>
@@ -310,14 +314,22 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse ($students as $student)
                             <tr class="text-gray-700 dark:text-gray-200">
+                                <td class="px-5 py-3 font-medium text-gray-900 dark:text-white">{{ $student->admission_no }}</td>
                                 <td class="px-5 py-3">
                                     <a href="{{ route('students.show', $student) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">
-                                        {{ $student->admission_no }}
+                                        {{ $student->full_name }}
                                     </a>
                                 </td>
-                                <td class="px-5 py-3 font-medium text-gray-900 dark:text-white">{{ $student->full_name }}</td>
                                 <td class="px-5 py-3">{{ trim($student->grade.' '.$student->section) }}</td>
-                                <td class="px-5 py-3">{{ $student->parent?->user?->name ?? '—' }}</td>
+                                <td class="px-5 py-3">
+                                    @if ($student->parent)
+                                        <a href="{{ route('parents.show', $student->parent) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                                            {{ $student->parent->user?->name ?? $student->parent->name }}
+                                        </a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3">
                                     @if ($student->is_active)
                                         <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</span>
@@ -359,7 +371,11 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse ($drivers as $driver)
                             <tr class="text-gray-700 dark:text-gray-200">
-                                <td class="px-5 py-3 font-medium text-gray-900 dark:text-white">{{ $driver->full_name ?: $driver->user?->name }}</td>
+                                <td class="px-5 py-3">
+                                    <a href="{{ route('drivers.show', $driver) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                                        {{ $driver->full_name ?: $driver->user?->name }}
+                                    </a>
+                                </td>
                                 <td class="px-5 py-3">{{ $driver->phone ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ $driver->license_number ?? '—' }}</td>
                                 <td class="px-5 py-3">
@@ -403,7 +419,11 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse ($parents as $parent)
                             <tr class="text-gray-700 dark:text-gray-200">
-                                <td class="px-5 py-3 font-medium text-gray-900 dark:text-white">{{ $parent->user?->name ?? $parent->name }}</td>
+                                <td class="px-5 py-3">
+                                    <a href="{{ route('parents.show', $parent) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                                        {{ $parent->user?->name ?? $parent->name }}
+                                    </a>
+                                </td>
                                 <td class="px-5 py-3">{{ $parent->user?->email ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ $parent->phone ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ $parent->children->count() }}</td>
@@ -442,7 +462,11 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse ($buses as $bus)
                             <tr class="text-gray-700 dark:text-gray-200">
-                                <td class="px-5 py-3 font-medium text-gray-900 dark:text-white">{{ $bus->bus_number }}</td>
+                                <td class="px-5 py-3">
+                                    <a href="{{ route('buses.show', $bus) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                                        {{ $bus->bus_number }}
+                                    </a>
+                                </td>
                                 <td class="px-5 py-3">{{ trim($bus->make.' '.$bus->model) ?: '—' }}</td>
                                 <td class="px-5 py-3">{{ $bus->capacity ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ $bus->gpsDevice?->device_name ?? '—' }}</td>
@@ -602,7 +626,11 @@
                                 ];
                             @endphp
                             <tr class="text-gray-700 dark:text-gray-200">
-                                <td class="px-5 py-3 font-medium text-gray-900 dark:text-white">{{ $invoice->invoice_number }}</td>
+                                <td class="px-5 py-3">
+                                    <a href="{{ route('invoices.show', $invoice) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                                        {{ $invoice->invoice_number }}
+                                    </a>
+                                </td>
                                 <td class="px-5 py-3">{{ $invoice->plan?->name ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ $invoice->currency ?? '₹' }}{{ number_format((float) $invoice->amount, 2) }}</td>
                                 <td class="px-5 py-3">
@@ -647,7 +675,15 @@
                             <tr class="text-gray-700 dark:text-gray-200">
                                 <td class="px-5 py-3 font-medium text-gray-900 dark:text-white">{{ $device->device_name }}</td>
                                 <td class="px-5 py-3">{{ $device->device_imei ?? '—' }}</td>
-                                <td class="px-5 py-3">{{ $device->bus?->bus_number ?? '—' }}</td>
+                                <td class="px-5 py-3">
+                                    @if ($device->bus)
+                                        <a href="{{ route('buses.show', $device->bus) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">
+                                            {{ $device->bus->bus_number }}
+                                        </a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3">
                                     @if ($device->status === 'active')
                                         <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</span>
