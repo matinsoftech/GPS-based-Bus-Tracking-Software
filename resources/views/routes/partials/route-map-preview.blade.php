@@ -193,10 +193,10 @@
         const banner = document.getElementById('routeMapBanner');
         const inner = document.getElementById('routeMapBannerInner');
         if (!banner || !inner) return;
-        inner.className = 'flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-medium shadow-lg backdrop-blur-md border ' +
+        inner.className = 'flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-medium shadow-lg border ' +
             (isWarning
-                ? 'bg-amber-900/90 text-amber-200 border-amber-700/60'
-                : 'bg-gray-900/90 text-gray-200 border-gray-700/60');
+                ? 'bg-amber-900/95 text-amber-100 border-amber-600/60'
+                : 'bg-white/95 text-gray-900 border-gray-200/80 dark:bg-gray-800/95 dark:border-gray-700');
         document.getElementById('routeMapBannerText').innerText = text;
         banner.classList.remove('hidden');
     }
@@ -455,7 +455,7 @@
 
         if (!hasActiveTrip) {
             updateStatusBadge(null, 'No Active Trip', '#6b7280');
-            showBanner('No active trip — no bus is running on this route right now.', false);
+            showBanner('No active trip — no bus is running on this route right now.', true);
             return;
         }
 
