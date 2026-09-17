@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use App\Models\ParentProfile;
 use App\Models\Route;
 use App\Models\RouteStop;
@@ -10,6 +11,7 @@ use App\Models\SchoolAdmin;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -207,6 +209,72 @@ class StudentController extends Controller
         $student->load(['school', 'parent.user', 'routes', 'stops']);
 
         return view('students.show', compact('student'));
+    }
+
+    /**
+     * Display the attendance history for the specified student.
+     */
+    public function attendance(Request $request, Student $student)
+    {
+        $this->authorizeStudent($student);
+
+        $student->load(['school', 'parent.user', 'routes', 'stops']);
+
+        $validated = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'date' => ['nullable', 'date'],
+            'period' => ['nullable', 'in:today,yesterday,this_week,this_month,all'],
+            'route_id' => ['nullable', 'integer', 'exists:routes,id'],
+        ]);
+
+        $singleDate = ! empty($validated['date'])
+            ? Carbon::parse($validated['date'])->startOfDay()
+            : null;
+
+        $period = $validated['period'] ?? '';
+
+        [$from, $to] = match (true) {
+            $singleDate !== null => [$singleDate->copy()->startOfDay(), $singleDate->copy()->endOfDay()],
+            $period === 'today' => [now()->startOfDay(), now()->endOfDay()],
+            $period === 'yesterday' => [now()->subDay()->startOfDay(), now()->subDay()->endOfDay()],
+            $period === 'this_week' => [now()->startOfWeek(), now()->endOfWeek()],
+            $period === 'this_month' => [now()->startOfMonth(), now()->endOfMonth()],
+            $period === 'all' => [null, null],
+            default => [
+                ! empty($validated['from']) ? Carbon::parse($validated['from'])->startOfDay() : null,
+                ! empty($validated['to']) ? Carbon::parse($validated['to'])->endOfDay() : null,
+            ],
+        };
+
+        $routeId = $validated['route_id'] ?? null;
+
+        $records = Attendance::query()
+            ->with(['route', 'markedBy'])
+            ->where('student_id', $student->id)
+            ->when($from, fn ($query) => $query->whereDate('date', '>=', $from))
+            ->when($to, fn ($query) => $query->whereDate('date', '<=', $to))
+            ->when($routeId, fn ($query) => $query->where('route_id', $routeId))
+            ->orderByDesc('date')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $totalRecords = $records->count();
+
+        $routeIds = $records->pluck('route_id')->unique()->filter();
+
+        if ($routeIds->isEmpty()) {
+            $routeIds = Attendance::where('student_id', $student->id)->pluck('route_id')->unique()->filter();
+        }
+
+        $routes = Route::whereIn('id', $routeIds)
+            ->orderBy('name')
+            ->get();
+
+        return view(
+            'students.attendance',
+            compact('student', 'records', 'totalRecords', 'from', 'to', 'singleDate', 'period', 'routeId', 'routes')
+        );
     }
 
     /**

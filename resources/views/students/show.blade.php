@@ -4,6 +4,12 @@
             <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $student->full_name }}</h1>
             <div class="flex items-center gap-3">
                 <a
+                    href="{{ route('students.attendance', $student) }}"
+                    class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                    Attendance History
+                </a>
+                <a
                     href="{{ route('students.edit', $student) }}"
                     class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
                 >
@@ -139,5 +145,6 @@
                 </div>
             </dl>
         </div>
+
     </div>
 </x-app-layout>
