@@ -66,8 +66,8 @@
                             <th class="px-5 py-3 font-medium">Name</th>
                             <th class="px-5 py-3 font-medium">Route Code</th>
                             <th class="px-5 py-3 font-medium">Route Type</th>
-                            <th class="px-5 py-3 font-medium">Start Location</th>
-                            <th class="px-5 py-3 font-medium">End Location</th>
+                            {{-- <th class="px-5 py-3 font-medium">Start Location</th>
+                            <th class="px-5 py-3 font-medium">End Location</th> --}}
                             <th class="px-5 py-3 font-medium">Distance</th>
                             <th class="px-5 py-3 font-medium">Duration</th>
                             <th class="px-5 py-3 font-medium">School</th>
@@ -82,8 +82,8 @@
                                 <td class="px-5 py-3 font-medium">{{ $route->name }}</td>
                                 <td class="px-5 py-3">{{ $route->route_code }}</td>
                                 <td class="px-5 py-3">{{ $route->route_type_label }}</td>
-                                <td class="px-5 py-3">{{ $route->start_location }}</td>
-                                <td class="px-5 py-3">{{ $route->end_location }}</td>
+                                {{-- <td class="px-5 py-3">{{ $route->start_location }}</td> --}}
+                                {{-- <td class="px-5 py-3">{{ $route->end_location }}</td> --}}
                                 <td class="px-5 py-3">
                                     {{ $route->estimated_distance ? $route->estimated_distance . ' km' : '—' }}</td>
                                 <td class="px-5 py-3">
@@ -168,14 +168,14 @@
                             <dt class="text-gray-400 dark:text-gray-500">Route Type</dt>
                             <dd class="text-gray-700 dark:text-gray-200">{{ $route->route_type_label }}</dd>
                         </div>
-                        <div>
+                        {{-- <div>
                             <dt class="text-gray-400 dark:text-gray-500">Start Location</dt>
                             <dd class="text-gray-700 dark:text-gray-200">{{ $route->start_location }}</dd>
                         </div>
                         <div>
                             <dt class="text-gray-400 dark:text-gray-500">End Location</dt>
                             <dd class="text-gray-700 dark:text-gray-200">{{ $route->end_location }}</dd>
-                        </div>
+                        </div> --}}
                         <div>
                             <dt class="text-gray-400 dark:text-gray-500">Distance</dt>
                             <dd class="text-gray-700 dark:text-gray-200">

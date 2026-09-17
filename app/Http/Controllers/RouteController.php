@@ -6,6 +6,7 @@ use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\User;
+use App\Services\NazarTrackService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,7 @@ use Illuminate\Validation\Rule;
 
 class RouteController extends Controller
 {
+    public function __construct(private readonly NazarTrackService $gpsService) {}
     /**
      * Display a listing of routes.
      */
@@ -155,7 +157,20 @@ class RouteController extends Controller
                 ->withQueryString();
         }
 
-        return view('routes.show', compact('route', 'tab', 'tripCount', 'trips'));
+        $activeBus = null;
+        $activeDriver = null;
+        $latestLocation = null;
+
+        if ($tab === 'map') {
+            $route->load(['activeTrip.bus.gpsDevice', 'activeTrip.driver']);
+
+            $activeBus = $route->activeTrip?->bus;
+            $activeDriver = $route->activeTrip?->driver;
+            $latestLocation = $this->gpsService->locationPayload($activeBus)
+                ?? $this->gpsService->lastKnownPayload($activeBus);
+        }
+
+        return view('routes.show', compact('route', 'tab', 'tripCount', 'trips', 'activeBus', 'activeDriver', 'latestLocation'));
     }
 
     /**
