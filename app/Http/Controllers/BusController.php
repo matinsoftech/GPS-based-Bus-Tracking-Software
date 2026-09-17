@@ -169,6 +169,8 @@ class BusController extends Controller
 
         $tripRecords = $bus->trips()
             ->with(['route.stops', 'driver'])
+            ->whereNotNull('started_at')
+            ->whereIn('status', [Trip::STATUS_IN_PROGRESS])
             ->orderByDesc('started_at')
             ->limit(10)
             ->get();
@@ -231,6 +233,8 @@ class BusController extends Controller
 
         $trips = $bus->trips()
             ->with(['route', 'driver', 'school'])
+            ->whereNotNull('started_at')
+            ->whereIn('status', [Trip::STATUS_IN_PROGRESS, Trip::STATUS_COMPLETED])
             ->when(filled($validated['search'] ?? null), fn ($q) => $this->applyTripSearch($q, $validated['search']))
             ->when(filled($validated['route_id'] ?? null), fn ($q) => $q->where('route_id', $validated['route_id']))
             ->when(filled($validated['driver_id'] ?? null), fn ($q) => $q->where('driver_id', $validated['driver_id']))
@@ -243,6 +247,8 @@ class BusController extends Controller
             ->withQueryString();
 
         $routes = $bus->trips()
+            ->whereNotNull('started_at')
+            ->whereIn('status', [Trip::STATUS_IN_PROGRESS, Trip::STATUS_COMPLETED])
             ->with('route')
             ->get()
             ->pluck('route')
@@ -251,6 +257,8 @@ class BusController extends Controller
             ->values();
 
         $drivers = $bus->trips()
+            ->whereNotNull('started_at')
+            ->whereIn('status', [Trip::STATUS_IN_PROGRESS, Trip::STATUS_COMPLETED])
             ->with('driver')
             ->get()
             ->pluck('driver')
