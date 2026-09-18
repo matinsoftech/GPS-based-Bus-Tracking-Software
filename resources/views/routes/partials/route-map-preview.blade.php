@@ -265,6 +265,7 @@
 
     function fitFullRouteBounds() {
         if (!routeMap) return;
+        autoFollowCamera = false;
 
         if (routePolylineBounds) {
             routeMap.fitBounds(routePolylineBounds, { padding: [50, 50], animate: true, duration: 0.8 });
