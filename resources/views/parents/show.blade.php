@@ -125,7 +125,13 @@
                                 </td>
                                 <td class="px-5 py-3">{{ $child->admission_no ?? '—' }}</td>
                                 <td class="px-5 py-3">{{ trim($child->grade.' '.$child->section) }}</td>
-                                <td class="px-5 py-3">{{ $child->school?->name ?? '—' }}</td>
+                                <td class="px-5 py-3">
+                                    @if ($child->school)
+                                        <a href="{{ route('schools.show', $child->school) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $child->school->name }}</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3">
                                     @if ($child->is_active)
                                         <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</span>

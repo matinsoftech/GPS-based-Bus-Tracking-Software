@@ -178,8 +178,8 @@
                                     </div>
                                 </td>
                                 <td class="px-5 py-3">{{ $trip->driver?->full_name ?? '—' }}</td>
-                                {{-- <td class="px-5 py-3">{{ $trip->school?->name ?? '—' }}</td>
-                                <td class="px-5 py-3">
+                                <td class="px-5 py-3">{{ $trip->school?->name ?? '—' }}</td>
+                                {{-- <td class="px-5 py-3">
                                     <span
                                         class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
                                         @if ($trip->trip_type === 'home_to_school') bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400
