@@ -10,6 +10,7 @@ use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\PlanLimitService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -186,7 +187,7 @@ class StudentController extends Controller
         $stops = $validated['stops'] ?? [];
         unset($validated['stops'], $validated['route_ids']);
 
-        if ($error = app(\App\Services\PlanLimitService::class)->assertCreatable('students', (int) $validated['school_id'])) {
+        if ($error = app(PlanLimitService::class)->assertCreatable('students', (int) $validated['school_id'])) {
             return back()->withInput()->withErrors(['plan_limit' => $error]);
         }
 
@@ -202,13 +203,43 @@ class StudentController extends Controller
     /**
      * Display the specified student.
      */
-    public function show(Student $student)
+    public function show(Student $student, Request $request)
     {
         $this->authorizeStudent($student);
 
+        $tab = $request->query('tab', 'overview');
+
+        $allowedTabs = ['overview', 'routes', 'attendance'];
+
+        if (! in_array($tab, $allowedTabs, true)) {
+            $tab = 'overview';
+        }
+
         $student->load(['school', 'parent.user', 'routes', 'stops']);
 
-        return view('students.show', compact('student'));
+        $routeCount = $student->routes->count();
+
+        $attendanceCount = Attendance::where('student_id', $student->id)->count();
+
+        $attendance = [
+            'records' => collect(),
+            'totalRecords' => 0,
+            'from' => null,
+            'to' => null,
+            'singleDate' => null,
+            'period' => '',
+            'routeId' => null,
+            'routes' => collect(),
+        ];
+
+        if ($tab === 'attendance') {
+            $attendance = $this->attendanceStats($student, $request);
+        }
+
+        return view('students.show', array_merge(
+            compact('student', 'tab', 'routeCount', 'attendanceCount'),
+            $attendance
+        ));
     }
 
     /**
@@ -220,6 +251,13 @@ class StudentController extends Controller
 
         $student->load(['school', 'parent.user', 'routes', 'stops']);
 
+        $attendance = $this->attendanceStats($student, $request);
+
+        return view('students.attendance', compact('student') + $attendance);
+    }
+
+    private function attendanceStats(Student $student, Request $request): array
+    {
         $validated = $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
@@ -271,10 +309,7 @@ class StudentController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view(
-            'students.attendance',
-            compact('student', 'records', 'totalRecords', 'from', 'to', 'singleDate', 'period', 'routeId', 'routes')
-        );
+        return compact('records', 'totalRecords', 'from', 'to', 'singleDate', 'period', 'routeId', 'routes');
     }
 
     /**
