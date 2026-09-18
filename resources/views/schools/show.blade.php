@@ -25,7 +25,7 @@
                     ],
                     [
                         'key' => 'principal',
-                        'label' => 'Principal',
+                        'label' => 'School Admins',
                         'url' => route('schools.show', [$school, 'tab' => 'principal']),
                         'icon' => 'identification',
                         'count' => $totalSchoolAdmins,
@@ -281,7 +281,7 @@
                 @endif
             </div>
         @elseif ($tab === 'principal')
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+            {{-- <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
                 <h2
                     class="mb-4 border-b border-gray-200 pb-3 text-lg font-semibold text-gray-900 dark:border-gray-800 dark:text-white">
                     Principal
@@ -302,7 +302,7 @@
                         <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $school->phone ?? '—' }}</dd>
                     </div>
                 </dl>
-            </div>
+            </div> --}}
 
             <div
                 class="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
