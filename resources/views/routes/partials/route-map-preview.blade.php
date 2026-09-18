@@ -43,7 +43,7 @@
                 id="routeRecenterBtn"
                 onclick="recenterCameraOnBus()"
                 title="Recenter Camera on Bus"
-                class="hidden items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-xs font-semibold text-gray-800 shadow-md backdrop-blur-md transition hover:bg-brand-500 hover:text-white dark:bg-gray-900/95 dark:text-gray-200 dark:hover:bg-brand-500 dark:hover:text-white border border-gray-200 dark:border-gray-700"
+                class="flex hidden items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-xs font-semibold text-gray-800 shadow-md backdrop-blur-md transition hover:bg-brand-500 hover:text-white dark:bg-gray-900/95 dark:text-gray-200 dark:hover:bg-brand-500 dark:hover:text-white border border-gray-200 dark:border-gray-700"
             >
                 <svg class="h-4 w-4 text-brand-500 dark:text-brand-400 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
@@ -333,11 +333,26 @@
             });
             if (!response.ok) return;
             const data = await response.json();
-            applyGpsPayload(data);
+            const applied = applyGpsPayload(data);
+            if (!applied) resetTelemetryUi();
         } catch (err) {
             console.warn('Live GPS poll failed:', err);
+            resetTelemetryUi();
         } finally {
             isPollingBusGps = false;
+        }
+    }
+
+    function resetTelemetryUi() {
+        hasLiveFix = false;
+
+        const speedEl = document.getElementById('routeBusSpeed');
+        if (speedEl) speedEl.innerText = '—';
+
+        updateStatusBadge(null, 'Waiting for GPS', '#6b7280');
+
+        if (!busLocationMarker) {
+            showBanner('Waiting for a live GPS signal from the bus device...', false);
         }
     }
 
