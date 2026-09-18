@@ -104,7 +104,13 @@
                                     @endif
                                 </td> --}}
                                 <td class="px-5 py-3">{{ $student->school->name ?? '—' }}</td>
-                                <td class="px-5 py-3">{{ $student->parent->user->name ?? '—' }}</td>
+                                <td class="px-5 py-3">
+                                    @if ($student->parent)
+                                        <a href="{{ route('parents.show', $student->parent) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $student->parent->user->name }}</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3">
                                     @if ($student->is_active)
                                         <span
@@ -208,7 +214,12 @@
                                 <div>
                                     <dt class="text-gray-400 dark:text-gray-500">Parent</dt>
                                     <dd class="text-gray-700 dark:text-gray-200">
-                                        {{ $student->parent->user->name ?? '—' }}</dd>
+                                        @if ($student->parent)
+                                            <a href="{{ route('parents.show', $student->parent) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $student->parent->user->name }}</a>
+                                        @else
+                                            —
+                                        @endif
+                                    </dd>
                                 </div>
                             </dl>
                         </div>
