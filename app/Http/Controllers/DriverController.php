@@ -329,9 +329,17 @@ class DriverController extends Controller
     /**
      * Display driver.
      */
-    public function show(Driver $driver)
+    public function show(Driver $driver, Request $request)
     {
         $this->authorizeDriver($driver);
+
+        $tab = $request->query('tab', 'overview');
+
+        $allowedTabs = ['overview', 'assigned', 'routes', 'trips'];
+
+        if (! in_array($tab, $allowedTabs, true)) {
+            $tab = 'overview';
+        }
 
         $driver->load([
             'school',
@@ -360,7 +368,30 @@ class DriverController extends Controller
             ])
             ->values();
 
-        return view('drivers.show', compact('driver', 'assignedRoutes'));
+        $tripCount = $driver->trips()
+            ->whereNotNull('started_at')
+            ->whereIn('status', [\App\Models\Trip::STATUS_IN_PROGRESS, \App\Models\Trip::STATUS_COMPLETED])
+            ->count();
+
+        $trips = null;
+
+        if ($tab === 'trips') {
+            $trips = $driver->trips()
+                ->with(['bus', 'route', 'school'])
+                ->whereNotNull('started_at')
+                ->whereIn('status', [\App\Models\Trip::STATUS_IN_PROGRESS, \App\Models\Trip::STATUS_COMPLETED])
+                ->orderByDesc('started_at')
+                ->paginate(10)
+                ->withQueryString();
+        }
+
+        return view('drivers.show', compact(
+            'driver',
+            'assignedRoutes',
+            'tab',
+            'tripCount',
+            'trips',
+        ));
     }
 
     /**
