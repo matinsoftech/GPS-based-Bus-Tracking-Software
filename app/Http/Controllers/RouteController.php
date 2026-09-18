@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Route;
 use App\Models\School;
 use App\Models\SchoolAdmin;
+use App\Models\Trip;
 use App\Models\User;
 use App\Services\NazarTrackService;
+use App\Services\PlanLimitService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +17,7 @@ use Illuminate\Validation\Rule;
 class RouteController extends Controller
 {
     public function __construct(private readonly NazarTrackService $gpsService) {}
+
     /**
      * Display a listing of routes.
      */
@@ -110,7 +113,7 @@ class RouteController extends Controller
             $validated['school_id'] = $this->getUserSchoolId($user);
         }
 
-        if ($error = app(\App\Services\PlanLimitService::class)->assertCreatable('routes', (int) $validated['school_id'])) {
+        if ($error = app(PlanLimitService::class)->assertCreatable('routes', (int) $validated['school_id'])) {
             return back()->withInput()->withErrors(['plan_limit' => $error]);
         }
 
@@ -142,19 +145,21 @@ class RouteController extends Controller
 
         $tripCount = $route->trips()
             ->whereNotNull('started_at')
-            ->whereIn('status', [\App\Models\Trip::STATUS_IN_PROGRESS, \App\Models\Trip::STATUS_COMPLETED])
+            ->whereIn('status', [Trip::STATUS_IN_PROGRESS, Trip::STATUS_COMPLETED])
             ->count();
 
         $trips = null;
+        $buses = collect();
+        $drivers = collect();
 
         if ($tab === 'trips') {
-            $trips = $route->trips()
-                ->with(['bus', 'driver', 'school'])
-                ->whereNotNull('started_at')
-                ->whereIn('status', [\App\Models\Trip::STATUS_IN_PROGRESS, \App\Models\Trip::STATUS_COMPLETED])
-                ->orderByDesc('started_at')
+            $validated = $request->validate($this->tripFilterRules());
+
+            $trips = $this->buildTripQuery($route, $validated)
                 ->paginate(10)
                 ->withQueryString();
+
+            [$buses, $drivers] = $this->tripFilterOptions($route);
         }
 
         $activeBus = null;
@@ -170,7 +175,7 @@ class RouteController extends Controller
                 ?? $this->gpsService->lastKnownPayload($activeBus);
         }
 
-        return view('routes.show', compact('route', 'tab', 'tripCount', 'trips', 'activeBus', 'activeDriver', 'latestLocation'));
+        return view('routes.show', compact('route', 'tab', 'tripCount', 'trips', 'buses', 'drivers', 'activeBus', 'activeDriver', 'latestLocation'));
     }
 
     /**
@@ -180,17 +185,36 @@ class RouteController extends Controller
     {
         $this->authorizeRoute($route);
 
-        $validated = $request->validate([
+        $validated = $request->validate($this->tripFilterRules());
+
+        $trips = $this->buildTripQuery($route, $validated)
+            ->paginate(10)
+            ->withQueryString();
+
+        [$buses, $drivers] = $this->tripFilterOptions($route);
+
+        return view('routes.trips', compact('route', 'trips', 'buses', 'drivers'));
+    }
+
+    private function tripFilterRules(): array
+    {
+        return [
             'search' => ['nullable', 'string', 'max:255'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'bus_id' => ['nullable', 'integer'],
             'driver_id' => ['nullable', 'integer'],
-            'trip_type' => ['nullable', Rule::in(array_keys(\App\Models\Trip::types()))],
-            'status' => ['nullable', Rule::in(array_keys(\App\Models\Trip::statuses()))],
-        ]);
+            'trip_type' => ['nullable', Rule::in(array_keys(Trip::types()))],
+            'status' => ['nullable', Rule::in(array_keys(Trip::statuses()))],
+        ];
+    }
 
-        $trips = $route->trips()
+    /**
+     * Build a filtered, ordered trip query for the given route.
+     */
+    private function buildTripQuery(Route $route, array $validated)
+    {
+        return $route->trips()
             ->with(['bus', 'driver', 'school'])
             ->when(filled($validated['search'] ?? null), fn ($q) => $this->applyTripSearch($q, $validated['search']))
             ->when(filled($validated['bus_id'] ?? null), fn ($q) => $q->where('bus_id', $validated['bus_id']))
@@ -199,10 +223,11 @@ class RouteController extends Controller
             ->when(filled($validated['status'] ?? null), fn ($q) => $q->where('status', $validated['status']))
             ->when(filled($validated['from'] ?? null), fn ($q) => $q->whereDate('started_at', '>=', Carbon::parse($validated['from'])->startOfDay()))
             ->when(filled($validated['to'] ?? null), fn ($q) => $q->whereDate('started_at', '<=', Carbon::parse($validated['to'])->endOfDay()))
-            ->orderByDesc('started_at')
-            ->paginate(10)
-            ->withQueryString();
+            ->orderByDesc('started_at');
+    }
 
+    private function tripFilterOptions(Route $route): array
+    {
         $buses = $route->trips()
             ->with('bus')
             ->get()
@@ -219,7 +244,7 @@ class RouteController extends Controller
             ->keyBy('id')
             ->values();
 
-        return view('routes.trips', compact('route', 'trips', 'buses', 'drivers'));
+        return [$buses, $drivers];
     }
 
     /**

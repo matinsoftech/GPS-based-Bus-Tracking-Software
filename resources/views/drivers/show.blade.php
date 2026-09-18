@@ -39,7 +39,7 @@
         $driverTabs = [
             ['key' => 'overview', 'label' => 'Overview', 'url' => route('drivers.show', $driver), 'icon' => 'user-circle'],
             ['key' => 'assigned', 'label' => 'Assigned', 'url' => route('drivers.show', [$driver, 'tab' => 'assigned']), 'icon' => 'truck', 'count' => $driver->buses->count()],
-            ['key' => 'routes', 'label' => 'Route', 'url' => route('drivers.show', [$driver, 'tab' => 'routes']), 'icon' => 'map', 'count' => $driver->routes->count()],
+            ['key' => 'routes', 'label' => 'Route Map', 'url' => route('drivers.show', [$driver, 'tab' => 'routes']), 'icon' => 'map', 'count' => $driver->routes->count()],
             ['key' => 'trips', 'label' => 'Trip History', 'url' => route('drivers.show', [$driver, 'tab' => 'trips']), 'icon' => 'clock', 'count' => $tripCount],
         ];
     @endphp
@@ -441,6 +441,97 @@
                 </a>
             </div>
         </div>
+
+        <form action="{{ route('drivers.show', [$driver, 'tab' => 'trips']) }}" method="GET"
+            class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+            <input type="hidden" name="tab" value="trips">
+            <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+                <div class="w-full sm:w-auto sm:flex-1">
+                    <label for="search"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input type="text" id="search" name="search" value="{{ request('search') }}"
+                        placeholder="Search trips by bus, route or school..."
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                </div>
+
+                <div>
+                    <label for="from"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">From</label>
+                    <input type="date" id="from" name="from" value="{{ request('from') }}"
+                        onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                </div>
+
+                <div>
+                    <label for="to" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">To</label>
+                    <input type="date" id="to" name="to" value="{{ request('to') }}"
+                        onclick="if (this.showPicker) { try { this.showPicker(); } catch (e) {} }"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                </div>
+
+                <div>
+                    <label for="bus_id"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Bus</label>
+                    <select name="bus_id" id="bus_id"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                        <option value="">All Buses</option>
+                        @foreach ($buses as $filterBus)
+                            <option value="{{ $filterBus->id }}" @selected((string) request('bus_id') === (string) $filterBus->id)>
+                                {{ $filterBus->bus_number }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="route_id"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Route</label>
+                    <select name="route_id" id="route_id"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                        <option value="">All Routes</option>
+                        @foreach ($routes as $filterRoute)
+                            <option value="{{ $filterRoute->id }}" @selected((string) request('route_id') === (string) $filterRoute->id)>
+                                {{ $filterRoute->name }} — {{ $filterRoute->route_type_label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="status"
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                    <select name="status" id="status"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                        <option value="">All Statuses</option>
+                        @foreach (\App\Models\Trip::statuses() as $statusKey => $statusLabel)
+                            <option value="{{ $statusKey }}" @selected(request('status') === $statusKey)>
+                                {{ $statusLabel }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex items-end">
+                    <div>
+                        <span class="mb-2 block text-sm font-medium text-transparent select-none"
+                            aria-hidden="true">Actions</span>
+                        <div class="flex gap-2">
+                            <button type="submit"
+                                class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+                                Filter
+                            </button>
+                            @if ($trips->total() > 0 || request()->except('tab'))
+                                <a href="{{ route('drivers.show', [$driver, 'tab' => 'trips']) }}"
+                                    class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                                    Reset
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
                 <thead class="border-b border-gray-200 dark:border-gray-800">

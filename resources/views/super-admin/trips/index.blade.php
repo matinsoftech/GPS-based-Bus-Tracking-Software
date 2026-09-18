@@ -155,7 +155,6 @@
                             <th class="px-5 py-3 text-left font-medium">Route</th>
                             <th class="px-5 py-3 text-left font-medium">Driver</th>
                             <th class="px-5 py-3 text-left font-medium">School</th>
-                            {{-- <th class="px-5 py-3 text-left font-medium">Type</th> --}}
                             <th class="px-5 py-3 text-left font-medium">Status</th>
                             <th class="px-5 py-3 text-left font-medium">Duration</th>
                             <th class="px-5 py-3 text-left font-medium">Started</th>
@@ -166,29 +165,35 @@
                         @forelse ($trips as $trip)
                             <tr class="text-gray-700 dark:text-gray-200">
                                 <td class="px-5 py-3">{{ $trip->started_at->format('M d, Y') }}</td>
-                                <td class="px-5 py-3">{{ $trip->bus->bus_number }}</td>
+                                <td class="px-5 py-3">
+                                    <a href="{{ route('buses.show', $trip->bus) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $trip->bus->bus_number }}</a>
+                                </td>
                                 <td class="px-5 py-3">
                                     <div class="flex items-center gap-2">
-                                        <span>{{ $trip->route?->name ?? '—' }}</span>
                                         @if ($trip->route)
+                                            <a href="{{ route('routes.show', $trip->route) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $trip->route->name }}</a>
                                             <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $trip->route->route_type_color_classes }}">
                                                 {{ $trip->route->route_type_label }}
                                             </span>
+                                        @else
+                                            <span>—</span>
                                         @endif
                                     </div>
                                 </td>
-                                <td class="px-5 py-3">{{ $trip->driver?->full_name ?? '—' }}</td>
-                                {{-- <td class="px-5 py-3">{{ $trip->school?->name ?? '—' }}</td>
                                 <td class="px-5 py-3">
-                                    <span
-                                        class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
-                                        @if ($trip->trip_type === 'home_to_school') bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400
-                                        @else
-                                            bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 @endif
-                                    ">
-                                        {{ $trip->trip_type_label }}
-                                    </span>
-                                </td> --}}
+                                    @if ($trip->driver)
+                                        <a href="{{ route('drivers.show', $trip->driver) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $trip->driver->full_name }}</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td class="px-5 py-3">
+                                    @if ($trip->school)
+                                        <a href="{{ route('schools.show', $trip->school) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $trip->school->name }}</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3">
                                     @if ($trip->status === 'in_progress')
                                         <span
@@ -248,14 +253,25 @@
                         <div class="min-w-0">
                             <p class="font-medium text-gray-900 dark:text-white">
                                 {{ $trip->started_at->format('M d, Y') }}</p>
-                            <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ $trip->bus->bus_number }} ·
-                                {{ $trip->route?->name ?? '—' }}</p>
+                            <p class="truncate text-xs text-gray-500 dark:text-gray-400">
+                                    <a href="{{ route('buses.show', $trip->bus) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $trip->bus->bus_number }}</a> ·
+                                    @if ($trip->route)
+                                        <a href="{{ route('routes.show', $trip->route) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $trip->route->name }}</a>
+                                    @else
+                                        —
+                                    @endif
+                                </p>
                             @if ($trip->route)
                                 <span class="mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium {{ $trip->route->route_type_color_classes }}">
                                     {{ $trip->route->route_type_label }}
                                 </span>
                             @endif
-                            <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ $trip->school?->name ?? '—' }}
+                            <p class="truncate text-xs text-gray-500 dark:text-gray-400">
+                                @if ($trip->school)
+                                    <a href="{{ route('schools.show', $trip->school) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $trip->school->name }}</a>
+                                @else
+                                    —
+                                @endif
                             </p>
                         </div>
                         @if ($trip->status === 'in_progress')
@@ -275,7 +291,13 @@
                     <dl class="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
                         <div>
                             <dt class="text-gray-400 dark:text-gray-500">Driver</dt>
-                            <dd class="text-gray-700 dark:text-gray-200">{{ $trip->driver?->full_name ?? '—' }}</dd>
+                            <dd class="text-gray-700 dark:text-gray-200">
+                                @if ($trip->driver)
+                                    <a href="{{ route('drivers.show', $trip->driver) }}" class="font-medium text-brand-600 hover:underline dark:text-brand-400">{{ $trip->driver->full_name }}</a>
+                                @else
+                                    —
+                                @endif
+                            </dd>
                         </div>
                         <div>
                             <dt class="text-gray-400 dark:text-gray-500">Duration</dt>

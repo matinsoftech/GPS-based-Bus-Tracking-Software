@@ -177,7 +177,7 @@ class NazarTrackService
      */
     public function lastKnownPayload(?Bus $bus): ?array
     {
-        if (! $bus || ! $bus->gpsDevice) {
+        if (! $bus || empty($bus->gps_device_id) || ! $bus->gpsDevice) {
             return null;
         }
 

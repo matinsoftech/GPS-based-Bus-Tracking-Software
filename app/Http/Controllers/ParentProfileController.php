@@ -6,6 +6,7 @@ use App\Models\ParentProfile;
 use App\Models\School;
 use App\Models\SchoolAdmin;
 use App\Models\User;
+use App\Services\PlanLimitService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -140,7 +141,7 @@ class ParentProfileController extends Controller
             }
         }
 
-        if ($error = app(\App\Services\PlanLimitService::class)->assertCreatable('parents', (int) $validated['school_id'])) {
+        if ($error = app(PlanLimitService::class)->assertCreatable('parents', (int) $validated['school_id'])) {
             return back()->withInput()->withErrors(['plan_limit' => $error]);
         }
 
@@ -179,13 +180,23 @@ class ParentProfileController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(ParentProfile $parentProfile)
+    public function show(ParentProfile $parentProfile, Request $request)
     {
         $this->authorizeParent($parentProfile);
 
-        $parentProfile->load(['user', 'school']);
+        $tab = $request->query('tab', 'overview');
 
-        return view('parents.show', compact('parentProfile'));
+        $allowedTabs = ['overview', 'children'];
+
+        if (! in_array($tab, $allowedTabs, true)) {
+            $tab = 'overview';
+        }
+
+        $parentProfile->load(['user', 'school', 'children.school']);
+
+        $childrenCount = $parentProfile->children->count();
+
+        return view('parents.show', compact('parentProfile', 'tab', 'childrenCount'));
     }
 
     /**
