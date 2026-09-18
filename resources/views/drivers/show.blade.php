@@ -39,7 +39,7 @@
         $driverTabs = [
             ['key' => 'overview', 'label' => 'Overview', 'url' => route('drivers.show', $driver), 'icon' => 'user-circle'],
             ['key' => 'assigned', 'label' => 'Assigned', 'url' => route('drivers.show', [$driver, 'tab' => 'assigned']), 'icon' => 'truck', 'count' => $driver->buses->count()],
-            ['key' => 'routes', 'label' => 'Route', 'url' => route('drivers.show', [$driver, 'tab' => 'routes']), 'icon' => 'map', 'count' => $driver->routes->count()],
+            ['key' => 'routes', 'label' => 'Route Map', 'url' => route('drivers.show', [$driver, 'tab' => 'routes']), 'icon' => 'map', 'count' => $driver->routes->count()],
             ['key' => 'trips', 'label' => 'Trip History', 'url' => route('drivers.show', [$driver, 'tab' => 'trips']), 'icon' => 'clock', 'count' => $tripCount],
         ];
     @endphp
